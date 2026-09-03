@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { Calendar03Icon, FilterResetIcon } from '@/components/ui/icons'
+import { FilterResetIcon } from '@/components/ui/icons'
 import { AUTHORS, COUNTERPARTIES, WAREHOUSES } from '@/features/receipts/mockData'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
+import { DatePicker, toISODate, fromISODate } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -80,24 +81,8 @@ export default function FilterModal({ open, onOpenChange, filters, onApply }) {
               Sana oralig'i
             </Label>
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="relative">
-                <Calendar03Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-                <Input
-                  type="date"
-                  value={draft.from}
-                  onChange={(e) => set('from', e.target.value)}
-                  className="h-9 w-full rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
-                />
-              </div>
-              <div className="relative">
-                <Calendar03Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-                <Input
-                  type="date"
-                  value={draft.to}
-                  onChange={(e) => set('to', e.target.value)}
-                  className="h-9 w-full rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
-                />
-              </div>
+              <DatePicker value={fromISODate(draft.from)} onChange={(d) => set('from', toISODate(d))} />
+              <DatePicker value={fromISODate(draft.to)} onChange={(d) => set('to', toISODate(d))} />
             </div>
           </div>
 
@@ -178,15 +163,13 @@ export default function FilterModal({ open, onOpenChange, filters, onApply }) {
               Summa, USD
             </Label>
             <div className="grid grid-cols-2 gap-2.5">
-              <Input
-                type="number"
+              <NumberInput
                 placeholder="0"
                 value={draft.minSum}
                 onChange={(e) => set('minSum', e.target.value)}
                 className="h-9 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
               />
-              <Input
-                type="number"
+              <NumberInput
                 placeholder="50 000"
                 value={draft.maxSum}
                 onChange={(e) => set('maxSum', e.target.value)}

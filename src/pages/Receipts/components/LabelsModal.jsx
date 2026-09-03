@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Printer, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import {
   Dialog,
   DialogContent,
@@ -44,9 +44,8 @@ export default function LabelsModal({ open, onOpenChange, rows, agentName, onPri
                   <SelectItem value="40x30">40 × 30 mm</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                type="number"
-                min={1}
+              <NumberInput
+                decimals={false}
                 value={copies}
                 onChange={(e) => setCopies(Number(e.target.value) || 1)}
                 className="h-9 w-16 rounded-md border-[#E5E5E5] bg-white text-center text-[14px] dark:border-white/10 dark:bg-card"

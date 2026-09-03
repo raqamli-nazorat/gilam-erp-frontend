@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { Calendar03Icon, FilterResetIcon } from '@/components/ui/icons'
+import { FilterResetIcon } from '@/components/ui/icons'
 import { BOOKING_AGENTS, BOOKING_WAREHOUSES } from '@/features/bookings/bookingsMockData'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
+import { DatePicker, toISODate, fromISODate } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -51,7 +53,7 @@ export default function BookingFilterModal({ open, onOpenChange, filters, onAppl
         onOpenChange(next)
       }}
     >
-      <DialogContent className="p-5 sm:max-w-[480px]">
+      <DialogContent className="gap-[14px] rounded-[12px] px-6 py-5 shadow-[0px_12px_24px_-6px_#01091C24] ring-0 sm:max-w-[560px]">
         <DialogHeader className="flex flex-row items-center justify-between pb-1">
           <DialogTitle className="text-[15px] font-semibold leading-[20px] text-[#0A0A0A] dark:text-white">
             Filtr
@@ -71,14 +73,8 @@ export default function BookingFilterModal({ open, onOpenChange, filters, onAppl
           <div>
             <Label className={labelCls}>Sana oralig'i</Label>
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="relative">
-                <Calendar03Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-                <Input type="date" value={draft.from} onChange={(e) => set('from', e.target.value)} className={`${inputCls} pl-9`} />
-              </div>
-              <div className="relative">
-                <Calendar03Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-                <Input type="date" value={draft.to} onChange={(e) => set('to', e.target.value)} className={`${inputCls} pl-9`} />
-              </div>
+              <DatePicker value={fromISODate(draft.from)} onChange={(d) => set('from', toISODate(d))} />
+              <DatePicker value={fromISODate(draft.to)} onChange={(d) => set('to', toISODate(d))} />
             </div>
           </div>
 
@@ -143,13 +139,13 @@ export default function BookingFilterModal({ open, onOpenChange, filters, onAppl
           <div>
             <Label className={labelCls}>Bron, m²</Label>
             <div className="grid grid-cols-2 gap-2.5">
-              <Input type="number" placeholder="0" value={draft.minM2} onChange={(e) => set('minM2', e.target.value)} className={inputCls} />
-              <Input type="number" placeholder="1 000" value={draft.maxM2} onChange={(e) => set('maxM2', e.target.value)} className={inputCls} />
+              <NumberInput decimals={false} placeholder="0" value={draft.minM2} onChange={(e) => set('minM2', e.target.value)} className={inputCls} />
+              <NumberInput decimals={false} placeholder="1 000" value={draft.maxM2} onChange={(e) => set('maxM2', e.target.value)} className={inputCls} />
             </div>
           </div>
         </div>
 
-        <DialogFooter className="mt-2 gap-2 border-t border-[#E5E5E5] pt-4 dark:border-white/10 sm:justify-end">
+        <DialogFooter className="mx-0 mb-0 mt-1 gap-2 border-0 bg-transparent p-0 sm:justify-end">
           <Button
             type="button"
             variant="outline"

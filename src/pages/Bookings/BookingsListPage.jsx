@@ -26,6 +26,9 @@ const TABS = [
   ['closed', 'Yopilgan'],
 ]
 
+// Jadval sarlavha yacheykasi — Onest 600, 13/18, #525252
+const TH = 'px-3 text-[13px] font-semibold uppercase leading-[18px] text-[#525252] dark:text-muted-foreground'
+
 export default function BookingsListPage() {
   const navigate = useNavigate()
   const bookings = useSelector((state) => state.bookings.list)
@@ -46,7 +49,8 @@ export default function BookingsListPage() {
           filters.closed && 'closed',
         ].filter(Boolean)
         if (!allowed.includes(b.status)) return false
-      } else if (b.status !== tab) {
+      } else if (tab !== 'active' && b.status !== tab) {
+        // "Faol" tab hamma bronni ko'rsatadi; qolgan tablar status bo'yicha filtrlaydi
         return false
       }
       if (search) {
@@ -65,8 +69,9 @@ export default function BookingsListPage() {
     })
   }, [bookings, tab, search, filters, statusFilterOn])
 
+  const totalCount = BOOKING_TAB_COUNTS.active + BOOKING_TAB_COUNTS.partial + BOOKING_TAB_COUNTS.closed
   usePageHeader('Bron tovarlar', {
-    label: String(filtered.length ? BOOKING_TAB_COUNTS[tab] : 0),
+    label: String(filtered.length === 0 ? 0 : tab === 'active' ? totalCount : BOOKING_TAB_COUNTS[tab]),
     variant: 'new',
   })
 
@@ -95,7 +100,7 @@ export default function BookingsListPage() {
                     : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
                 )}
               >
-                {BOOKING_TAB_COUNTS[key]}
+                {key === 'active' ? totalCount : BOOKING_TAB_COUNTS[key]}
               </span>
               {tab === key && <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />}
             </button>
@@ -150,18 +155,18 @@ export default function BookingsListPage() {
           <Table>
             <TableHeader className="bg-[#F5F5F5] dark:bg-white/5">
               <TableRow className="h-10 border-b border-[#E5E5E5] hover:bg-transparent dark:border-white/10">
-                <TableHead className="w-10 px-3 text-[11px] font-semibold uppercase text-[#737373]">#</TableHead>
-                <TableHead className="px-3 text-[11px] font-semibold uppercase text-[#737373]">№</TableHead>
-                <TableHead className="px-3 text-[11px] font-semibold uppercase text-[#737373]">
+                <TableHead className={cn(TH, 'w-10')}>#</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>№</TableHead>
+                <TableHead className={TH}>
                   <span className="inline-flex items-center gap-1">SANA <ChevronDown className="h-3 w-3" /></span>
                 </TableHead>
-                <TableHead className="px-3 text-[11px] font-semibold uppercase text-[#737373]">KIMGA</TableHead>
-                <TableHead className="px-3 text-[11px] font-semibold uppercase text-[#737373]">AGENT</TableHead>
-                <TableHead className="px-3 text-[11px] font-semibold uppercase text-[#737373]">OMBOR</TableHead>
-                <TableHead className="px-3 text-right text-[11px] font-semibold uppercase text-[#737373]">BRON, M²</TableHead>
-                <TableHead className="px-3 text-right text-[11px] font-semibold uppercase text-[#737373]">SOTILGAN, M²</TableHead>
-                <TableHead className="px-3 text-right text-[11px] font-semibold uppercase text-[#737373]">QAYTGAN, M²</TableHead>
-                <TableHead className="px-3 text-[11px] font-semibold uppercase text-[#737373]">HOLAT</TableHead>
+                <TableHead className={TH}>KIMGA</TableHead>
+                <TableHead className={TH}>AGENT</TableHead>
+                <TableHead className={TH}>OMBOR</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>BRON, M²</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>SOTILGAN, M²</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>QAYTGAN, M²</TableHead>
+                <TableHead className={TH}>HOLAT</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -171,12 +176,12 @@ export default function BookingsListPage() {
                   className="h-11 cursor-pointer border-b border-[#E5E5E5] hover:bg-[#F9FAFB] dark:border-white/5 dark:hover:bg-white/5"
                   onClick={() => navigate(`/bron-tovarlar/${b.id}`)}
                 >
-                  <TableCell className="px-3 text-[13px] text-[#737373]">{i + 1}</TableCell>
-                  <TableCell className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{b.number}</TableCell>
-                  <TableCell className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{formatDate(b.date)}</TableCell>
-                  <TableCell className="max-w-[170px] truncate px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{b.customer || '—'}</TableCell>
-                  <TableCell className="max-w-[150px] truncate px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.agent}</TableCell>
-                  <TableCell className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.warehouse}</TableCell>
+                  <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{i + 1}</TableCell>
+                  <TableCell className="px-3 text-right text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{b.number}</TableCell>
+                  <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{formatDate(b.date)}</TableCell>
+                  <TableCell className="max-w-[170px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{b.customer || '—'}</TableCell>
+                  <TableCell className="max-w-[150px] truncate px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{b.agent}</TableCell>
+                  <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{b.warehouse}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{formatNumber(b.bronM2)}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(b.soldM2)}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(b.returnedM2)}</TableCell>

@@ -4,7 +4,7 @@ import { CASHBOXES, rollBookedM2, rollSum } from '@/features/bookings/bookingsMo
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DatePicker, toISODate, fromISODate } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -86,7 +86,7 @@ export default function BookingSaleModal({ open, onOpenChange, rolls = [], excha
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className={labelCls}>To'lov muddati</Label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={fieldCls} />
+            <DatePicker value={fromISODate(dueDate)} onChange={(d) => setDueDate(toISODate(d))} />
           </div>
           <div>
             <Label className={labelCls}>Kassa</Label>

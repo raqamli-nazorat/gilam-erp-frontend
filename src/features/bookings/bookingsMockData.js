@@ -102,6 +102,8 @@ function makeBooking(o) {
   }
 }
 
+// Figma freymlaridagi bronlar (35–37): Faol tab HAMMASINI ko'rsatadi,
+// "Qisman sotilgan" va "Yopilgan" tablari status bo'yicha filtrlaydi.
 export const initialBookings = [
   makeBooking({ number: 'BR-0046', date: '2023-05-19', time: '14:32', customer: '+998 93 659 12 28', agent: "Mirzajonov G'afforjon", transport: 'Anvar Matiz', status: 'active', rooms: br0046Rooms(), rolls: br0046Rolls(), bronM2: 236, soldM2: 0, returnedM2: 0 }),
   makeBooking({ number: 'BR-0045', date: '2023-05-18', customer: 'Xumo Arena', agent: 'Kamol Usta', status: 'partial', bronM2: 412, soldM2: 120, returnedM2: 0 }),
@@ -111,19 +113,13 @@ export const initialBookings = [
   makeBooking({ number: 'BR-0041', date: '2023-05-12', customer: 'Navoi Diller', agent: 'Mirzadjonov Ziyodullo', status: 'active', bronM2: 320, soldM2: 0, returnedM2: 0 }),
   makeBooking({ number: 'BR-0040', date: '2023-05-11', customer: '958000000', agent: 'Alimov Shuxrat', status: 'closed', bronM2: 78, soldM2: 78, returnedM2: 0 }),
   makeBooking({ number: 'BR-0039', date: '2023-05-10', customer: 'Omon SAG Xujand', agent: 'Kamol Usta', status: 'closed', bronM2: 144, soldM2: 0, returnedM2: 144 }),
-  makeBooking({ number: 'BR-0038', date: '2023-05-09', customer: '+998 90 123 45 67', agent: "Mirzajonov G'afforjon", status: 'active', bronM2: 128, soldM2: 0, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0037', date: '2023-05-08', customer: 'Karvon Saroy', agent: 'Alimov Shuxrat', status: 'partial', bronM2: 96, soldM2: 48, returnedM2: 0 }),
+  makeBooking({ number: 'BR-0037', date: '2023-05-08', customer: '12 TREST ZOHID', agent: "Mirzajonov G'afforjon", status: 'partial', bronM2: 620, soldM2: 410, returnedM2: 0 }),
   makeBooking({ number: 'BR-0036', date: '2023-05-06', customer: 'Xissador Botir aka', agent: 'Mirzadjonov Ziyodullo', status: 'closed', bronM2: 210, soldM2: 210, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0035', date: '2023-05-05', customer: '+998 91 555 22 11', agent: 'Kamol Usta', status: 'active', bronM2: 64, soldM2: 0, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0034', date: '2023-05-03', customer: 'Grand Atlas', agent: "Mirzajonov G'afforjon", status: 'partial', bronM2: 150, soldM2: 90, returnedM2: 0 }),
+  makeBooking({ number: 'BR-0034', date: '2023-05-04', customer: '935004411', agent: 'Usmonov Jamshid', status: 'partial', bronM2: 88, soldM2: 44, returnedM2: 0 }),
   makeBooking({ number: 'BR-0033', date: '2023-05-02', customer: 'Navoi Diller', agent: 'Alimov Shuxrat', status: 'closed', bronM2: 64, soldM2: 64, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0032', date: '2023-04-29', customer: '972450011', agent: 'Usmonov Jamshid', status: 'closed', bronM2: 112, soldM2: 112, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0031', date: '2023-04-27', customer: 'Bahor Mebel', agent: 'Kamol Usta', status: 'active', bronM2: 88, soldM2: 0, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0030', date: '2023-04-25', customer: '+998 93 777 88 99', agent: 'Mirzadjonov Ziyodullo', status: 'partial', bronM2: 204, soldM2: 60, returnedM2: 0 }),
-  makeBooking({ number: 'BR-0029', date: '2023-04-22', customer: 'Oq Saroy', agent: "Mirzajonov G'afforjon", status: 'closed', bronM2: 176, soldM2: 176, returnedM2: 0 }),
 ]
 
-let bookingSeq = 48
+let bookingSeq = 47
 export function nextBookingNumber() {
   return `BR-${String(bookingSeq++).padStart(4, '0')}`
 }

@@ -25,12 +25,13 @@ const bookingsSlice = createSlice({
       },
       prepare() {
         const number = nextBookingNumber()
+        const now = new Date()
         return {
           payload: {
             id: number,
             number,
-            date: new Date().toISOString().slice(0, 10),
-            time: new Date().toTimeString().slice(0, 5),
+            date: now.toISOString().slice(0, 10),
+            time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
             customer: '',
             agent: "Mirzajonov G'afforjon",
             warehouse: 'Bron ombori',

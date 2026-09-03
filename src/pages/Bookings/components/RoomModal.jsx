@@ -3,6 +3,7 @@ import { Plus, X } from 'lucide-react'
 import { formatNumber } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -48,11 +49,11 @@ export default function RoomModal({ open, onOpenChange, neededM2 = 0, onAdd }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className={labelCls}>Eni, m</Label>
-            <Input type="number" step="0.01" value={widthM} onChange={(e) => setWidthM(e.target.value)} className={fieldCls} />
+            <NumberInput pad={2} value={widthM} onChange={(e) => setWidthM(e.target.value)} className={fieldCls} />
           </div>
           <div>
             <Label className={labelCls}>Bo'yi, m</Label>
-            <Input type="number" step="0.01" value={lengthM} onChange={(e) => setLengthM(e.target.value)} className={fieldCls} />
+            <NumberInput pad={2} value={lengthM} onChange={(e) => setLengthM(e.target.value)} className={fieldCls} />
           </div>
         </div>
 

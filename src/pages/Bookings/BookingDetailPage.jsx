@@ -159,8 +159,8 @@ function BookingWorkspace() {
               <p className="text-[12px] font-normal text-[#737373] dark:text-muted-foreground">Kerakli maydon</p>
               <p className="mt-0.5">
                 <span className="text-[16px] font-bold text-[#0052D2] dark:text-[#60A5FA]">{formatNumber(neededM2)}</span>
-                <span className="ml-1 text-[12px] text-[#737373] dark:text-muted-foreground">
-                  m² · {booking.rooms.length} ta xona
+                <span className="ml-1.5 text-[12px] text-[#737373] dark:text-muted-foreground">
+                  {booking.rooms.length > 0 && 'm² · '}{booking.rooms.length} ta xona
                 </span>
               </p>
             </div>
@@ -184,14 +184,14 @@ function BookingWorkspace() {
                       render={
                         <Button
                           type="button"
-                          variant="outline"
-                          className="h-9 w-9 border-[#E5E5E5] bg-white p-0 text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+                          variant="ghost"
+                          className="h-9 w-9 p-0 text-[#737373] hover:bg-[#F5F5F5] hover:text-[#0A0A0A] dark:hover:bg-white/5 dark:hover:text-white"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       }
                     />
-                    <DropdownMenuContent align="end" className="w-[200px] rounded-xl border-[#E5E5E5] bg-white p-1.5 shadow-[0_8px_24px_rgba(1,9,28,0.12)] dark:border-white/10 dark:bg-card">
+                    <DropdownMenuContent align="end" className="w-[200px] rounded-[12px] border border-[#E5E5E5] bg-white p-1.5 shadow-[0px_8px_24px_0px_#01091C1F] dark:border-white/10 dark:bg-card">
                       <DropdownMenuItem
                         disabled={isClosed}
                         onClick={() => setSaleOpen(true)}

@@ -1,9 +1,14 @@
+// Butun son qismini minglik bo'shliqlari bilan ajratadi: "1234567" -> "1 234 567"
+export function groupThousands(intStr) {
+  return intStr.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+}
+
 // 12 230,00 uslubidagi son formatlash (bo'shliq — minglik, vergul — kasr ajratkichi)
 export function formatNumber(value, fractionDigits = 2) {
   if (value == null || Number.isNaN(value)) return '—'
   const fixed = Number(value).toFixed(fractionDigits)
   const [intPart, fracPart] = fixed.split('.')
-  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  const withSpaces = groupThousands(intPart)
   return fracPart ? `${withSpaces},${fracPart}` : withSpaces
 }
 

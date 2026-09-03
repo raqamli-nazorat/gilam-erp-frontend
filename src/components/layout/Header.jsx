@@ -22,6 +22,7 @@ const BADGE_STYLES = {
   new: 'border-white/25 bg-white/10 text-white',
   draft: 'border-amber-400/40 bg-amber-400/15 text-amber-200',
   confirmed: 'border-emerald-400/40 bg-emerald-400/15 text-emerald-200',
+  rejected: 'border-red-400/40 bg-red-400/15 text-red-200',
   count: 'border-white/25 bg-white/10 text-white',
 }
 
@@ -31,14 +32,15 @@ export default function Header({ title, badge }) {
   const dispatch = useDispatch()
   const theme = useSelector((state) => state.ui.theme)
   const { pathname } = useLocation()
-  const isBooking = pathname.startsWith('/bron-tovarlar')
+  // Bron hujjati sahifasida ombor "Bron ombori", ro'yxatda esa odatiy MAGAZIN
+  const isBookingDoc = pathname.startsWith('/bron-tovarlar/')
   const [warehouse, setWarehouse] = useState(WAREHOUSES[0])
   const [language, setLanguage] = useState('UZ')
-  const warehouseOptions = isBooking ? [BOOKING_WAREHOUSE, ...WAREHOUSES] : WAREHOUSES
+  const warehouseOptions = isBookingDoc ? [BOOKING_WAREHOUSE, ...WAREHOUSES] : WAREHOUSES
 
   useEffect(() => {
-    setWarehouse(isBooking ? BOOKING_WAREHOUSE : WAREHOUSES[0])
-  }, [isBooking])
+    setWarehouse(isBookingDoc ? BOOKING_WAREHOUSE : WAREHOUSES[0])
+  }, [isBookingDoc])
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 bg-[#1B3E75] px-6">

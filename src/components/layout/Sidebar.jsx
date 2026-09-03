@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { toggleSidebar, setSidebarCollapsed } from '@/features/ui/uiSlice'
 import { cn } from '@/lib/utils'
@@ -26,8 +26,26 @@ const NAV_ITEMS = [
   { to: '/tovarlar-qaytarishi', label: 'Tovarlar qaytarishi', icon: ShoppingCartRemove01Icon },
   { to: '/qaytarish-kirimi', label: 'Qaytarish kirimi', icon: PackageReceive01Icon },
   { to: '/xarajatlar', label: 'Xarajatlar', icon: Invoice01Icon },
-  { to: '/ish-haqi', label: 'Ish haqi', icon: UserGroupIcon },
-  { to: '/kassa', label: 'Kassa', icon: CashierIcon },
+  {
+    to: '/ish-haqi',
+    label: 'Ish haqi',
+    icon: UserGroupIcon,
+    children: [
+      { to: '/ish-haqi', label: 'Ish haqi hisoblash', end: true },
+      { to: '/ish-haqi/avans', label: 'Avans va ushlanmalar' },
+      { to: '/ish-haqi/tabel', label: 'Kunlik tabel' },
+    ],
+  },
+  {
+    to: '/kassa',
+    label: 'Kassa',
+    icon: CashierIcon,
+    children: [
+      { to: '/kassa', label: "Ish o'rni", end: true },
+      { to: '/kassa/operatsiyalar', label: 'Kassa operatsiyalari' },
+      { to: '/kassa/kun-yakuni', label: 'Kun yakuni' },
+    ],
+  },
   { to: '/hisobotlar', label: 'Hisobotlar', icon: Chart01Icon },
   { to: '/balans', label: 'Balans', icon: BalanceScaleIcon },
   { to: '/malumotnomalar', label: "Ma'lumotnomalar", icon: Book01Icon },
@@ -38,6 +56,7 @@ export default function Sidebar() {
   const dispatch = useDispatch()
   const user = useSelector((state) => state.auth.user)
   const collapsed = useSelector((state) => state.ui.sidebarCollapsed)
+  const { pathname } = useLocation()
 
   return (
     <aside
@@ -78,7 +97,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) =>
+        {NAV_ITEMS.map(({ to, label, icon: Icon, children }) =>
           collapsed ? (
             <Tooltip key={to}>
               <TooltipTrigger
@@ -99,20 +118,40 @@ export default function Sidebar() {
               <TooltipContent side="right">{label}</TooltipContent>
             </Tooltip>
           ) : (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={(e) => e.stopPropagation()}
-              className={({ isActive }) =>
-                cn(
+            <div key={to}>
+              <NavLink
+                to={to}
+                onClick={(e) => e.stopPropagation()}
+                className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white',
-                  isActive && 'bg-white/15 text-white'
-                )
-              }
-            >
-              <Icon className="shrink-0" />
-              <span className="truncate">{label}</span>
-            </NavLink>
+                  (children ? pathname.startsWith(to) : pathname === to) && 'bg-white/15 text-white'
+                )}
+              >
+                <Icon className="shrink-0" />
+                <span className="truncate">{label}</span>
+              </NavLink>
+
+              {children && pathname.startsWith(to) && (
+                <div className="mt-1 space-y-0.5 pb-1 pl-9">
+                  {children.map((child) => (
+                    <NavLink
+                      key={child.label}
+                      to={child.to}
+                      end={child.end}
+                      onClick={(e) => e.stopPropagation()}
+                      className={({ isActive }) =>
+                        cn(
+                          'block rounded-md px-3 py-1.5 text-[13px] font-normal text-white/60 transition-colors hover:bg-white/10 hover:text-white',
+                          isActive && 'bg-white/10 font-medium text-white'
+                        )
+                      }
+                    >
+                      {child.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           )
         )}
       </nav>

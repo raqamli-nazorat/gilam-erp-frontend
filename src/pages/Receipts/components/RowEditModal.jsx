@@ -9,6 +9,7 @@ import {
 import { Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -54,15 +55,15 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
   }
 
   function setMarkup(value) {
-    const markupPct = Number(value)
-    const priceSale = Number((form.priceIn * (1 + markupPct / 100)).toFixed(2))
-    setForm((f) => ({ ...f, markupPct, priceSale }))
+    const m = Number(value) || 0
+    const p = Number(form.priceIn) || 0
+    setForm((f) => ({ ...f, markupPct: value, priceSale: (p * (1 + m / 100)).toFixed(2) }))
   }
 
   function setPriceSale(value) {
-    const priceSale = Number(value)
-    const markupPct = form.priceIn > 0 ? Number(((priceSale / form.priceIn - 1) * 100).toFixed(1)) : 0
-    setForm((f) => ({ ...f, priceSale, markupPct }))
+    const s = Number(value) || 0
+    const p = Number(form.priceIn) || 0
+    setForm((f) => ({ ...f, priceSale: value, markupPct: p > 0 ? ((s / p - 1) * 100).toFixed(1) : '0' }))
   }
 
   const m2 = Number((Number(form.widthM || 0) * Number(form.heightM || 0)).toFixed(2))
@@ -159,11 +160,11 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="mb-1.5">Eni, m</Label>
-                <Input type="number" step="0.01" value={form.widthM} onChange={(e) => set('widthM', e.target.value)} />
+                <NumberInput pad={2} value={form.widthM} onChange={(e) => set('widthM', e.target.value)} />
               </div>
               <div>
                 <Label className="mb-1.5">Bo'yi, m</Label>
-                <Input type="number" step="0.01" value={form.heightM} onChange={(e) => set('heightM', e.target.value)} />
+                <NumberInput pad={2} value={form.heightM} onChange={(e) => set('heightM', e.target.value)} />
               </div>
               <div>
                 <Label className="mb-1.5">m² (hisoblanadi)</Label>
@@ -189,24 +190,24 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="mb-1.5">Kirim narxi, USD</Label>
-                <Input
-                  type="number"
-                  step="0.01"
+                <NumberInput
+                  pad={2}
                   value={form.priceIn}
                   onChange={(e) => {
-                    const priceIn = Number(e.target.value)
-                    const priceSale = Number((priceIn * (1 + form.markupPct / 100)).toFixed(2))
-                    setForm((f) => ({ ...f, priceIn, priceSale }))
+                    const priceIn = e.target.value
+                    const p = Number(priceIn) || 0
+                    const m = Number(form.markupPct) || 0
+                    setForm((f) => ({ ...f, priceIn, priceSale: (p * (1 + m / 100)).toFixed(2) }))
                   }}
                 />
               </div>
               <div>
                 <Label className="mb-1.5">Ustama, %</Label>
-                <Input type="number" value={form.markupPct} onChange={(e) => setMarkup(e.target.value)} />
+                <NumberInput value={form.markupPct} onChange={(e) => setMarkup(e.target.value)} />
               </div>
               <div>
                 <Label className="mb-1.5">Sotuv narxi, USD</Label>
-                <Input type="number" step="0.01" value={form.priceSale} onChange={(e) => setPriceSale(e.target.value)} />
+                <NumberInput pad={2} value={form.priceSale} onChange={(e) => setPriceSale(e.target.value)} />
               </div>
               <div>
                 <Label className="mb-1.5">Valyuta</Label>
