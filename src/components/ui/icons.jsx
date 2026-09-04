@@ -4,6 +4,8 @@ import {
   Add01Icon as Add01Raw,
   BalanceScaleIcon as BalanceScaleRaw,
   Book01Icon as Book01Raw,
+  Briefcase01Icon as Briefcase01Raw,
+  Building03Icon as Building03Raw,
   Calendar03Icon as Calendar03Raw,
   CashierIcon as CashierRaw,
   Chart01Icon as Chart01Raw,
@@ -89,6 +91,14 @@ export function BalanceScaleIcon({ className, size = 18, ...props }) {
 
 export function Book01Icon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Book01Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
+export function Building03Icon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={Building03Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
+export function Briefcase01Icon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={Briefcase01Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
 export function Settings01Icon({ className, size = 18, ...props }) {

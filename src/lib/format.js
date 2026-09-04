@@ -19,6 +19,33 @@ export function formatDate(isoDate) {
   return `${d}.${m}.${y}`
 }
 
+// Faqat raqamlarni oladi va "+998 90 123-45-67" ko'rinishiga keltiradi.
+// Harf va boshqa belgilar e'tiborsiz qoldiriladi; 998 prefiksi avtomatik.
+export function formatUzPhone(input) {
+  let digits = String(input ?? '').replace(/\D/g, '')
+  if (digits.startsWith('998')) digits = digits.slice(3)
+  digits = digits.slice(0, 9)
+  if (!digits) return ''
+  let out = '+998 ' + digits.slice(0, 2)
+  if (digits.length > 2) out += ' ' + digits.slice(2, 5)
+  if (digits.length > 5) out += '-' + digits.slice(5, 7)
+  if (digits.length > 7) out += '-' + digits.slice(7, 9)
+  return out
+}
+
+// To'liq (9 ta raqamli) O'zbekiston raqami kiritilganmi
+export function isValidUzPhone(input) {
+  let digits = String(input ?? '').replace(/\D/g, '')
+  if (digits.startsWith('998')) digits = digits.slice(3)
+  return digits.length === 9
+}
+
+// "04.09.2026 14:32" ko'rinishidagi sana-vaqt (audit yozuvlari uchun)
+export function formatDateTime(date = new Date()) {
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(date.getDate())}.${p(date.getMonth() + 1)}.${date.getFullYear()} ${p(date.getHours())}:${p(date.getMinutes())}`
+}
+
 export function formatCountdown(ms) {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
   const minutes = Math.floor(totalSeconds / 60)

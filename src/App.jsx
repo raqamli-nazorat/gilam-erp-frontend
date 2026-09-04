@@ -27,6 +27,14 @@ import BalansPage from '@/pages/Balans/BalansPage'
 import KontragentBalansPage from '@/pages/Balans/KontragentBalansPage'
 import MalumotnomalarIndexPage from '@/pages/Malumotnomalar/MalumotnomalarIndexPage'
 import MalumotnomaDetailPage from '@/pages/Malumotnomalar/MalumotnomaDetailPage'
+import TashkilotlarListPage from '@/pages/Tashkilotlar/TashkilotlarListPage'
+import TashkilotDetailPage from '@/pages/Tashkilotlar/TashkilotDetailPage'
+import FiliallarListPage from '@/pages/Filiallar/FiliallarListPage'
+import FilialDetailPage from '@/pages/Filiallar/FilialDetailPage'
+import FilialXodimlarPage from '@/pages/Filiallar/FilialXodimlarPage'
+import FilialOmborlarPage from '@/pages/Filiallar/FilialOmborlarPage'
+import FilialMijozlarPage from '@/pages/Filiallar/FilialMijozlarPage'
+import FilialSavdoPage from '@/pages/Filiallar/FilialSavdoPage'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 function App() {
@@ -77,6 +85,14 @@ function App() {
           <Route path="/balans/kontragent/:id" element={<KontragentBalansPage />} />
           <Route path="/malumotnomalar" element={<MalumotnomalarIndexPage />} />
           <Route path="/malumotnomalar/:slug" element={<MalumotnomaDetailPage />} />
+          <Route path="/tashkilotlar" element={<TashkilotlarListPage />} />
+          <Route path="/tashkilotlar/:id" element={<TashkilotDetailPage />} />
+          <Route path="/filiallar" element={<FiliallarListPage />} />
+          <Route path="/filiallar/:id" element={<FilialDetailPage />} />
+          <Route path="/filiallar/:id/xodimlar" element={<FilialXodimlarPage />} />
+          <Route path="/filiallar/:id/omborlar" element={<FilialOmborlarPage />} />
+          <Route path="/filiallar/:id/mijozlar" element={<FilialMijozlarPage />} />
+          <Route path="/filiallar/:id/savdo" element={<FilialSavdoPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
