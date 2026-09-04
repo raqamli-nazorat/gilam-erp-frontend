@@ -11,9 +11,9 @@ export default function LoginLeftPanel() {
       }}
     >
       <div className="relative flex h-full flex-col p-10">
-        <img src="/logo.svg" alt="GILAM" className="h-8 w-auto" />
+        <img src="/logo.svg" alt="GILAM" className="h-8 w-auto self-start" />
 
-        <div className="mt-auto flex flex-col gap-5">
+        <div className="flex flex-1 flex-col justify-center gap-5">
           <h1
             style={{
               fontSize: 40,
@@ -29,8 +29,14 @@ export default function LoginLeftPanel() {
           </h1>
 
           <p
-            className="max-w-[340px] text-white/70"
-            style={{ fontSize: 14, fontWeight: 400, lineHeight: '22px' }}
+            className="max-w-[436px]"
+            style={{
+              fontSize: 14,
+              fontWeight: 400,
+              lineHeight: '22px',
+              letterSpacing: 0,
+              color: '#FFFFFF9E',
+            }}
           >
             Partiya, shtrix kod, qoldiq m² va kassa — bitta tizimda. Kirish uchun
             administrator bergan login va parolni kiriting.
