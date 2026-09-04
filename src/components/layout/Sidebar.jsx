@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   BalanceScaleIcon,
   Book01Icon,
+  Briefcase01Icon,
+  Building03Icon,
   CashierIcon,
   Chart01Icon,
   Invoice01Icon,
@@ -20,6 +22,8 @@ import {
 } from '@/components/ui/icons'
 
 const NAV_ITEMS = [
+  { to: '/tashkilotlar', label: 'Tashkilotlar', icon: Building03Icon },
+  { to: '/filiallar', label: 'Filiallar', icon: Briefcase01Icon },
   { to: '/tovarlar-kirimi', label: 'Tovarlar kirimi', icon: ShoppingCartCheckIn01Icon },
   { to: '/bron-tovarlar', label: 'Bron tovarlar', icon: Tag01Icon },
   { to: '/tovarlar-savdosi', label: 'Tovarlar savdosi', icon: ShoppingCartCheckOut01Icon },

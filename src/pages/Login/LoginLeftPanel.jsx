@@ -14,28 +14,6 @@ export default function LoginLeftPanel() {
         <img src="/logo.svg" alt="GILAM" className="h-8 w-auto" />
 
         <div className="mt-auto flex flex-col gap-5">
-          <div
-            className="inline-flex w-fit items-center gap-2 backdrop-blur-sm"
-            style={{
-              height: 26,
-              borderRadius: 999,
-              paddingTop: 5,
-              paddingRight: 12,
-              paddingBottom: 5,
-              paddingLeft: 10,
-              background: '#FFFFFF1A',
-              border: '1px solid #FFFFFF29',
-            }}
-          >
-            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
-            <span
-              className="whitespace-nowrap"
-              style={{ fontSize: 12, fontWeight: 500, lineHeight: '16px', color: '#FFFFFFD1' }}
-            >
-              21 ta salon · real vaqtda
-            </span>
-          </div>
-
           <h1
             style={{
               fontSize: 40,
