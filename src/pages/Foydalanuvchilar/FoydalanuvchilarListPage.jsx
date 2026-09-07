@@ -1,25 +1,18 @@
 import { useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Filter, Plus, Search } from 'lucide-react'
+import { Filter, Plus, Search, Shield, Users } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { orgAdded } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
+import { userAdded } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import OrgModal from './components/OrgModal'
-import OrgFilterModal, { EMPTY_ORG_FILTERS } from './components/OrgFilterModal'
-import FiliallarHududChart from './components/FiliallarHududChart'
+import UserModal from './components/UserModal'
+import UserFilterModal, { EMPTY_USER_FILTERS } from './components/UserFilterModal'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
-
-function matchesCountBucket(n, bucket) {
-  if (!bucket) return true
-  if (bucket.endsWith('+ ta')) return n >= Number.parseInt(bucket, 10)
-  const [lo, hi] = bucket.replace(' ta', '').split('–').map((s) => Number.parseInt(s, 10))
-  return hi == null ? n === lo : n >= lo && n <= hi
-}
 
 // "14.02.2024 10:24" -> Date
 function parseDateTime(s) {
@@ -28,9 +21,9 @@ function parseDateTime(s) {
   return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
 }
 
-function matchesSanaFilter(sana, preset) {
+function matchesSanaFilter(yaratilgan, preset) {
   if (!preset) return true
-  const d = parseDateTime(sana)
+  const d = parseDateTime(yaratilgan)
   if (!d) return false
   const now = new Date()
   if (preset === 'Bugun') return d.toDateString() === now.toDateString()
@@ -43,54 +36,53 @@ function matchesSanaFilter(sana, preset) {
   return true
 }
 
-export default function TashkilotlarListPage() {
+export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const orgs = useSelector((s) => s.tashkilotlar.list)
-  const branches = useSelector((s) => s.filiallar.list)
+  const users = useSelector((s) => s.foydalanuvchilar.list)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState(EMPTY_ORG_FILTERS)
+  const [filters, setFilters] = useState(EMPTY_USER_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
-  usePageHeader('Tashkilotlar')
+  usePageHeader('Platforma › Foydalanuvchilar')
 
   const counts = useMemo(
     () => ({
-      all: orgs.length,
-      active: orgs.filter((o) => o.status === 'active').length,
-      suspended: orgs.filter((o) => o.status === 'suspended').length,
+      all: users.length,
+      active: users.filter((u) => u.holat === 'active').length,
+      blocked: users.filter((u) => u.holat === 'blocked').length,
     }),
-    [orgs]
+    [users]
   )
   const hasFilter = Object.values(filters).some(Boolean)
 
   const shown = useMemo(() => {
-    let out = orgs
-    if (tab === 'active') out = out.filter((o) => o.status === 'active')
-    if (tab === 'suspended') out = out.filter((o) => o.status === 'suspended')
+    let out = users
+    if (tab === 'active') out = out.filter((u) => u.holat === 'active')
+    if (tab === 'blocked') out = out.filter((u) => u.holat === 'blocked')
     if (search) {
       const q = search.trim().toLowerCase()
-      out = out.filter((o) => o.name.toLowerCase().includes(q) || o.inn.includes(q))
+      out = out.filter((u) => u.name.toLowerCase().includes(q) || u.phone.replace(/\D/g, '').includes(q.replace(/\D/g, '')))
     }
-    if (filters.hudud) out = out.filter((o) => o.viloyat === filters.hudud)
-    if (filters.holat) out = out.filter((o) => (filters.holat === 'Faol' ? o.status === 'active' : o.status === 'suspended'))
-    if (filters.filiallarSoni) out = out.filter((o) => matchesCountBucket(o.branchCount, filters.filiallarSoni))
-    if (filters.foydalanuvchilar) out = out.filter((o) => matchesCountBucket(o.stats?.foydalanuvchilar ?? 0, filters.foydalanuvchilar))
-    if (filters.sana) out = out.filter((o) => matchesSanaFilter(o.registeredAt, filters.sana))
+    if (filters.tashkilot) out = out.filter((u) => u.tashkilot === filters.tashkilot)
+    if (filters.filial) out = out.filter((u) => u.filial === filters.filial)
+    if (filters.rol) out = out.filter((u) => u.rol === filters.rol)
+    if (filters.holat) out = out.filter((u) => (filters.holat === 'Faol' ? u.holat === 'active' : u.holat === 'blocked'))
+    if (filters.sana) out = out.filter((u) => matchesSanaFilter(u.yaratilgan, filters.sana))
     return out
-  }, [orgs, tab, search, filters])
+  }, [users, tab, search, filters])
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5E5] pb-2 dark:border-white/10">
         <div className="flex items-center gap-6">
           {[
             ['all', 'Barchasi', counts.all],
             ['active', 'Faol', counts.active],
-            ['suspended', 'To‘xtatilgan', counts.suspended],
+            ['blocked', 'Bloklangan', counts.blocked],
           ].map(([key, label, n]) => (
             <button
               key={key}
@@ -120,15 +112,22 @@ export default function TashkilotlarListPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
-          <div className="relative w-[280px]">
+          <div className="relative w-[300px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tashkilot yoki INN…"
-              className="h-9 w-[280px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              placeholder="F.I.SH. yoki telefon…"
+              className="h-9 w-[300px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
             />
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/foydalanuvchilar/rollar')}
+            className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground"
+          >
+            <Shield className="h-4 w-4" /> Rollar
+          </Button>
           <Button
             variant="outline"
             onClick={() => setFilterOpen(true)}
@@ -141,62 +140,64 @@ export default function TashkilotlarListPage() {
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
-            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
+            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
-            <Plus className="h-4 w-4" /> Yangi tashkilot
+            <Plus className="h-4 w-4" /> Yangi foydalanuvchi
           </Button>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
-        <div className="overflow-x-auto">
+      <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">
+        Foydalanuvchilar, {shown.length} ta
+      </p>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-sm dark:bg-card">
+        <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
-                <th className={cn(TH, 'text-left')}>NOMI</th>
-                <th className={cn(TH, 'text-right')}>INN</th>
-                <th className={cn(TH, 'text-left')}>DIREKTOR</th>
+                <th className={cn(TH, 'text-left')}>F.I.SH.</th>
                 <th className={cn(TH, 'text-left')}>TELEFON</th>
-                <th className={cn(TH, 'text-left')}>HUDUD</th>
-                <th className={cn(TH, 'text-right')}>FILIAL</th>
+                <th className={cn(TH, 'text-left')}>TASHKILOT</th>
+                <th className={cn(TH, 'text-left')}>FILIAL</th>
+                <th className={cn(TH, 'text-left')}>ROL</th>
                 <th className={cn(TH, 'text-left')}>HOLAT</th>
               </tr>
             </thead>
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={6} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
-                        <Building2 className="h-6 w-6 text-[#737373]" />
+                        <Users className="h-6 w-6 text-[#737373]" />
                       </div>
-                      <p className="text-sm text-[#737373]">Tashkilot topilmadi</p>
+                      <p className="text-sm text-[#737373]">Foydalanuvchi topilmadi</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                shown.map((o) => (
+                shown.map((u) => (
                   <tr
-                    key={o.id}
-                    onClick={() => navigate(`/tashkilotlar/${o.id}`)}
+                    key={u.id}
+                    onClick={() => navigate(`/foydalanuvchilar/${u.id}`)}
                     className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                   >
-                    <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{o.name}</td>
-                    <td className="px-4 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{o.inn}</td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.director || '—'}</td>
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{o.phone || '—'}</td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.viloyat || '—'}</td>
-                    <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.branchCount}</td>
+                    <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{u.name}</td>
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{u.phone}</td>
+                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{u.tashkilot}</td>
+                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{u.filial}</td>
+                    <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-white">{u.rol}</td>
                     <td className="px-4">
                       <span
                         className={cn(
                           'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                          o.status === 'active'
+                          u.holat === 'active'
                             ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                            : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+                            : 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
                         )}
                       >
-                        {o.status === 'active' ? 'Faol' : 'To‘xtatilgan'}
+                        {holatLabel(u.holat)}
                       </span>
                     </td>
                   </tr>
@@ -207,20 +208,16 @@ export default function TashkilotlarListPage() {
         </div>
       </div>
 
-      <div className="shrink-0">
-        <FiliallarHududChart jamiFiliallar={branches.length} />
-      </div>
-
-      <OrgModal
+      <UserModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        org={null}
+        user={null}
         onSave={(values) => {
-          const action = dispatch(orgAdded(values))
-          navigate(`/tashkilotlar/${action.payload.id}`)
+          const action = dispatch(userAdded(values))
+          navigate(`/foydalanuvchilar/${action.payload.id}`)
         }}
       />
-      <OrgFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <UserFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
     </div>
   )
 }

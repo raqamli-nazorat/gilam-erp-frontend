@@ -9,7 +9,9 @@ import {
   Calendar03Icon as Calendar03Raw,
   CashierIcon as CashierRaw,
   Chart01Icon as Chart01Raw,
+  DashboardSquare01Icon as DashboardSquare01Raw,
   Download01Icon as Download01Raw,
+  FileTextIcon as FileTextRaw,
   FilterIcon as FilterRaw,
   FilterResetIcon as FilterResetRaw,
   Invoice01Icon as Invoice01Raw,
@@ -22,6 +24,7 @@ import {
   SidebarLeft01Icon as SidebarLeft01Raw,
   Tag01Icon as Tag01Raw,
   UserGroupIcon as UserGroupRaw,
+  UserMultipleIcon as UserMultipleRaw,
 } from '@hugeicons/core-free-icons'
 
 export function FilterResetIcon({ className, size = 18, ...props }) {
@@ -77,12 +80,24 @@ export function UserGroupIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={UserGroupRaw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
+export function UserMultipleIcon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={UserMultipleRaw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
 export function CashierIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={CashierRaw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
 export function Chart01Icon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Chart01Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
+export function DashboardSquare01Icon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={DashboardSquare01Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
+export function FileTextIcon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={FileTextRaw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
 export function BalanceScaleIcon({ className, size = 18, ...props }) {

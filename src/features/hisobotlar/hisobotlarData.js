@@ -70,6 +70,17 @@ export const REPORT_CATALOG = [
       { slug: 'kontragent-hisoboti', name: 'Kontragent hisoboti' },
     ],
   },
+  {
+    section: 'Platforma bo‘yicha',
+    icon: 'briefcase',
+    items: [
+      { slug: 'savdo-boyicha', name: 'Savdo bo‘yicha' },
+      { slug: 'moliya-boyicha', name: 'Moliya bo‘yicha' },
+      { slug: 'ombor-boyicha', name: 'Ombor bo‘yicha' },
+      { slug: 'mijozlar-boyicha', name: 'Mijozlar bo‘yicha' },
+      { slug: 'xodimlar-boyicha', name: 'Xodimlar bo‘yicha' },
+    ],
+  },
 ]
 
 export const REPORT_INDEX = Object.fromEntries(
