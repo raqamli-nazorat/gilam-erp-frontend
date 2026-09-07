@@ -12,7 +12,7 @@ import BranchModal from './components/BranchModal'
 import BranchFilterModal, { EMPTY_BRANCH_FILTERS } from './components/BranchFilterModal'
 
 const TH =
-  'sticky top-0 z-10 h-11 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
+  'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
 export default function FiliallarListPage() {
   const navigate = useNavigate()
@@ -54,7 +54,7 @@ export default function FiliallarListPage() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5E5] pb-2 dark:border-white/10">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-6">
           {[
             ['all', 'Barchasi', counts.all],
@@ -89,13 +89,13 @@ export default function FiliallarListPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
-          <div className="relative w-[300px]">
+          <div className="relative w-[280px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filial yoki manzil…"
-              className="h-9 w-[300px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-9 w-[280px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
             />
           </div>
           <Button
@@ -110,15 +110,19 @@ export default function FiliallarListPage() {
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
-            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
           >
             <Plus className="h-4 w-4" /> Yangi filial
           </Button>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-sm dark:bg-card">
-        <div className="min-h-0 flex-1 overflow-auto">
+      <p className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">
+        Filiallar, {shown.length} ta
+      </p>
+
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
+        <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>

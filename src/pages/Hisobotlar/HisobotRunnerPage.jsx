@@ -14,6 +14,8 @@ import {
   REPORT_STAKEHOLDERS,
   REPORT_WAREHOUSES,
 } from '@/features/hisobotlar/hisobotlarData'
+import { PLATFORM_REPORT_SLUGS } from '@/features/hisobotlar/platformReportsData'
+import PlatformReportPage from './PlatformReportPage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,6 +44,12 @@ function cellText(row, col) {
 
 export default function HisobotRunnerPage() {
   const { slug } = useParams()
+  if (PLATFORM_REPORT_SLUGS.includes(slug)) return <PlatformReportPage slug={slug} />
+  return <GenericReportRunner slug={slug} />
+}
+
+// Tenant ERP'ning umumiy (slug bo'yicha config'ga qarab ishlaydigan) hisobot generatori.
+function GenericReportRunner({ slug }) {
   const navigate = useNavigate()
 
   const meta = REPORT_INDEX[slug]

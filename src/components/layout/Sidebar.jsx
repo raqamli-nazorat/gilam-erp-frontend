@@ -10,6 +10,8 @@ import {
   Building03Icon,
   CashierIcon,
   Chart01Icon,
+  DashboardSquare01Icon,
+  FileTextIcon,
   Invoice01Icon,
   PackageReceive01Icon,
   Settings01Icon,
@@ -19,11 +21,14 @@ import {
   SidebarLeft01Icon,
   Tag01Icon,
   UserGroupIcon,
+  UserMultipleIcon,
 } from '@/components/ui/icons'
 
 const NAV_ITEMS = [
+  { to: '/boshqaruv-paneli', label: 'Boshqaruv paneli', icon: DashboardSquare01Icon },
   { to: '/tashkilotlar', label: 'Tashkilotlar', icon: Building03Icon },
   { to: '/filiallar', label: 'Filiallar', icon: Briefcase01Icon },
+  { to: '/foydalanuvchilar', label: 'Foydalanuvchilar', icon: UserMultipleIcon },
   { to: '/tovarlar-kirimi', label: 'Tovarlar kirimi', icon: ShoppingCartCheckIn01Icon },
   { to: '/bron-tovarlar', label: 'Bron tovarlar', icon: Tag01Icon },
   { to: '/tovarlar-savdosi', label: 'Tovarlar savdosi', icon: ShoppingCartCheckOut01Icon },
@@ -53,6 +58,7 @@ const NAV_ITEMS = [
   { to: '/hisobotlar', label: 'Hisobotlar', icon: Chart01Icon },
   { to: '/balans', label: 'Balans', icon: BalanceScaleIcon },
   { to: '/malumotnomalar', label: "Ma'lumotnomalar", icon: Book01Icon },
+  { to: '/audit-jurnali', label: 'Audit jurnali', icon: FileTextIcon },
   { to: '/boshqalar', label: 'Boshqalar', icon: Settings01Icon },
 ]
 
@@ -160,9 +166,11 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <div
+      <NavLink
+        to="/profil"
+        onClick={(e) => e.stopPropagation()}
         className={cn(
-          'flex items-center gap-3 border-t border-white/10 py-4',
+          'flex items-center gap-3 border-t border-white/10 py-4 transition-colors hover:bg-white/10',
           collapsed ? 'justify-center px-2' : 'px-5'
         )}
       >
@@ -175,7 +183,7 @@ export default function Sidebar() {
             <p className="truncate text-xs text-white/60">{user?.role ?? '—'}</p>
           </div>
         )}
-      </div>
+      </NavLink>
     </aside>
   )
 }

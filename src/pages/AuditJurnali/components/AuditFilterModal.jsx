@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Check, X } from 'lucide-react'
-import { FILIAL_TURLARI, TASHKILOT_NOMLARI, VILOYATLAR } from '@/features/filiallar/filiallarData'
+import { Check, Search, X } from 'lucide-react'
+import { AMALLAR, AUDIT_FOYDALANUVCHILAR, AUDIT_TASHKILOTLAR, JADVALLAR } from '@/features/audit/auditData'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -22,7 +23,7 @@ const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
-export const EMPTY_BRANCH_FILTERS = { tashkilot: '', viloyat: '', turi: '', holat: '' }
+export const EMPTY_AUDIT_FILTERS = { amal: '', jadval: '', foydalanuvchi: '', tashkilot: '', sana: '' }
 
 function F({ label, value, onChange, allLabel, options }) {
   return (
@@ -41,7 +42,7 @@ function F({ label, value, onChange, allLabel, options }) {
   )
 }
 
-export default function BranchFilterModal({ open, onOpenChange, filters, onApply }) {
+export default function AuditFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
 
@@ -59,17 +60,29 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 py-1">
-          <F label="Tashkilot" value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} allLabel="Barchasi" options={TASHKILOT_NOMLARI} />
-          <F label="Viloyat" value={draft.viloyat} onChange={(v) => set('viloyat', v)} allLabel="Barchasi" options={VILOYATLAR} />
-          <F label="Filial turi" value={draft.turi} onChange={(v) => set('turi', v)} allLabel="Barchasi" options={FILIAL_TURLARI} />
-          <F label="Holat" value={draft.holat} onChange={(v) => set('holat', v)} allLabel="Barchasi" options={['Faol', 'Yopilgan']} />
+          <F label="Amal" value={draft.amal} onChange={(v) => set('amal', v)} allLabel="Barchasi" options={AMALLAR} />
+          <F label="Jadval" value={draft.jadval} onChange={(v) => set('jadval', v)} allLabel="Barchasi" options={JADVALLAR} />
+          <F label="Foydalanuvchi" value={draft.foydalanuvchi} onChange={(v) => set('foydalanuvchi', v)} allLabel="Barchasi" options={AUDIT_FOYDALANUVCHILAR} />
+          <F label="Tashkilot" value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} allLabel="Barchasi" options={AUDIT_TASHKILOTLAR} />
+          <div className="col-span-2">
+            <Label className={labelCls}>Sana, dan</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A3A3A3]" />
+              <Input
+                readOnly
+                value={draft.sana || '01.09.2026 00:00'}
+                onChange={() => {}}
+                className={fieldCls.replace('px-3', 'pl-9 pr-3')}
+              />
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="mx-0 mb-0 mt-2 gap-2 border-0 bg-transparent p-0">
           <Button
             type="button"
             variant="outline"
-            onClick={() => setDraft(EMPTY_BRANCH_FILTERS)}
+            onClick={() => setDraft(EMPTY_AUDIT_FILTERS)}
             className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
             <X className="h-4 w-4" /> Tozalash

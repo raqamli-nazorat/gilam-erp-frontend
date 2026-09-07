@@ -4,7 +4,7 @@ import StatCards from './StatCards'
 import FilialFooter from './FilialFooter'
 
 export const TH =
-  'sticky top-0 z-10 h-11 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
+  'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 export const TD = 'px-4 text-[13px] text-[#525252] dark:text-muted-foreground'
 export const TD_LINK = 'px-4 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]'
 export const TD_NUM = 'px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white'

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { FILIAL_TURLARI, TASHKILOT_NOMLARI, VILOYATLAR } from '@/features/filiallar/filiallarData'
+import { FILIALLAR_BY_TASHKILOT, ROLLAR_NOMLARI, TASHKILOT_NOMLARI } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -22,14 +22,14 @@ const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
-export const EMPTY_BRANCH_FILTERS = { tashkilot: '', viloyat: '', turi: '', holat: '' }
+export const EMPTY_USER_FILTERS = { tashkilot: '', filial: '', rol: '', holat: '', sana: '' }
 
-function F({ label, value, onChange, allLabel, options }) {
+function F({ label, value, onChange, allLabel, options, disabled }) {
   return (
     <div>
       <Label className={labelCls}>{label}</Label>
-      <Select value={value || '__all'} onValueChange={(v) => onChange(v === '__all' ? '' : v)}>
-        <SelectTrigger className={fieldCls}>
+      <Select value={value || '__all'} onValueChange={(v) => onChange(v === '__all' ? '' : v)} disabled={disabled}>
+        <SelectTrigger className={cnDisabled(fieldCls, disabled)}>
           <SelectValue>{(v) => (v === '__all' ? allLabel : v)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -41,9 +41,19 @@ function F({ label, value, onChange, allLabel, options }) {
   )
 }
 
-export default function BranchFilterModal({ open, onOpenChange, filters, onApply }) {
+function cnDisabled(base, disabled) {
+  return disabled ? `${base} opacity-60` : base
+}
+
+export default function UserFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
-  const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
+  const set = (k, v) => setDraft((d) => {
+    const next = { ...d, [k]: v }
+    if (k === 'tashkilot' && v !== d.tashkilot) next.filial = ''
+    return next
+  })
+
+  const filialOptions = FILIALLAR_BY_TASHKILOT[draft.tashkilot] ?? []
 
   return (
     <Dialog
@@ -60,16 +70,32 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 py-1">
           <F label="Tashkilot" value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} allLabel="Barchasi" options={TASHKILOT_NOMLARI} />
-          <F label="Viloyat" value={draft.viloyat} onChange={(v) => set('viloyat', v)} allLabel="Barchasi" options={VILOYATLAR} />
-          <F label="Filial turi" value={draft.turi} onChange={(v) => set('turi', v)} allLabel="Barchasi" options={FILIAL_TURLARI} />
-          <F label="Holat" value={draft.holat} onChange={(v) => set('holat', v)} allLabel="Barchasi" options={['Faol', 'Yopilgan']} />
+          <F
+            label="Filial"
+            value={draft.filial}
+            onChange={(v) => set('filial', v)}
+            allLabel="Barchasi"
+            options={filialOptions}
+            disabled={!draft.tashkilot}
+          />
+          <F label="Rol" value={draft.rol} onChange={(v) => set('rol', v)} allLabel="Barchasi" options={ROLLAR_NOMLARI} />
+          <F label="Holat" value={draft.holat} onChange={(v) => set('holat', v)} allLabel="Barchasi" options={['Faol', 'Bloklangan']} />
+          <div className="col-span-2">
+            <F
+              label="Yaratilgan sana"
+              value={draft.sana}
+              onChange={(v) => set('sana', v)}
+              allLabel="Barchasi"
+              options={['Bugun', 'Shu hafta', 'Shu oy', 'Shu yil']}
+            />
+          </div>
         </div>
 
         <DialogFooter className="mx-0 mb-0 mt-2 gap-2 border-0 bg-transparent p-0">
           <Button
             type="button"
             variant="outline"
-            onClick={() => setDraft(EMPTY_BRANCH_FILTERS)}
+            onClick={() => setDraft(EMPTY_USER_FILTERS)}
             className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
             <X className="h-4 w-4" /> Tozalash

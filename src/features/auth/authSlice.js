@@ -4,9 +4,13 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 const MOCK_USER = {
   login: 'admin',
   password: '1',
-  fullName: "Mirzajonov G'afforjon",
-  role: 'Menejer',
-  initials: 'MG',
+  fullName: 'Anvarov Sardorbek',
+  role: 'Platforma admini',
+  initials: 'AS',
+  phone: '+998 90 123-45-67',
+  tashkilot: 'SAG Gilamlari',
+  filial: 'Registon filiali',
+  passwordChangedAt: '12.08.2026',
 }
 
 const MAX_ATTEMPTS = 5
@@ -66,6 +70,10 @@ export const login = createAsyncThunk(
           fullName: MOCK_USER.fullName,
           role: MOCK_USER.role,
           initials: MOCK_USER.initials,
+          phone: MOCK_USER.phone,
+          tashkilot: MOCK_USER.tashkilot,
+          filial: MOCK_USER.filial,
+          passwordChangedAt: MOCK_USER.passwordChangedAt,
         },
         token: 'mock-token-' + Date.now(),
       }
@@ -95,6 +103,11 @@ const authSlice = createSlice({
       } catch {
         /* ignore */
       }
+    },
+    passwordChanged(state, action) {
+      if (!state.user) return
+      state.user.passwordChangedAt = action.payload
+      writeStored('gilam-auth-user', state.user)
     },
   },
   extraReducers: (builder) => {
@@ -142,5 +155,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { unblock, logout } = authSlice.actions
+export const { unblock, logout, passwordChanged } = authSlice.actions
 export default authSlice.reducer

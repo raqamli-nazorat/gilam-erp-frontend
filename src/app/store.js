@@ -11,6 +11,7 @@ import payrollReducer from '@/features/payroll/payrollSlice'
 import kassaReducer from '@/features/kassa/kassaSlice'
 import tashkilotlarReducer from '@/features/tashkilotlar/tashkilotlarSlice'
 import filiallarReducer from '@/features/filiallar/filiallarSlice'
+import foydalanuvchilarReducer from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 
 export const store = configureStore({
   reducer: {
@@ -26,5 +27,6 @@ export const store = configureStore({
     kassa: kassaReducer,
     tashkilotlar: tashkilotlarReducer,
     filiallar: filiallarReducer,
+    foydalanuvchilar: foydalanuvchilarReducer,
   },
 })

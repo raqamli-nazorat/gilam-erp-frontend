@@ -35,6 +35,12 @@ import FilialXodimlarPage from '@/pages/Filiallar/FilialXodimlarPage'
 import FilialOmborlarPage from '@/pages/Filiallar/FilialOmborlarPage'
 import FilialMijozlarPage from '@/pages/Filiallar/FilialMijozlarPage'
 import FilialSavdoPage from '@/pages/Filiallar/FilialSavdoPage'
+import FoydalanuvchilarListPage from '@/pages/Foydalanuvchilar/FoydalanuvchilarListPage'
+import FoydalanuvchilarDetailPage from '@/pages/Foydalanuvchilar/FoydalanuvchilarDetailPage'
+import RollarPage from '@/pages/Foydalanuvchilar/RollarPage'
+import ProfilPage from '@/pages/Profil/ProfilPage'
+import DashboardPage from '@/pages/Dashboard/DashboardPage'
+import AuditJurnaliPage from '@/pages/AuditJurnali/AuditJurnaliPage'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 function App() {
@@ -93,6 +99,12 @@ function App() {
           <Route path="/filiallar/:id/omborlar" element={<FilialOmborlarPage />} />
           <Route path="/filiallar/:id/mijozlar" element={<FilialMijozlarPage />} />
           <Route path="/filiallar/:id/savdo" element={<FilialSavdoPage />} />
+          <Route path="/foydalanuvchilar" element={<FoydalanuvchilarListPage />} />
+          <Route path="/foydalanuvchilar/rollar" element={<RollarPage />} />
+          <Route path="/foydalanuvchilar/:id" element={<FoydalanuvchilarDetailPage />} />
+          <Route path="/profil" element={<ProfilPage />} />
+          <Route path="/boshqaruv-paneli" element={<DashboardPage />} />
+          <Route path="/audit-jurnali" element={<AuditJurnaliPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
