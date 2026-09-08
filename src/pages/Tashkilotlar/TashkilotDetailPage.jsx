@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import OrgModal from './components/OrgModal'
 import SuspendOrgModal from './components/SuspendOrgModal'
+import ActivateOrgModal from './components/ActivateOrgModal'
 
 const THb =
   'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
@@ -32,6 +33,7 @@ export default function TashkilotDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false)
   const [suspendOpen, setSuspendOpen] = useState(false)
+  const [activateOpen, setActivateOpen] = useState(false)
   const [toast, setToast] = useState('')
 
   usePageHeader(org ? `Tashkilotlar › ${org.name}` : 'Tashkilotlar')
@@ -60,6 +62,12 @@ export default function TashkilotDetailPage() {
         {suspended && org.suspend && (
           <div className="rounded-lg bg-[#FEECEC] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#DC2626] dark:bg-[#DC2626]/15">
             Tashkilot to‘xtatilgan, {org.suspend.at}. Sabab: {org.suspend.reason}. To‘xtatdi: {org.suspend.by}.
+          </div>
+        )}
+        {!suspended && org.activation && (
+          <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
+            Tashkilot faollashtirildi, {org.activation.at}. To‘xtatish sababi audit jurnalida saqlanib qoldi. Faollashtirdi:{' '}
+            {org.activation.by}.
           </div>
         )}
 
@@ -148,12 +156,12 @@ export default function TashkilotDetailPage() {
               {org.users.map((u) => (
                 <div key={u.role} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
                   <span className="text-[#525252] dark:text-muted-foreground">{u.role}</span>
-                  <span className="font-medium text-[#0A0A0A] dark:text-white">{u.count}</span>
+                  <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 2)} UZS</span>
                 </div>
               ))}
               <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
                 <span>JAMI</span>
-                <span>{org.stats.foydalanuvchilar}</span>
+                <span>{formatNumber(org.stats.foydalanuvchilar, 2)} UZS</span>
               </div>
             </Panel>
           </div>
@@ -178,10 +186,7 @@ export default function TashkilotDetailPage() {
             </Button>
             {suspended ? (
               <Button
-                onClick={() => {
-                  dispatch(orgActivated(org.id))
-                  setToast('Tashkilot faollashtirildi')
-                }}
+                onClick={() => setActivateOpen(true)}
                 className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
               >
                 <CheckCircle2 className="h-4 w-4" /> Faollashtirish
@@ -214,6 +219,15 @@ export default function TashkilotDetailPage() {
         onConfirm={(reason) => {
           dispatch(orgSuspended({ id: org.id, reason, by: currentUser?.fullName ?? 'Administrator' }))
           setToast('Tashkilot to‘xtatildi')
+        }}
+      />
+      <ActivateOrgModal
+        open={activateOpen}
+        onOpenChange={setActivateOpen}
+        org={org}
+        onConfirm={() => {
+          dispatch(orgActivated({ id: org.id, by: currentUser?.fullName ?? 'Administrator' }))
+          setToast('Tashkilot faollashtirildi')
         }}
       />
       <Toast message={toast} />

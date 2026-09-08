@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Filter, Plus, Search } from 'lucide-react'
+import { Building2, Copy, Filter, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { orgAdded } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Toast from '@/components/Toast'
 import OrgModal from './components/OrgModal'
 import OrgFilterModal, { EMPTY_ORG_FILTERS } from './components/OrgFilterModal'
-import FiliallarHududChart from './components/FiliallarHududChart'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
@@ -47,15 +47,27 @@ export default function TashkilotlarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const orgs = useSelector((s) => s.tashkilotlar.list)
-  const branches = useSelector((s) => s.filiallar.list)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_ORG_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [toast, setToast] = useState('')
 
   usePageHeader('Tashkilotlar')
+
+  useEffect(() => {
+    if (!toast) return undefined
+    const t = setTimeout(() => setToast(''), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  function copy(e, text, label) {
+    e.stopPropagation()
+    navigator.clipboard?.writeText(String(text))
+    setToast(`${label} nusxalandi`)
+  }
 
   const counts = useMemo(
     () => ({
@@ -153,11 +165,13 @@ export default function TashkilotlarListPage() {
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
+                <th className={cn(TH, 'w-12 text-left')}>#</th>
                 <th className={cn(TH, 'text-left')}>NOMI</th>
                 <th className={cn(TH, 'text-right')}>INN</th>
                 <th className={cn(TH, 'text-left')}>DIREKTOR</th>
                 <th className={cn(TH, 'text-left')}>TELEFON</th>
-                <th className={cn(TH, 'text-left')}>HUDUD</th>
+                <th className={cn(TH, 'text-left')}>VILOYAT</th>
+                <th className={cn(TH, 'text-left')}>TUMAN</th>
                 <th className={cn(TH, 'text-right')}>FILIAL</th>
                 <th className={cn(TH, 'text-left')}>HOLAT</th>
               </tr>
@@ -165,7 +179,7 @@ export default function TashkilotlarListPage() {
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
                         <Building2 className="h-6 w-6 text-[#737373]" />
@@ -175,17 +189,49 @@ export default function TashkilotlarListPage() {
                   </td>
                 </tr>
               ) : (
-                shown.map((o) => (
+                shown.map((o, i) => (
                   <tr
                     key={o.id}
                     onClick={() => navigate(`/tashkilotlar/${o.id}`)}
                     className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                   >
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                     <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{o.name}</td>
-                    <td className="px-4 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{o.inn}</td>
+                    <td className="px-4 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        {o.inn}
+                        {o.inn && (
+                          <button
+                            type="button"
+                            onClick={(e) => copy(e, o.inn, 'INN')}
+                            className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                            aria-label="Nusxa olish"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </span>
+                    </td>
                     <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.director || '—'}</td>
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{o.phone || '—'}</td>
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
+                      {o.phone ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          {o.phone}
+                          <button
+                            type="button"
+                            onClick={(e) => copy(e, o.phone, 'Telefon')}
+                            className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                            aria-label="Nusxa olish"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.viloyat || '—'}</td>
+                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.tuman || '—'}</td>
                     <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.branchCount}</td>
                     <td className="px-4">
                       <span
@@ -207,10 +253,6 @@ export default function TashkilotlarListPage() {
         </div>
       </div>
 
-      <div className="shrink-0">
-        <FiliallarHududChart jamiFiliallar={branches.length} />
-      </div>
-
       <OrgModal
         open={modalOpen}
         onOpenChange={setModalOpen}
@@ -221,6 +263,7 @@ export default function TashkilotlarListPage() {
         }}
       />
       <OrgFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <Toast message={toast} />
     </div>
   )
 }

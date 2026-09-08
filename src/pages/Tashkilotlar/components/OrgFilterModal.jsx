@@ -63,7 +63,7 @@ export default function OrgFilterModal({ open, onOpenChange, filters, onApply })
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 py-1">
-          <F label="Hudud" value={draft.hudud} onChange={(v) => set('hudud', v)} allLabel="Barchasi" options={VILOYATLAR} />
+          <F label="Viloyat" value={draft.hudud} onChange={(v) => set('hudud', v)} allLabel="Barchasi" options={VILOYATLAR} />
           <F label="Holat" value={draft.holat} onChange={(v) => set('holat', v)} allLabel="Barchasi" options={['Faol', 'To‘xtatilgan']} />
           <F
             label="Filiallar soni"

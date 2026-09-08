@@ -100,20 +100,9 @@ const RAW_ORGS = [
   { id: 'qoraqalpogiston-gilam', name: 'Qoraqalpog‘iston Gilam', titul: 'QQG', inn: '312001122', director: 'Seytov Q.', phone: '+998 94 234-56-78', viloyat: 'Qoraqalpog‘iston', tuman: 'Nukus shahri', manzil: 'Ernazar Alako‘z 30', registeredAt: '06.05.2025 11:25', status: 'suspended', branchCount: 1, stats: { filiallar: 1, foydalanuvchilar: 4, mijozlar: 60, savdo: 61900000 }, suspend: { at: '18.08.2026 09:12', reason: 'Shartnoma muddati tugadi, to‘lov kelmadi', by: 'Anvarov Sardorbek' } },
 ]
 
-// "Filiallar hudud bo'yicha" diagrammasi (Tashkilotlar ro'yxati sahifasi) — Figma'dagi taqsimotga mos
-export const FILIALLAR_HUDUD_TAQSIMOTI = [
-  { hudud: 'Samarqand', soni: 21 },
-  { hudud: 'Buxoro', soni: 6 },
-  { hudud: 'Namangan', soni: 4 },
-  { hudud: 'Andijon', soni: 3 },
-  { hudud: 'Farg‘ona', soni: 3 },
-  { hudud: 'Xorazm', soni: 2 },
-  { hudud: 'Qashqadaryo', soni: 2 },
-  { hudud: 'Boshqa', soni: 6 },
-]
-
 export const initialOrgs = RAW_ORGS.map((o) => ({
   suspend: null,
+  activation: null,
   ...o,
   branches: o.branches ?? synthBranches(o.name, o.viloyat, o.branchCount),
   users: o.users ?? splitUsers(o.stats.foydalanuvchilar),

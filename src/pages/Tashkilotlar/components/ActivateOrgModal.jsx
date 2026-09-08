@@ -1,8 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Copy, X } from 'lucide-react'
+import { Check, Copy, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -11,13 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) {
-  const [reason, setReason] = useState('')
-
-  useEffect(() => {
-    if (open) setReason('')
-  }, [open])
-
+export default function ActivateOrgModal({ open, onOpenChange, org, onConfirm }) {
   if (!org) return null
 
   return (
@@ -25,9 +16,17 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
       <DialogContent className="p-5 sm:max-w-[520px]">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            Tashkilotni to‘xtatishmi?
+            Tashkilot faollashtirilsinmi?
           </DialogTitle>
         </DialogHeader>
+
+        <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
+          <p>Faollashtirilgandan so‘ng tashkilot foydalanuvchilari tizimga qayta kira oladi.</p>
+          <p className="mt-1.5">
+            Filiallar, savdolar va foydalanuvchilar huquqlari o‘zgarmaydi. Tashkilot «Faol» holatiga
+            qaytadi, faollashtirish audit jurnaliga yoziladi.
+          </p>
+        </div>
 
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[
@@ -35,16 +34,18 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
             ['INN', org.inn, true],
             ['Filiallar', `${org.stats.filiallar} ta`, false],
             ['Foydalanuvchilar', `${org.stats.foydalanuvchilar} ta`, false],
+            ['To‘xtatilgan', org.suspend?.at ?? '—', false],
+            ['Sababi', org.suspend?.reason ?? '—', false],
           ].map(([k, v, copyable]) => (
-            <div key={k} className="flex items-center justify-between py-1">
-              <span className="text-[#737373] dark:text-muted-foreground">{k}</span>
-              <span className="flex items-center gap-1.5 font-medium text-[#0A0A0A] dark:text-white">
-                {v}
+            <div key={k} className="flex items-center justify-between gap-3 py-1">
+              <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{k}</span>
+              <span className="flex min-w-0 items-center gap-1.5 text-right font-medium text-[#0A0A0A] dark:text-white">
+                <span className="truncate">{v}</span>
                 {copyable && (
                   <button
                     type="button"
                     onClick={() => navigator.clipboard?.writeText(String(v))}
-                    className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                    className="shrink-0 text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                     aria-label="Nusxa olish"
                   >
                     <Copy className="h-3.5 w-3.5" />
@@ -53,18 +54,6 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
               </span>
             </div>
           ))}
-        </div>
-
-        <div>
-          <Label className="mb-1.5 block text-[13px] font-normal text-[#525252] dark:text-muted-foreground">
-            To‘xtatish sababi
-          </Label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Masalan: shartnoma muddati tugadi"
-            className="h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white"
-          />
         </div>
 
         <DialogFooter className="mx-0 mb-0 mt-1 gap-2 border-0 bg-transparent p-0">
@@ -78,14 +67,13 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
           </Button>
           <Button
             type="button"
-            disabled={!reason.trim()}
             onClick={() => {
-              onConfirm(reason.trim())
+              onConfirm()
               onOpenChange(false)
             }}
-            className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
+            className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
-            <X className="h-4 w-4" /> To‘xtatish
+            <Check className="h-4 w-4" /> Faollashtirish
           </Button>
         </DialogFooter>
       </DialogContent>
