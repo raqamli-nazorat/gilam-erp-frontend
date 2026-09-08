@@ -24,16 +24,16 @@ const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525
 
 export const EMPTY_BRANCH_FILTERS = { tashkilot: '', viloyat: '', turi: '', holat: '' }
 
-function F({ label, value, onChange, allLabel, options }) {
+function F({ label, value, onChange, allLabel, placeholder, options }) {
   return (
     <div>
       <Label className={labelCls}>{label}</Label>
       <Select value={value || '__all'} onValueChange={(v) => onChange(v === '__all' ? '' : v)}>
         <SelectTrigger className={fieldCls}>
-          <SelectValue>{(v) => (v === '__all' ? allLabel : v)}</SelectValue>
+          <SelectValue>{(v) => (v === '__all' ? <span className="text-[#737373]">{placeholder ?? allLabel}</span> : v)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="__all">{allLabel}</SelectItem>
+          <SelectItem value="__all">{placeholder ?? allLabel}</SelectItem>
           {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
         </SelectContent>
       </Select>
@@ -54,25 +54,32 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
       }}
     >
       <DialogContent className="p-5 sm:max-w-[560px]">
-        <DialogHeader className="pb-1">
-          <DialogTitle className="text-[15px] font-semibold leading-[20px] text-[#0A0A0A] dark:text-white">Filtr</DialogTitle>
+        <DialogHeader className="flex flex-row items-center justify-between pb-1 pr-8">
+          <DialogTitle className="text-[17px] font-semibold leading-[24px] text-[#0A0A0A] dark:text-white">Filtr</DialogTitle>
+          <button
+            type="button"
+            onClick={() => setDraft(EMPTY_BRANCH_FILTERS)}
+            className="text-[13px] font-medium text-[#0052D2] transition-colors hover:text-[#0047B8] dark:text-[#60A5FA]"
+          >
+            Tozalash
+          </button>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 py-1">
-          <F label="Tashkilot" value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} allLabel="Barchasi" options={TASHKILOT_NOMLARI} />
-          <F label="Viloyat" value={draft.viloyat} onChange={(v) => set('viloyat', v)} allLabel="Barchasi" options={VILOYATLAR} />
-          <F label="Filial turi" value={draft.turi} onChange={(v) => set('turi', v)} allLabel="Barchasi" options={FILIAL_TURLARI} />
-          <F label="Holat" value={draft.holat} onChange={(v) => set('holat', v)} allLabel="Barchasi" options={['Faol', 'Yopilgan']} />
+          <F label="Tashkilot" value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} placeholder="Barcha tashkilotlar" options={TASHKILOT_NOMLARI} />
+          <F label="Viloyat" value={draft.viloyat} onChange={(v) => set('viloyat', v)} placeholder="Barcha viloyatlar" options={VILOYATLAR} />
+          <F label="Filial turi" value={draft.turi} onChange={(v) => set('turi', v)} placeholder="Barcha turlar" options={FILIAL_TURLARI} />
+          <F label="Holat" value={draft.holat} onChange={(v) => set('holat', v)} placeholder="Barcha holatlar" options={['Faol', 'Yopilgan']} />
         </div>
 
         <DialogFooter className="mx-0 mb-0 mt-2 gap-2 border-0 bg-transparent p-0">
           <Button
             type="button"
             variant="outline"
-            onClick={() => setDraft(EMPTY_BRANCH_FILTERS)}
+            onClick={() => onOpenChange(false)}
             className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
-            <X className="h-4 w-4" /> Tozalash
+            <X className="h-4 w-4" /> Bekor qilish
           </Button>
           <Button
             type="button"

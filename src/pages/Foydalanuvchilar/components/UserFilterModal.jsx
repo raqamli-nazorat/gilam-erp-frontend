@@ -65,7 +65,7 @@ export default function UserFilterModal({ open, onOpenChange, filters, onApply }
     >
       <DialogContent className="p-5 sm:max-w-[560px]">
         <DialogHeader className="pb-1">
-          <DialogTitle className="text-[15px] font-semibold leading-[20px] text-[#0A0A0A] dark:text-white">Filtr</DialogTitle>
+          <DialogTitle className="text-[17px] font-semibold leading-[24px] text-[#0A0A0A] dark:text-white">Filtr</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 py-1">

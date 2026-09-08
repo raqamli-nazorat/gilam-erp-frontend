@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Copy } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -82,7 +83,19 @@ export default function FilialDetailPage() {
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{x.lavozim}</td>
-                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{x.phone}</td>
+                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">
+                          <span className="inline-flex items-center gap-1.5">
+                            {x.phone}
+                            <button
+                              type="button"
+                              onClick={() => copy(x.phone, 'Telefon')}
+                              className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                              aria-label="Nusxa olish"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        </td>
                         <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{x.holat}</td>
                       </tr>
                     ))
@@ -121,10 +134,12 @@ export default function FilialDetailPage() {
             </Panel>
 
             <Panel title="Oxirgi savdolar:">
-              {d.lastSales.map((r) => (
+              {d.lastSales.map((r, i) => (
                 <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
                   <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
-                  <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.amount, 2)}</span>
+                  <span className="font-medium text-[#0A0A0A] dark:text-white">
+                    {formatNumber(r.amount, 2)}{i === 0 ? ' UZS' : ''}
+                  </span>
                 </div>
               ))}
               <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
