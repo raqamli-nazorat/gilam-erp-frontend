@@ -36,6 +36,7 @@ const tashkilotlarSlice = createSlice({
             branches: [],
             users: [],
             suspend: null,
+            activation: null,
           },
         }
       },
@@ -51,12 +52,20 @@ const tashkilotlarSlice = createSlice({
       if (org) {
         org.status = 'suspended'
         org.suspend = { at: formatDateTime(), reason, by }
+        org.activation = null
       }
     },
     orgActivated(state, action) {
-      const org = findOrg(state, action.payload)
+      const { id, by } = action.payload
+      const org = findOrg(state, id)
       if (org) {
         org.status = 'active'
+        org.activation = {
+          at: formatDateTime(),
+          by,
+          prevReason: org.suspend?.reason ?? '',
+          prevAt: org.suspend?.at ?? '',
+        }
         org.suspend = null
       }
     },
