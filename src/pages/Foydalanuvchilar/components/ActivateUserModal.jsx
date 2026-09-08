@@ -15,14 +15,14 @@ export default function ActivateUserModal({ open, onOpenChange, user, onConfirm 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-5 sm:max-w-[520px]">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-[17px] font-semibold leading-[24px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
+          <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             Foydalanuvchini faollashtirishmi?
           </DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-          <p>Faollashtirilgandan so‘ng foydalanuvchi tizimga qayta kira oladi.</p>
-          <p className="mt-1.5">Roli va tashkiloti o‘zgarmaydi. Faollashtirish audit jurnaliga yoziladi.</p>
+        <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] leading-[19px] dark:bg-[#047A47]/15">
+          <p className="text-[#047A47] dark:text-[#34D399]">Faollashtirilgandan so‘ng foydalanuvchi tizimga qayta kira oladi.</p>
+          <p className="mt-1.5 text-[#DC2626] dark:text-[#F87171]">Roli va tashkiloti o‘zgarmaydi. Faollashtirish audit jurnaliga yoziladi.</p>
         </div>
 
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">

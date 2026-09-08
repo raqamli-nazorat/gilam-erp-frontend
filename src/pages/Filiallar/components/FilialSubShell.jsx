@@ -1,3 +1,4 @@
+import { Copy } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import StatCards from './StatCards'
@@ -8,9 +9,34 @@ export const TH =
 export const TD = 'px-4 text-[13px] text-[#525252] dark:text-muted-foreground'
 export const TD_LINK = 'px-4 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]'
 export const TD_NUM = 'px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white'
+export const TD_IDX = 'px-4 text-[13px] text-[#737373] dark:text-muted-foreground'
+
+export function CopyBtn({ value }) {
+  if (!value) return null
+  return (
+    <button
+      type="button"
+      onClick={() => navigator.clipboard?.writeText(String(value))}
+      className="ml-1.5 inline-flex text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+      aria-label="Nusxa olish"
+    >
+      <Copy className="h-3.5 w-3.5" />
+    </button>
+  )
+}
 
 // head: [{ label, align }]
-export default function FilialSubShell({ branch, crumbTail, statItems, subtitle, head, children }) {
+export default function FilialSubShell({
+  branch,
+  crumbTail,
+  statItems,
+  subtitle,
+  head,
+  children,
+  belowTable,
+  noFooter,
+  tableFill = true,
+}) {
   usePageHeader(`${branch.name} › ${crumbTail}`)
 
   return (
@@ -19,8 +45,13 @@ export default function FilialSubShell({ branch, crumbTail, statItems, subtitle,
       <p className="shrink-0 text-[12px] font-medium uppercase tracking-[0.3px] text-[#737373] dark:text-muted-foreground">
         {subtitle}
       </p>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-sm dark:bg-card">
-        <div className="min-h-0 flex-1 overflow-auto">
+      <div
+        className={cn(
+          'flex flex-col overflow-hidden rounded-xl bg-white shadow-sm dark:bg-card',
+          tableFill ? 'min-h-0 flex-1' : 'shrink-0'
+        )}
+      >
+        <div className={cn('overflow-auto', tableFill && 'min-h-0 flex-1')}>
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
@@ -35,7 +66,8 @@ export default function FilialSubShell({ branch, crumbTail, statItems, subtitle,
           </table>
         </div>
       </div>
-      <FilialFooter branch={branch} />
+      {belowTable && <div className={tableFill ? 'shrink-0' : 'flex min-h-0 flex-1 flex-col'}>{belowTable}</div>}
+      {!noFooter && <FilialFooter branch={branch} />}
     </div>
   )
 }

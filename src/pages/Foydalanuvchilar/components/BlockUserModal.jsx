@@ -24,7 +24,7 @@ export default function BlockUserModal({ open, onOpenChange, user, onConfirm }) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-5 sm:max-w-[520px]">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-[17px] font-semibold leading-[24px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
+          <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             Foydalanuvchini bloklashmi?
           </DialogTitle>
         </DialogHeader>

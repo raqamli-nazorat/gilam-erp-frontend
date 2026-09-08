@@ -13,14 +13,14 @@ import RoleFilterModal, { EMPTY_ROLE_FILTERS } from './components/RoleFilterModa
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
-// Kategorial palitra — dataviz skill (references/palette.md), sobit tartibda
+// Ketma-ket ko'k gradatsiya — dataviz skill (references/palette.md), kamayish bo'yicha
 const PALETTE = [
-  { swatch: 'bg-[#2a78d6] dark:bg-[#3987e5]', stroke: 'stroke-[#2a78d6] dark:stroke-[#3987e5]' },
-  { swatch: 'bg-[#eb6834] dark:bg-[#d95926]', stroke: 'stroke-[#eb6834] dark:stroke-[#d95926]' },
-  { swatch: 'bg-[#1baf7a] dark:bg-[#199e70]', stroke: 'stroke-[#1baf7a] dark:stroke-[#199e70]' },
-  { swatch: 'bg-[#eda100] dark:bg-[#c98500]', stroke: 'stroke-[#eda100] dark:stroke-[#c98500]' },
-  { swatch: 'bg-[#e87ba4] dark:bg-[#d55181]', stroke: 'stroke-[#e87ba4] dark:stroke-[#d55181]' },
-  { swatch: 'bg-[#008300]', stroke: 'stroke-[#008300]' },
+  { swatch: 'bg-[#0d366b]', stroke: 'stroke-[#0d366b]' },
+  { swatch: 'bg-[#17508f]', stroke: 'stroke-[#17508f]' },
+  { swatch: 'bg-[#2a78d6]', stroke: 'stroke-[#2a78d6]' },
+  { swatch: 'bg-[#5b9ae8]', stroke: 'stroke-[#5b9ae8]' },
+  { swatch: 'bg-[#8fbdf0]', stroke: 'stroke-[#8fbdf0]' },
+  { swatch: 'bg-[#bcd9f8]', stroke: 'stroke-[#bcd9f8]' },
 ]
 
 function RoleDonut({ data, total }) {
@@ -79,8 +79,12 @@ export default function RollarPage() {
     let out = roles
     if (filters.tashkilot) out = out.filter((r) => r.tashkilot === filters.tashkilot)
     if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.holat === 'active' : r.holat !== 'active'))
+    const dan = Number(filters.foydalanuvchiDan) || 0
+    const gacha = Number(filters.foydalanuvchiGacha) || 0
+    if (dan) out = out.filter((r) => countOf(r.name) >= dan)
+    if (gacha) out = out.filter((r) => countOf(r.name) <= gacha)
     return out
-  }, [roles, filters])
+  }, [roles, filters]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeRole = shownRoles.find((r) => r.id === selected) ?? shownRoles[0] ?? null
   const permissions = activeRole ? ROLE_PERMISSIONS[activeRole.name] ?? {} : {}
@@ -89,19 +93,20 @@ export default function RollarPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5E5] pb-3 dark:border-white/10">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">Rollar</h2>
-          <span className="inline-flex h-[20px] min-w-[24px] items-center justify-center rounded-full bg-[#EAF1FE] px-1.5 text-[12px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="relative flex items-center gap-1.5 pb-2.5 pt-1 text-sm font-medium text-[#0A0A0A] dark:text-white">
+          Rollar
+          <span className="inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full bg-[#EAF1FE] px-1.5 text-[12px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
             {shownRoles.length}
           </span>
+          <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />
         </div>
         <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
             onClick={() => setFilterOpen(true)}
             className={cn(
-              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
@@ -109,7 +114,7 @@ export default function RollarPage() {
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
-            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
           >
             <Plus className="h-4 w-4" /> Yangi rol
           </Button>
@@ -125,13 +130,14 @@ export default function RollarPage() {
             <table className="w-full border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
+                  <th className={cn(TH, 'w-12 text-left')}>#</th>
                   <th className={cn(TH, 'text-left')}>NOMI</th>
                   <th className={cn(TH, 'text-right')}>FOYDALANUVCHILAR</th>
                   <th className={cn(TH, 'text-left')}>HOLAT</th>
                 </tr>
               </thead>
               <tbody>
-                {shownRoles.map((r) => (
+                {shownRoles.map((r, i) => (
                   <tr
                     key={r.id}
                     onClick={() => setSelected(r.id)}
@@ -140,6 +146,7 @@ export default function RollarPage() {
                       activeRole?.id === r.id && 'bg-[#EAF1FE] dark:bg-[#0052D2]/15'
                     )}
                   >
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                     <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
                     <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{countOf(r.name)}</td>
                     <td className="px-4">
@@ -157,6 +164,7 @@ export default function RollarPage() {
                   </tr>
                 ))}
                 <tr className="h-[52px] bg-[#F5F5F5] dark:bg-white/5">
+                  <td className="px-4 text-[13px] font-semibold text-[#737373] dark:text-muted-foreground">{shownRoles.length + 1}</td>
                   <td className="px-4 text-[13px] font-semibold text-[#0A0A0A] dark:text-white">JAMI</td>
                   <td className="px-4 text-right text-[13px] font-semibold text-[#0A0A0A] dark:text-white">{total}</td>
                   <td />
@@ -206,7 +214,7 @@ export default function RollarPage() {
             <div className="divide-y divide-[#E5E5E5] dark:divide-white/10">
               {PERMISSIONS.map((p) => (
                 <div key={p} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
-                  <span className="text-[#0A0A0A] dark:text-white">{p}</span>
+                  <span className={permissions[p] ? 'text-[#0A0A0A] dark:text-white' : 'text-[#A3A3A3] dark:text-muted-foreground'}>{p}</span>
                   {permissions[p] ? (
                     <Check className="h-4 w-4 shrink-0 text-[#047A47] dark:text-[#34D399]" />
                   ) : (

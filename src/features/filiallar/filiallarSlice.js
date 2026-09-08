@@ -8,8 +8,9 @@ const find = (state, id) => state.list.find((b) => b.id === id)
 const emptyDetail = {
   lastSales: [],
   xodimlar: [],
-  xodimlarStats: { xodimlar: 0, sotuvchi: 0, kassir: 0, ishHaqiFondi: 0 },
+  xodimlarStats: { xodimlar: 0, sotuvchi: 0, kassir: 0, ishHaqiFondi: 0, ishHaqiTaqsimot: [] },
   omborlar: [],
+  rulonlar: [],
   omborStats: { omborlar: 0, rulon: 0, qoldiq: 0, qiymat: 0 },
   mijozlar: [],
   mijozStats: { mijozlar: 0, qarziBor: 0, jamiQarz: 0, ortachaChek: 0 },

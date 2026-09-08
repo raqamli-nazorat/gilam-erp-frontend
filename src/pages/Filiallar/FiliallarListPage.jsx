@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Filter, Plus, Search } from 'lucide-react'
+import { Briefcase, Copy, Filter, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/filiallar/filiallarData'
 import { branchAdded } from '@/features/filiallar/filiallarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Toast from '@/components/Toast'
 import BranchModal from './components/BranchModal'
 import BranchFilterModal, { EMPTY_BRANCH_FILTERS } from './components/BranchFilterModal'
 
@@ -24,8 +25,21 @@ export default function FiliallarListPage() {
   const [filters, setFilters] = useState(EMPTY_BRANCH_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [toast, setToast] = useState('')
 
   usePageHeader('Filiallar')
+
+  useEffect(() => {
+    if (!toast) return undefined
+    const t = setTimeout(() => setToast(''), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  function copyPhone(e, phone) {
+    e.stopPropagation()
+    navigator.clipboard?.writeText(String(phone))
+    setToast('Telefon nusxalandi')
+  }
 
   const counts = useMemo(
     () => ({
@@ -126,9 +140,11 @@ export default function FiliallarListPage() {
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
+                <th className={cn(TH, 'w-12 text-left')}>#</th>
                 <th className={cn(TH, 'text-left')}>NOMI</th>
                 <th className={cn(TH, 'text-left')}>TASHKILOT</th>
-                <th className={cn(TH, 'text-left')}>HUDUD</th>
+                <th className={cn(TH, 'text-left')}>VILOYAT</th>
+                <th className={cn(TH, 'text-left')}>TUMAN</th>
                 <th className={cn(TH, 'text-left')}>MANZIL</th>
                 <th className={cn(TH, 'text-left')}>TELEFON</th>
                 <th className={cn(TH, 'text-right')}>OMBOR</th>
@@ -138,7 +154,7 @@ export default function FiliallarListPage() {
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
                         <Briefcase className="h-6 w-6 text-[#737373]" />
@@ -148,17 +164,35 @@ export default function FiliallarListPage() {
                   </td>
                 </tr>
               ) : (
-                shown.map((b) => (
+                shown.map((b, i) => (
                   <tr
                     key={b.id}
                     onClick={() => navigate(`/filiallar/${b.id}`)}
                     className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                   >
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                     <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{b.name}</td>
                     <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{b.tashkilot}</td>
                     <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{b.viloyat}</td>
+                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{b.tuman || '—'}</td>
                     <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil}</td>
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{b.phone || '—'}</td>
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
+                      {b.phone ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          {b.phone}
+                          <button
+                            type="button"
+                            onClick={(e) => copyPhone(e, b.phone)}
+                            className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                            aria-label="Nusxa olish"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor}</td>
                     <td className="px-4">
                       <span
@@ -190,6 +224,7 @@ export default function FiliallarListPage() {
         }}
       />
       <BranchFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <Toast message={toast} />
     </div>
   )
 }

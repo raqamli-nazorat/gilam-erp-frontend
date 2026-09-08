@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Plus, Search, Shield, Users } from 'lucide-react'
+import { Copy, Filter, Plus, Search, Users } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { userAdded } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Toast from '@/components/Toast'
 import UserModal from './components/UserModal'
 import UserFilterModal, { EMPTY_USER_FILTERS } from './components/UserFilterModal'
 
@@ -40,14 +41,28 @@ export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const users = useSelector((s) => s.foydalanuvchilar.list)
+  const roles = useSelector((s) => s.foydalanuvchilar.roles)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_USER_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [toast, setToast] = useState('')
 
   usePageHeader('Platforma › Foydalanuvchilar')
+
+  useEffect(() => {
+    if (!toast) return undefined
+    const t = setTimeout(() => setToast(''), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  function copyPhone(e, phone) {
+    e.stopPropagation()
+    navigator.clipboard?.writeText(String(phone))
+    setToast('Telefon nusxalandi')
+  }
 
   const counts = useMemo(
     () => ({
@@ -77,7 +92,7 @@ export default function FoydalanuvchilarListPage() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5E5] pb-2 dark:border-white/10">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-6">
           {[
             ['all', 'Barchasi', counts.all],
@@ -109,30 +124,33 @@ export default function FoydalanuvchilarListPage() {
               {tab === key && <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => navigate('/foydalanuvchilar/rollar')}
+            className="flex items-center gap-1.5 pb-2.5 pt-1 text-sm font-normal text-[#737373] transition-colors hover:text-[#0A0A0A] dark:text-muted-foreground"
+          >
+            Rollar
+            <span className="inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full bg-[#F5F5F5] px-1.5 text-[12px] font-medium text-[#737373] dark:bg-white/10 dark:text-muted-foreground">
+              {roles.length}
+            </span>
+          </button>
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
-          <div className="relative w-[300px]">
+          <div className="relative w-[280px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="F.I.SH. yoki telefon…"
-              className="h-9 w-[300px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-9 w-[280px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
             />
           </div>
           <Button
             variant="outline"
-            onClick={() => navigate('/foydalanuvchilar/rollar')}
-            className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground"
-          >
-            <Shield className="h-4 w-4" /> Rollar
-          </Button>
-          <Button
-            variant="outline"
             onClick={() => setFilterOpen(true)}
             className={cn(
-              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
@@ -140,22 +158,23 @@ export default function FoydalanuvchilarListPage() {
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
-            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
           >
             <Plus className="h-4 w-4" /> Yangi foydalanuvchi
           </Button>
         </div>
       </div>
 
-      <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">
+      <p className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">
         Foydalanuvchilar, {shown.length} ta
       </p>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow-sm dark:bg-card">
-        <div className="min-h-0 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
+        <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
+                <th className={cn(TH, 'w-12 text-left')}>#</th>
                 <th className={cn(TH, 'text-left')}>F.I.SH.</th>
                 <th className={cn(TH, 'text-left')}>TELEFON</th>
                 <th className={cn(TH, 'text-left')}>TASHKILOT</th>
@@ -167,7 +186,7 @@ export default function FoydalanuvchilarListPage() {
             <tbody>
               {shown.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center">
+                  <td colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
                         <Users className="h-6 w-6 text-[#737373]" />
@@ -177,14 +196,31 @@ export default function FoydalanuvchilarListPage() {
                   </td>
                 </tr>
               ) : (
-                shown.map((u) => (
+                shown.map((u, i) => (
                   <tr
                     key={u.id}
                     onClick={() => navigate(`/foydalanuvchilar/${u.id}`)}
                     className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                   >
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                     <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{u.name}</td>
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{u.phone}</td>
+                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
+                      {u.phone ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          {u.phone}
+                          <button
+                            type="button"
+                            onClick={(e) => copyPhone(e, u.phone)}
+                            className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                            aria-label="Nusxa olish"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{u.tashkilot}</td>
                     <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{u.filial}</td>
                     <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-white">{u.rol}</td>
@@ -218,6 +254,7 @@ export default function FoydalanuvchilarListPage() {
         }}
       />
       <UserFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <Toast message={toast} />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
 import { useBranch } from './useBranch'
-import FilialSubShell, { TD, TD_LINK } from './components/FilialSubShell'
+import FilialSubShell, { CopyBtn, TD, TD_IDX, TD_LINK } from './components/FilialSubShell'
 
 export default function FilialXodimlarPage() {
   const branch = useBranch()
@@ -21,7 +21,27 @@ export default function FilialXodimlarPage() {
         { title: 'ISH HAQI FONDI', value: `${formatNumber(s.ishHaqiFondi, 2)} UZS` },
       ]}
       subtitle={`XODIMLAR, ${branch.name}, ${s.xodimlar} ta`}
+      noFooter
+      belowTable={
+        <div className="grid gap-6 border-t border-[#E5E5E5] pt-4 dark:border-white/10 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">JAMI FOND</p>
+            <p className="mt-1 text-[22px] font-bold leading-tight text-[#0A0A0A] dark:text-white">{formatNumber(s.ishHaqiFondi, 2)} UZS</p>
+            <p className="mt-1 text-[12px] text-[#737373] dark:text-muted-foreground">Oyiga</p>
+          </div>
+          {(s.ishHaqiTaqsimot ?? []).map((t) => (
+            <div key={t.label}>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">{t.label}</p>
+              <p className="mt-1 text-[22px] font-bold leading-tight text-[#0A0A0A] dark:text-white">{formatNumber(t.summa, 2)} UZS</p>
+              <p className="mt-1 text-[12px] text-[#737373] dark:text-muted-foreground">
+                {t.xodim} xodim, {formatNumber(t.pct, 1)} %
+              </p>
+            </div>
+          ))}
+        </div>
+      }
       head={[
+        { label: '#' },
         { label: 'F.I.SH.' },
         { label: 'LAVOZIM' },
         { label: 'TELEFON' },
@@ -30,13 +50,14 @@ export default function FilialXodimlarPage() {
         { label: 'HOLAT' },
       ]}
     >
-      {rows.map((x) => {
+      {rows.map((x, i) => {
         const working = x.holat === 'Faol'
         return (
           <tr key={x.id} className="h-[60px] hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+            <td className={TD_IDX}>{i + 1}</td>
             <td className={TD_LINK}>{x.name}</td>
             <td className={TD}>{x.lavozim}</td>
-            <td className={cn(TD, 'text-[#737373]')}>{x.phone}</td>
+            <td className={cn(TD, 'text-[#737373]')}>{x.phone}<CopyBtn value={x.phone} /></td>
             <td className={TD}>{x.ishHaqiTuri}</td>
             <td className={cn(TD, 'text-[#737373]')}>{x.ishgaKirgan}</td>
             <td className="px-4">

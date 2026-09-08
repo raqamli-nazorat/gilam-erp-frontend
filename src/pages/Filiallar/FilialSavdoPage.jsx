@@ -82,7 +82,8 @@ export default function FilialSavdoPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <MiniTable
           label="ENG KO‘P SOTILGAN TOVARLAR"
-          head={['TOVAR', 'm²', 'SUMMA, UZS']}
+          indexed
+          head={['TOVAR', 'm²', 'SUMMA']}
           rows={sv.topTovarlar.map((t) => [t.name, formatNumber(t.m2, 0), formatNumber(t.summa, 0)])}
         />
         <MiniTable
@@ -95,7 +96,7 @@ export default function FilialSavdoPage() {
   )
 }
 
-function MiniTable({ label, head, rows }) {
+function MiniTable({ label, head, rows, indexed }) {
   return (
     <div>
       <p className={LABEL}>{label}</p>
@@ -103,14 +104,16 @@ function MiniTable({ label, head, rows }) {
         <table className="w-full text-sm">
           <thead>
             <tr>
+              {indexed && <th className={cn(TH, 'w-12 text-left')}>#</th>}
               {head.map((h, i) => (
                 <th key={h} className={cn(TH, i === 0 ? 'text-left' : 'text-right')}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {rows.map((r, ri) => (
               <tr key={r[0]} className="h-[52px] hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+                {indexed && <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{ri + 1}</td>}
                 <td className={TD_LINK}>{r[0]}</td>
                 <td className={TD_NUM}>{r[1]}</td>
                 <td className={TD_NUM}>{r[2]}</td>

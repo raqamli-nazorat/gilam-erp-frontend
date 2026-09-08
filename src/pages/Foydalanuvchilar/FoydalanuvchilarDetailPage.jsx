@@ -102,7 +102,7 @@ export default function FoydalanuvchilarDetailPage() {
 
           {/* O'ng panel */}
           <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[360px]">
-            <Panel title="Foydalanuvchi ma’lumotlari:">
+            <Panel title="FOYDALANUVCHI MA’LUMOTLARI">
               <InfoRow label="Tashkiloti" value={user.tashkilot} />
               <InfoRow label="Filiali" value={user.filial} />
               <InfoRow label="Roli" value={user.rol} />
