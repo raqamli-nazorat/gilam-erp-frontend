@@ -1,0 +1,50 @@
+name: Deploy Gilam ERP Frontend
+
+on:
+  push:
+    branches:
+      - production
+
+concurrency:
+  group: production-frontend-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          envs: GITHUB_TOKEN,VITE_BASE_URL
+          script: |
+            set -e
+            cd /var/www/frontend/gilam-erp-frontend
+            
+            echo "1. Kodni yangilash (Production)"
+            git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/raqamli-nazorat/gilam-erp-frontend.git
+            git fetch origin production
+            git reset --hard origin/production
+            
+            echo "2. Environment faylini yaratish"
+            echo "VITE_BASE_URL=$VITE_BASE_URL" > .env
+            
+            echo "3. Paketlarni o'rnatish va Build qilish"
+            npm install
+            npm run build
+            
+            echo "4. Ruxsatlarni to'g'rilash va Nginx reload"
+            chmod -R 755 dist
+            sudo systemctl reload nginx
+            
+            echo "Frontend muvaffaqiyatli yangilandi!"
