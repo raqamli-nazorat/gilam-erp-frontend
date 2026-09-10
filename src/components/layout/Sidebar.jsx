@@ -62,24 +62,38 @@ const NAV_ITEMS = [
   { to: '/boshqalar', label: 'Boshqalar', icon: Settings01Icon },
 ]
 
+// Figma: aktiv element foni #4468BC (--nav-bg-hover), oq ikona + oq matn.
+// Nofaol: #FFFFFF/60, hover: #FFFFFF/10. Yig'ilgan/yoyilgan holatda bir xil.
+const ITEM_ACTIVE = 'bg-[#4468BC] text-white'
+const ITEM_IDLE = 'text-white/60 hover:bg-white/10 hover:text-white'
+
 export default function Sidebar() {
   const dispatch = useDispatch()
   const user = useSelector((state) => state.auth.user)
   const collapsed = useSelector((state) => state.ui.sidebarCollapsed)
   const { pathname } = useLocation()
 
+  const isActive = (to, hasChildren) =>
+    hasChildren ? pathname.startsWith(to) : pathname === to || pathname.startsWith(`${to}/`)
+
+  const avatar = (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-[#1B3E75]">
+      {user?.initials ?? '?'}
+    </div>
+  )
+
   return (
     <aside
       onClick={() => {
-        // Yig'ilgan holatda sidebar'ning istalgan joyiga bosilsa, u yoyiladi.
+        // Yig'ilgan holatda sidebar'ning istalgan joyiga bosilsa — faqat yoyiladi (navigatsiyasiz).
         if (collapsed) dispatch(setSidebarCollapsed(false))
       }}
       className={cn(
-        'flex h-screen shrink-0 flex-col bg-[#1B3E75] text-white transition-[width] duration-200',
+        'flex h-screen shrink-0 flex-col bg-[#1B3E75] text-white transition-[width] duration-500 ease-in-out',
         collapsed ? 'w-[76px] cursor-pointer' : 'w-[280px]'
       )}
     >
-      <div className={cn('flex items-center px-5 py-5', collapsed ? 'flex-col gap-3' : 'justify-between')}>
+      <div className={cn('flex items-center px-5 py-5', collapsed ? 'justify-center' : 'justify-between')}>
         {collapsed ? (
           <div
             className="h-8 w-8 shrink-0"
@@ -93,48 +107,56 @@ export default function Sidebar() {
         ) : (
           <img src="/logo.svg" alt="GILAM" className="h-8 w-auto" />
         )}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            dispatch(toggleSidebar())
-          }}
-          className="rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-          aria-label={collapsed ? "Sidebar'ni yoyish" : "Sidebar'ni yig'ish"}
-        >
-          <SidebarLeft01Icon className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')} />
-        </button>
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              dispatch(toggleSidebar())
+            }}
+            className="rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Sidebar'ni yig'ish"
+          >
+            <SidebarLeft01Icon className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, children }) =>
-          collapsed ? (
-            <Tooltip key={to}>
-              <TooltipTrigger
-                render={
-                  <NavLink
-                    to={to}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center justify-center rounded-lg py-2.5 text-white/75 transition-colors hover:bg-white/10 hover:text-white',
-                        isActive && 'bg-white/15 text-white'
-                      )
-                    }
-                  >
-                    <Icon className="shrink-0" />
-                  </NavLink>
-                }
-              />
-              <TooltipContent side="right">{label}</TooltipContent>
-            </Tooltip>
-          ) : (
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {NAV_ITEMS.map(({ to, label, icon: Icon, children }) => {
+          const active = isActive(to, Boolean(children))
+
+          if (collapsed) {
+            return (
+              <Tooltip key={to}>
+                <TooltipTrigger
+                  render={
+                    <NavLink
+                      to={to}
+                      // Yig'ilgan ikonaga bosilganda: ham o'sha bo'limga o'tadi, ham sidebar yoyiladi.
+                      onClick={() => dispatch(setSidebarCollapsed(false))}
+                      className={cn(
+                        'mx-auto flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                        active ? ITEM_ACTIVE : ITEM_IDLE
+                      )}
+                    >
+                      <Icon className="shrink-0" />
+                    </NavLink>
+                  }
+                />
+                <TooltipContent side="right">{label}</TooltipContent>
+              </Tooltip>
+            )
+          }
+
+          return (
             <div key={to}>
               <NavLink
                 to={to}
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white',
-                  (children ? pathname.startsWith(to) : pathname === to) && 'bg-white/15 text-white'
+                  'flex h-11 items-center gap-3 rounded-lg px-3 text-[15px] font-medium transition-colors',
+                  active ? ITEM_ACTIVE : ITEM_IDLE
                 )}
               >
                 <Icon className="shrink-0" />
@@ -149,10 +171,10 @@ export default function Sidebar() {
                       to={child.to}
                       end={child.end}
                       onClick={(e) => e.stopPropagation()}
-                      className={({ isActive }) =>
+                      className={({ isActive: childActive }) =>
                         cn(
-                          'block rounded-md px-3 py-1.5 text-[13px] font-normal text-white/60 transition-colors hover:bg-white/10 hover:text-white',
-                          isActive && 'bg-white/10 font-medium text-white'
+                          'block rounded-md px-3 py-1.5 text-[13px] font-normal text-white/55 transition-colors hover:bg-white/10 hover:text-white',
+                          childActive && 'bg-white/10 font-medium text-white'
                         )
                       }
                     >
@@ -163,27 +185,24 @@ export default function Sidebar() {
               )}
             </div>
           )
-        )}
+        })}
       </nav>
 
-      <NavLink
-        to="/profil"
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          'flex items-center gap-3 border-t border-white/10 py-4 transition-colors hover:bg-white/10',
-          collapsed ? 'justify-center px-2' : 'px-5'
-        )}
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-semibold">
-          {user?.initials ?? '?'}
-        </div>
-        {!collapsed && (
+      {collapsed ? (
+        <div className="flex items-center justify-center border-t border-white/10 py-4">{avatar}</div>
+      ) : (
+        <NavLink
+          to="/profil"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-3 border-t border-white/10 px-5 py-4 transition-colors hover:bg-white/10"
+        >
+          {avatar}
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{user?.fullName ?? 'Foydalanuvchi'}</p>
             <p className="truncate text-xs text-white/60">{user?.role ?? '—'}</p>
           </div>
-        )}
-      </NavLink>
+        </NavLink>
+      )}
     </aside>
   )
 }

@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils'
 import { SAVDO_KESIMI } from '@/features/dashboard/dashboardData'
 
-// Ketma-ket (sequential) ko'k shkala — miqdor bo'yicha tartiblangan kesim uchun (dataviz skill, palette.md)
+// Figma: kategoriyali pastel palitra (yashil / binafsha / marjon / och-ko'k)
 const STEPS = [
-  { swatch: 'bg-[#0d366b]', stroke: 'stroke-[#0d366b]' },
-  { swatch: 'bg-[#1c5cab]', stroke: 'stroke-[#1c5cab]' },
-  { swatch: 'bg-[#3987e5]', stroke: 'stroke-[#3987e5]' },
-  { swatch: 'bg-[#9ec5f4]', stroke: 'stroke-[#9ec5f4]' },
+  { swatch: 'bg-[#9BE3A8]', stroke: 'stroke-[#9BE3A8]' },
+  { swatch: 'bg-[#C7C1F4]', stroke: 'stroke-[#C7C1F4]' },
+  { swatch: 'bg-[#F2AC9B]', stroke: 'stroke-[#F2AC9B]' },
+  { swatch: 'bg-[#DCEEFB]', stroke: 'stroke-[#DCEEFB]' },
 ]
 
 function formatMlrd(sumUzs) {
@@ -23,9 +23,9 @@ export default function SavdoKesimiDonut({ jamiUzs }) {
   }, [])
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#E5E5E5] bg-white p-4 dark:border-white/10 dark:bg-card lg:h-[306px]">
+    <div className="flex flex-col gap-3 rounded-xl bg-white p-4 dark:bg-card lg:h-[306px]">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[13px] font-semibold uppercase tracking-[0.4px] text-[#0A0A0A] dark:text-white">Savdo kesimi, tashkilot</p>
+        <p className="text-[13px] font-semibold uppercase tracking-[0.4px] text-[#0A0A0A] dark:text-white">Tashkilotlar bo‘yicha savdo ulushi</p>
         <p className="text-[12px] text-[#737373] dark:text-muted-foreground">12 oy</p>
       </div>
 
@@ -58,7 +58,7 @@ export default function SavdoKesimiDonut({ jamiUzs }) {
         {segments.map((s, i) => (
           <div key={s.name} className="flex items-center justify-between gap-3 text-[13px]">
             <span className="flex items-center gap-2 text-[#525252] dark:text-muted-foreground">
-              <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', STEPS[i % STEPS.length].swatch)} />
+              <span className={cn('h-2.5 w-2.5 shrink-0 rounded-[3px]', STEPS[i % STEPS.length].swatch)} />
               {s.name}
             </span>
             <span className="font-medium tabular-nums text-[#0A0A0A] dark:text-white">

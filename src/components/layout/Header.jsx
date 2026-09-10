@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { Moon, Sun } from 'lucide-react'
+import { ChevronDown, Moon, Sun } from 'lucide-react'
 import { toggleTheme } from '@/features/ui/uiSlice'
 import { formatNumber } from '@/lib/format'
 import { WAREHOUSES, EXCHANGE_RATE } from '@/features/receipts/mockData'
@@ -15,8 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+// Figma: nav-control — balandlik 36 (h-9), "control" radius (8px), fon #4468BC (--nav-bg-hover)
 const pillTrigger =
-  'h-9 border-0 bg-[#4468BC] text-[13px] font-medium text-white hover:bg-[#3B5DAE] data-[state=open]:bg-[#3B5DAE] cursor-pointer rounded-md [&_svg]:text-white'
+  'h-9 border-0 bg-[#4468BC] text-[13px] font-medium text-white hover:bg-[#3B5DAE] data-[state=open]:bg-[#3B5DAE] cursor-pointer rounded-[8px] [&_svg]:text-white'
 
 const BADGE_STYLES = {
   new: 'border-white/25 bg-white/10 text-white',
@@ -67,28 +68,37 @@ export default function Header({ title, badge }) {
           </SelectContent>
         </Select>
 
-        <div className={cn('flex h-9 items-center gap-1.5 px-3', pillTrigger)}>
+        {/* Figma: 160×36, gap 8, padding 12/8 */}
+        <div className={cn('flex h-9 w-[160px] items-center gap-2 pl-3 pr-2', pillTrigger)}>
           <span>USD</span>
           <span className="text-white/40">|</span>
-          <span>{formatNumber(EXCHANGE_RATE)}</span>
+          <span className="leading-[18px]">{formatNumber(EXCHANGE_RATE)}</span>
+          <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-white/70" />
         </div>
 
         {/* Divider line */}
         <div className="h-[22px] w-px bg-[#B9C6E4]" />
 
-        {/* Language Select */}
+        {/* Language Select — Figma: 86×36, gap 6, padding 10/8, bayroq + kod */}
         <Select value={language} onValueChange={setLanguage}>
-          <SelectTrigger className={cn(pillTrigger, 'h-9 w-[55px] pl-2.5 pr-2 text-[13px] font-medium')}>
+          <SelectTrigger className={cn(pillTrigger, 'h-9 w-[90px] gap-1.5 pl-2.5 pr-2 text-[13px] font-medium')}>
+            <img src={`/${language}.svg`} alt="" className="h-4 w-6 shrink-0 rounded-[2px] object-cover" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="UZ">UZ</SelectItem>
-            <SelectItem value="RU">RU</SelectItem>
+            {['UZ', 'RU'].map((code) => (
+              <SelectItem key={code} value={code}>
+                <span className="flex items-center gap-2">
+                  <img src={`/${code}.svg`} alt="" className="h-4 w-6 shrink-0 rounded-[2px] object-cover" />
+                  {code}
+                </span>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
-        {/* Theme Switcher Pill */}
-        <div className="flex h-9 w-[72px] items-center gap-[2px] rounded-md bg-[#4468BC] p-[3px]">
+        {/* Theme Switcher Pill — Figma: 72×36, gap 2, padding 3, "control" radius */}
+        <div className="flex h-9 w-[72px] items-center gap-[2px] rounded-[8px] bg-[#4468BC] p-[3px]">
           <button
             type="button"
             aria-label="Yorug' rejim"
