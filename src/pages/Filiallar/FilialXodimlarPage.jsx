@@ -20,26 +20,6 @@ export default function FilialXodimlarPage() {
         { title: 'KASSIR', value: `${formatNumber(s.kassir, 0)} ta` },
         { title: 'ISH HAQI FONDI', value: `${formatNumber(s.ishHaqiFondi, 2)} UZS` },
       ]}
-      subtitle={`XODIMLAR, ${branch.name}, ${s.xodimlar} ta`}
-      noFooter
-      belowTable={
-        <div className="grid gap-6 border-t border-[#E5E5E5] pt-4 dark:border-white/10 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">JAMI FOND</p>
-            <p className="mt-1 text-[22px] font-bold leading-tight text-[#0A0A0A] dark:text-white">{formatNumber(s.ishHaqiFondi, 2)} UZS</p>
-            <p className="mt-1 text-[12px] text-[#737373] dark:text-muted-foreground">Oyiga</p>
-          </div>
-          {(s.ishHaqiTaqsimot ?? []).map((t) => (
-            <div key={t.label}>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">{t.label}</p>
-              <p className="mt-1 text-[22px] font-bold leading-tight text-[#0A0A0A] dark:text-white">{formatNumber(t.summa, 2)} UZS</p>
-              <p className="mt-1 text-[12px] text-[#737373] dark:text-muted-foreground">
-                {t.xodim} xodim, {formatNumber(t.pct, 1)} %
-              </p>
-            </div>
-          ))}
-        </div>
-      }
       head={[
         { label: '#' },
         { label: 'F.I.SH.' },

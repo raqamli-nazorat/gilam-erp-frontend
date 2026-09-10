@@ -63,6 +63,17 @@ export function formatDateTime(date = new Date()) {
   return `${p(date.getDate())}.${p(date.getMonth() + 1)}.${date.getFullYear()} ${p(date.getHours())}:${p(date.getMinutes())}`
 }
 
+// Klaviaturadan yozilganda "DD.MM.YYYY HH:MM" niqobi
+export function maskDateTime(raw) {
+  const d = String(raw ?? '').replace(/\D/g, '').slice(0, 12) // DDMMYYYYHHMM
+  let out = d.slice(0, 2)
+  if (d.length > 2) out += '.' + d.slice(2, 4)
+  if (d.length > 4) out += '.' + d.slice(4, 8)
+  if (d.length > 8) out += ' ' + d.slice(8, 10)
+  if (d.length > 10) out += ':' + d.slice(10, 12)
+  return out
+}
+
 export function formatCountdown(ms) {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
   const minutes = Math.floor(totalSeconds / 60)

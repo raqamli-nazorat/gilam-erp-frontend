@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { CheckCircle2, FileBarChart2, Pencil, X } from 'lucide-react'
+import { CheckCircle2, FileBarChart2, X } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Edit02Icon } from '@hugeicons/core-free-icons/index'
 import { branchClosed, branchOpened, branchUpdated } from '@/features/filiallar/filiallarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import BranchModal from './BranchModal'
 import CloseBranchModal from './CloseBranchModal'
+import ReopenBranchModal from './ReopenBranchModal'
 
 export default function FilialFooter({ branch }) {
   const dispatch = useDispatch()
   const currentUser = useSelector((s) => s.auth.user)
   const [editOpen, setEditOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
+  const [reopenOpen, setReopenOpen] = useState(false)
   const [toast, setToast] = useState('')
 
   useEffect(() => {
@@ -24,7 +28,7 @@ export default function FilialFooter({ branch }) {
 
   return (
     <>
-      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-3 py-3 dark:border-white/10 dark:bg-white/5">
+      <div className="flex shrink-0 items-center justify-between gap-3 bg-[#F5F5F5] px-3 py-3 dark:bg-white/5">
         <Button
           onClick={() => setToast('Hisobot tayyorlanmoqda…')}
           className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium rounded-xl text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
@@ -36,16 +40,13 @@ export default function FilialFooter({ branch }) {
             variant="outline"
             disabled={closed}
             onClick={() => setEditOpen(true)}
-            className="h-9 gap-2 border-[#E5E5E5] rounded-xl bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white"
+            className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
           >
-            <Pencil className="h-4 w-4" /> Tahrirlash
+            <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
           </Button>
           {closed ? (
             <Button
-              onClick={() => {
-                dispatch(branchOpened(branch.id))
-                setToast('Filial qayta ochildi')
-              }}
+              onClick={() => setReopenOpen(true)}
               className="h-9 gap-2 bg-[#0052D2] px-4 text-sm rounded-xl font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
             >
               <CheckCircle2 className="h-4 w-4" /> Qayta ochish
@@ -77,6 +78,15 @@ export default function FilialFooter({ branch }) {
         onConfirm={(reason) => {
           dispatch(branchClosed({ id: branch.id, reason, by: currentUser?.fullName ?? 'Administrator' }))
           setToast('Filial yopildi')
+        }}
+      />
+      <ReopenBranchModal
+        open={reopenOpen}
+        onOpenChange={setReopenOpen}
+        branch={branch}
+        onConfirm={() => {
+          dispatch(branchOpened(branch.id))
+          setToast('Filial qayta ochildi')
         }}
       />
       <Toast message={toast} />

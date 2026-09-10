@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons/index'
@@ -19,12 +18,15 @@ export default function StatCards({ items }) {
             {...(it.to ? { type: 'button', onClick: () => navigate(it.to) } : {})}
             style={{ backgroundColor: BG[i % 4] }}
             className={cn(
-              'p-5 text-left text-[#0A0A0A]',
-              it.to && ''
+              'rounded-xl p-5 text-left text-[#0A0A0A] transition-[filter] duration-150',
+              it.to && 'cursor-pointer hover:brightness-95'
             )}
           >
             <div className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.4px]">
-              {it.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
+              {it.title}
+              {it.to && (
+                <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
+              )}
             </div>
             <p className="mt-3 text-[22px] font-bold leading-tight">{it.value}</p>
           </Tag>

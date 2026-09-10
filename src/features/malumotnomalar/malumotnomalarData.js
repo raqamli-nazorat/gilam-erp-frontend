@@ -64,6 +64,34 @@ export const MALUMOTNOMA_INDEX = Object.fromEntries(
   MALUMOTNOMA_CATALOG.flatMap((s) => s.items.map((it) => [it.slug, { ...it, section: s.section }]))
 )
 
+// Platforma-admin "Ma'lumotnomalar" menyusi — sidebar'dagi 6 ta bo'lim
+export const MALUMOTNOMA_MENU = [
+  { slug: 'rollar', name: 'Rollar' },
+  { slug: 'sifatlar', name: 'Sifatlar' },
+  { slug: 'ranglar', name: 'Ranglar' },
+  { slug: 'olchov-birliklari', name: "O'lchov birliklari" },
+  { slug: 'lavozimlar', name: 'Lavozimlar' },
+  { slug: 'kontragent-turlari', name: 'Kontragent turlari' },
+]
+
+// Mock uchun "o'zgartirilgan" sanalar (Figma bo'yicha, kamayish tartibida)
+const MOD_DATES = [
+  '26.08.2026 12:10', '18.07.2026 10:05', '02.06.2026 15:40', '14.05.2026 11:12',
+  '21.04.2026 16:28', '09.03.2026 09:51', '27.02.2026 14:06', '15.01.2026 13:33',
+  '30.12.2025 10:47', '11.11.2025 17:20', '03.10.2025 12:55', '22.09.2025 08:38',
+  '19.08.2025 15:14', '07.07.2025 11:02', '25.06.2025 16:49', '13.05.2025 09:26',
+  '28.04.2025 14:10', '16.03.2025 10:38', '04.02.2025 13:21', '22.12.2024 09:47',
+]
+
+// Har bir yozuvga yaratilgan/o'zgartirilgan sana qo'shadi (backend ulanmagani uchun sintez)
+export function withRecordMeta(rows) {
+  return rows.map((r, i) => ({
+    yaratilgan: r.yaratilgan ?? `12.01.2024 09:${String(22 + i * 2).padStart(2, '0')}`,
+    ozgartirilgan: r.ozgartirilgan ?? MOD_DATES[i % MOD_DATES.length],
+    ...r,
+  }))
+}
+
 const EMPLOYEE_NAMES = [
   "Mirzajonov G'afforjon",
   'Mirzadjonov Ziyodulla',
@@ -227,43 +255,65 @@ export const MALUMOTNOMA_CONFIG = {
   lavozimlar: {
     kind: 'list',
     entity: 'lavozim',
-    searchPlaceholder: 'Lavozim nomi bo\'yicha qidirish',
     columns: [
-      { key: 'name', label: 'LAVOZIM', align: 'left', sortable: true },
-      { key: 'dept', label: "BO'LIM", align: 'left' },
-      { key: 'percent', label: 'ODATIY FOIZ', align: 'left' },
+      { key: 'name', label: 'NOMI', align: 'left' },
+      { key: 'tavsif', label: 'TAVSIF', align: 'left' },
     ],
     modalFields: [
-      { key: 'name', label: 'Lavozim', kind: 'text', required: true, placeholder: 'Kiriting' },
-      { key: 'dept', label: "Bo'lim", kind: 'select', options: ['Savdo', 'Kassa', 'Ombor', 'Boshqaruv'] },
-      { key: 'percent', label: 'Odatiy foiz', kind: 'text', placeholder: '2,00 %', full: true },
+      { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: Menejer', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
     ],
+    deleteNote: 'Bu lavozimdagi xodimlar tarixda saqlanadi.',
     rows: [
-      { id: 'p1', name: 'Menejer', dept: 'Savdo', percent: '2,00 %', active: true },
-      { id: 'p2', name: 'Kassir', dept: 'Kassa', percent: '—', active: true },
-      { id: 'p3', name: 'Omborchi', dept: 'Ombor', percent: '—', active: true },
-      { id: 'p4', name: 'Direktor', dept: 'Boshqaruv', percent: '—', active: true },
+      { id: 'p1', name: 'Direktor', tavsif: 'Tashkilot rahbari', active: true },
+      { id: 'p2', name: 'Boshqaruvchi', tavsif: 'Filial rahbari', active: true },
+      { id: 'p3', name: 'Savdo menejeri', tavsif: 'Savdo bo‘yicha mutaxassis', active: true },
+      { id: 'p4', name: 'Sotuvchi-maslahatchi', tavsif: 'Zalda mijoz bilan ishlaydi', active: true },
+      { id: 'p5', name: 'Kassir', tavsif: 'Kassa operatsiyalari', active: true },
+      { id: 'p6', name: 'Omborchi', tavsif: 'Ombor hisobi', active: true },
+      { id: 'p7', name: 'Buxgalter', tavsif: 'Moliyaviy hisobot', active: true },
+      { id: 'p8', name: 'Marketolog', tavsif: 'Reklama va aksiyalar', active: true },
+      { id: 'p9', name: 'HR menejeri', tavsif: 'Xodimlar bilan ishlash', active: true },
+      { id: 'p10', name: 'Yuk tashuvchi', tavsif: 'Yetkazib berish', active: true },
+      { id: 'p11', name: 'O‘lchovchi', tavsif: 'Xonani o‘lchash', active: true },
+      { id: 'p12', name: 'Montajchi', tavsif: 'Gilam yotqizish', active: true },
+      { id: 'p13', name: 'Xavfsizlik xodimi', tavsif: 'Obyekt xavfsizligi', active: true },
+      { id: 'p14', name: 'Tozalovchi', tavsif: 'Salon tozaligi', active: true },
     ],
   },
 
   ranglar: {
     kind: 'list',
     entity: 'rang',
-    searchPlaceholder: 'Rang nomi bo\'yicha qidirish',
     columns: [
-      { key: 'name', label: 'RANG', align: 'left', sortable: true },
-      { key: 'code', label: 'KOD', align: 'left' },
+      { key: 'name', label: 'NOMI', align: 'left', swatchKey: 'hex' },
+      { key: 'hex', label: 'HEX', align: 'left', copyable: true },
+      { key: 'tavsif', label: 'TAVSIF', align: 'left' },
     ],
     modalFields: [
-      { key: 'name', label: 'Rang', kind: 'text', required: true, placeholder: 'Kiriting' },
-      { key: 'code', label: 'Kod', kind: 'text', placeholder: 'BEJ' },
+      { key: 'name', label: 'Rang nomi', kind: 'text', required: true, placeholder: 'Masalan: Pushti' },
+      { key: 'hex', label: 'HEX kodi', kind: 'text', placeholder: '#E8A0B0', copyable: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
     ],
+    deleteNote: 'Bu rang bilan belgilangan tovarlar tarixda saqlanadi.',
     rows: [
-      { id: 'c1', name: 'Bej', code: 'BEJ', active: true },
-      { id: 'c2', name: 'Kulrang', code: 'GRY', active: true },
-      { id: 'c3', name: "Ko'k", code: 'BLU', active: true },
-      { id: 'c4', name: 'Qizil', code: 'RED', active: true },
-      { id: 'c5', name: 'Yashil', code: 'GRN', active: true },
+      { id: 'c1', name: 'Bej', hex: '#D9C6A5', tavsif: 'Klassik gilamlar uchun asosiy', active: true },
+      { id: 'c2', name: 'Qizil', hex: '#B3312C', tavsif: 'An’anaviy naqshlar', active: true },
+      { id: 'c3', name: 'Ko‘k', hex: '#23408E', tavsif: 'Zamonaviy kolleksiyalar', active: true },
+      { id: 'c4', name: 'Yashil', hex: '#2E6B4F', tavsif: 'Sun’iy maysa va gilam', active: true },
+      { id: 'c5', name: 'Kulrang', hex: '#8A8A8A', tavsif: 'Neytral, ofis uchun', active: true },
+      { id: 'c6', name: 'Qora', hex: '#1A1A1A', tavsif: 'Kontrast hoshiya', active: true },
+      { id: 'c7', name: 'Oq', hex: '#F2F0EB', tavsif: 'Yengil zamonaviy', active: true },
+      { id: 'c8', name: 'Sariq', hex: '#D8A72E', tavsif: 'Aksent ranglar', active: true },
+      { id: 'c9', name: 'Qo‘ng‘ir', hex: '#6E4B33', tavsif: 'Yog‘och ohang', active: true },
+      { id: 'c10', name: 'Binafsha', hex: '#5B3A7A', tavsif: 'Cheklangan seriya', active: true },
+      { id: 'c11', name: 'Pushti', hex: '#E8A0B0', tavsif: 'Bolalar xonasi uchun', active: true },
+      { id: 'c12', name: 'Moviy', hex: '#4A90D9', tavsif: 'Zamonaviy seriya', active: true },
+      { id: 'c13', name: 'To‘q yashil', hex: '#1F5C3A', tavsif: 'Klassik naqshlar', active: true },
+      { id: 'c14', name: 'Terrakota', hex: '#C1583B', tavsif: 'An’anaviy gilamlar', active: true },
+      { id: 'c15', name: 'Krem', hex: '#F5EFE0', tavsif: 'Yengil ohang', active: true },
+      { id: 'c16', name: 'Bordo', hex: '#7A2233', tavsif: 'Premium kolleksiya', active: true },
+      { id: 'c17', name: 'Zaytun', hex: '#6B7A3F', tavsif: 'Tabiiy ohang', active: true },
     ],
   },
 
@@ -335,6 +385,76 @@ export const MALUMOTNOMA_CONFIG = {
       { id: 'b1', name: 'Ipoteka Bank', mfo: '00443', active: true },
       { id: 'b2', name: 'Kapital Bank', mfo: '01088', active: true },
       { id: 'b3', name: 'Hamkorbank', mfo: '00967', active: true },
+    ],
+  },
+
+  sifatlar: {
+    kind: 'list',
+    entity: 'sifat',
+    columns: [
+      { key: 'name', label: 'NOMI', align: 'left' },
+      { key: 'tavsif', label: 'TAVSIF', align: 'left' },
+    ],
+    modalFields: [
+      { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: Lyuks', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
+    ],
+    deleteNote: 'Bu sifat bilan belgilangan tovarlar tarixda saqlanadi.',
+    rows: [
+      { id: 's1', name: 'Lyuks', tavsif: 'Ipak aralash, eng yuqori zichlik', active: true },
+      { id: 's2', name: 'Premium', tavsif: '1 500 000 tugun/m²', active: true },
+      { id: 's3', name: 'Standart', tavsif: '1 200 000 tugun/m²', active: true },
+      { id: 's4', name: 'Ekonom', tavsif: 'Byudjet segmenti', active: true },
+      { id: 's5', name: 'Heat-set', tavsif: 'Issiqlikda mustahkamlangan ip', active: true },
+      { id: 's6', name: 'Frize', tavsif: 'Buralgan tuk, uzun xivchin', active: true },
+      { id: 's7', name: 'Shag', tavsif: 'Uzun tukli, yumshoq', active: true },
+      { id: 's8', name: 'Vintage', tavsif: 'Eskirtirilgan naqsh effekti', active: true },
+      { id: 's9', name: 'Akril', tavsif: 'Yumshoq, rangi barqaror', active: true },
+      { id: 's10', name: 'Jun aralash', tavsif: 'Tabiiy jun 30%', active: true },
+      { id: 's11', name: 'Polipropilen', tavsif: 'Namga chidamli', active: true },
+      { id: 's12', name: 'Viskoza', tavsif: 'Ipakka o‘xshash yaltiroq', active: true },
+      { id: 's13', name: 'Bukle', tavsif: 'Halqali tuzilma', active: true },
+      { id: 's14', name: 'Mikrofibra', tavsif: 'Zich va yumshoq tuk', active: true },
+      { id: 's15', name: 'Antislip', tavsif: 'Sirpanmas asos', active: true },
+      { id: 's16', name: 'Qo‘lbola', tavsif: 'Qo‘lda to‘qilgan', active: true },
+      { id: 's17', name: 'Tafting', tavsif: 'Mashina to‘qimasi', active: true },
+    ],
+  },
+
+  'olchov-birliklari': {
+    kind: 'list',
+    entity: "o'lchov birligi",
+    columns: [
+      { key: 'name', label: 'NOMI', align: 'left' },
+      { key: 'tavsif', label: 'TAVSIF', align: 'left' },
+    ],
+    modalFields: [
+      { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: dona', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
+    ],
+    deleteNote: 'Bu birlik ishlatilgan hujjatlar tarixda saqlanadi.',
+    rows: [
+      { id: 'u1', name: 'm²', tavsif: 'Gilam maydoni o‘lchovi', active: true },
+      { id: 'u2', name: 'dona', tavsif: 'Donali gilam va gilamcha', active: true },
+      { id: 'u3', name: 'metr', tavsif: 'Rulondan pogon metr', active: true },
+      { id: 'u4', name: 'rulon', tavsif: 'Butun rulon, kovrolin va gazon', active: true },
+      { id: 'u5', name: 'kg', tavsif: 'Og‘irlik bo‘yicha hisob', active: true },
+      { id: 'u6', name: 'to‘plam', tavsif: 'Gilamlar to‘plami', active: true },
+    ],
+  },
+
+  'kontragent-turlari': {
+    kind: 'list',
+    entity: 'kontragent turi',
+    columns: [{ key: 'name', label: 'NOMI', align: 'left' }],
+    modalFields: [
+      { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: Xaridor', full: true },
+    ],
+    deleteNote: 'Bu tur bilan belgilangan kontragentlar tarixda saqlanadi.',
+    rows: [
+      { id: 'kt1', name: 'Yetkazib beruvchi', yaratilgan: '12.01.2024 09:28', ozgartirilgan: '30.08.2026 16:02', active: true },
+      { id: 'kt2', name: 'Xaridor', yaratilgan: '12.01.2024 09:30', ozgartirilgan: '14.07.2026 11:25', active: true },
+      { id: 'kt3', name: 'Vositachi', yaratilgan: '12.01.2024 09:32', ozgartirilgan: '02.05.2026 09:48', active: true },
     ],
   },
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Copy } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -20,7 +21,7 @@ export default function FilialDetailPage() {
   const branch = useSelector((s) => s.filiallar.list.find((b) => b.id === id))
   const [toast, setToast] = useState('')
 
-  usePageHeader(branch ? `Filiallar › ${branch.name}` : 'Filiallar')
+  usePageHeader(branch ? [{ label: 'Filiallar', to: '/filiallar' }, { label: branch.name }] : 'Filiallar')
 
   useEffect(() => {
     if (!branch) navigate('/filiallar', { replace: true })
@@ -92,7 +93,7 @@ export default function FilialDetailPage() {
                               className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                               aria-label="Nusxa olish"
                             >
-                              <Copy className="h-3.5 w-3.5" />
+                              <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                             </button>
                           </span>
                         </td>

@@ -2,12 +2,23 @@ import { createSlice, nanoid } from '@reduxjs/toolkit'
 import { formatDateTime } from '@/lib/format'
 import { initialUsers, ROLE_DEFS } from './foydalanuvchilarData'
 
+const ROLE_META = {
+  Sotuvchi: { yaratilgan: '12.01.2024 09:14', ozgartirilgan: '03.09.2026 11:20', description: 'Savdo zalida sotish va mijozlarga xizmat' },
+  Menejer: { yaratilgan: '12.01.2024 09:15', ozgartirilgan: '28.08.2026 16:41', description: 'Savdo jarayoni va mijozlar bazasini boshqarish' },
+  Kassir: { yaratilgan: '12.01.2024 09:16', ozgartirilgan: '21.08.2026 10:05', description: 'Kassa operatsiyalari va to‘lovlarni qabul qilish' },
+  Omborchi: { yaratilgan: '12.01.2024 09:17', ozgartirilgan: '14.08.2026 08:52', description: 'Ombor qoldig‘i, qabul va jo‘natish' },
+  Direktor: { yaratilgan: '12.01.2024 09:18', ozgartirilgan: '02.09.2026 14:07', description: 'Filial boshqaruvi, to‘liq huquqlar' },
+  Administrator: { yaratilgan: '12.01.2024 09:19', ozgartirilgan: '01.09.2026 09:33', description: 'Tizim sozlamalari va foydalanuvchilarni boshqarish' },
+}
+
 const initialRoles = ROLE_DEFS.map((r) => ({
   id: r.name.toLowerCase(),
   name: r.name,
   tashkilot: 'Barcha tashkilotlar',
   holat: 'active',
-  description: '',
+  description: ROLE_META[r.name]?.description ?? '',
+  yaratilgan: ROLE_META[r.name]?.yaratilgan ?? '12.01.2024 09:14',
+  ozgartirilgan: ROLE_META[r.name]?.ozgartirilgan ?? '12.01.2024 09:14',
 }))
 
 const initialState = { list: initialUsers, roles: initialRoles }
@@ -75,6 +86,7 @@ const foydalanuvchilarSlice = createSlice({
         state.roles.unshift(action.payload)
       },
       prepare(values) {
+        const now = formatDateTime()
         return {
           payload: {
             id: nanoid(8),
@@ -82,13 +94,21 @@ const foydalanuvchilarSlice = createSlice({
             tashkilot: 'Barcha tashkilotlar',
             holat: 'active',
             description: '',
+            yaratilgan: now,
+            ozgartirilgan: now,
             ...values,
           },
         }
       },
     },
+    roleUpdated(state, action) {
+      const { id, patch } = action.payload
+      const r = state.roles.find((x) => x.id === id)
+      if (r) Object.assign(r, patch, { ozgartirilgan: formatDateTime() })
+    },
   },
 })
 
-export const { userAdded, userUpdated, userBlocked, userActivated, roleAdded } = foydalanuvchilarSlice.actions
+export const { userAdded, userUpdated, userBlocked, userActivated, roleAdded, roleUpdated } =
+  foydalanuvchilarSlice.actions
 export default foydalanuvchilarSlice.reducer

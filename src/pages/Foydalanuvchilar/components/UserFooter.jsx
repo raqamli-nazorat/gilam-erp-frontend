@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { CheckCircle2, Pencil, X } from 'lucide-react'
+import { CheckCircle2, X } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Edit02Icon } from '@hugeicons/core-free-icons/index'
 import { userActivated, userBlocked, userUpdated } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
@@ -26,14 +28,14 @@ export default function UserFooter({ user }) {
 
   return (
     <>
-      <div className="-mx-6 -mb-6 flex shrink-0 items-center justify-end gap-2.5 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
+      <div className="flex shrink-0 items-center justify-end gap-2.5 bg-[#F5F5F5] px-3 py-3 dark:bg-white/5">
         <Button
           variant="outline"
           disabled={blocked}
           onClick={() => setEditOpen(true)}
-          className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white"
+          className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
         >
-          <Pencil className="h-4 w-4" /> Tahrirlash
+          <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
         </Button>
         {blocked ? (
           <Button
