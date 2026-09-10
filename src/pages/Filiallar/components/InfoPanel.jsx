@@ -6,7 +6,7 @@ export const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
 export function Panel({ title, children }) {
   return (
-    <div className={cn('overflow-hidden rounded-xl', surface)}>
+    <div className={cn('overflow-hidden', surface)}>
       <div className={cn('px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>{title}</div>
       <div className="divide-y divide-[#DFE4EF] dark:divide-white/5">{children}</div>
     </div>

@@ -11,6 +11,8 @@ import Toast from '@/components/Toast'
 import OrgModal from './components/OrgModal'
 import SuspendOrgModal from './components/SuspendOrgModal'
 import ActivateOrgModal from './components/ActivateOrgModal'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons/index'
 
 const THb =
   'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
@@ -18,10 +20,10 @@ const headBg = 'bg-[#9AC2FF] dark:bg-[#0052D2]/40'
 const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
 const STAT_META = [
-  { key: 'filiallar', title: 'FILIALLAR', bg: '#61FFB8', suffix: ' ta', digits: 0 },
-  { key: 'foydalanuvchilar', title: 'FOYDALANUVCHILAR', bg: '#679CFF', suffix: ' ta', digits: 0 },
-  { key: 'mijozlar', title: 'MIJOZLAR', bg: '#FFBF68', suffix: ' ta', digits: 0 },
-  { key: 'savdo', title: 'SAVDO', bg: '#F268FF', suffix: ' UZS', digits: 2 },
+  { key: 'filiallar', title: 'FILIALLAR', bg: '#D7D5FD', suffix: ' ta', digits: 0 },
+  { key: 'foydalanuvchilar', title: 'FOYDALANUVCHILAR', bg: '#CDE7FE', suffix: ' ta', digits: 0 },
+  { key: 'mijozlar', title: 'MIJOZLAR', bg: '#F8C3B3', suffix: ' ta', digits: 0 },
+  { key: 'savdo', title: 'SAVDO', bg: '#B3F8C5', suffix: ' UZS', digits: 2 },
 ]
 
 export default function TashkilotDetailPage() {
@@ -74,20 +76,20 @@ export default function TashkilotDetailPage() {
         {/* Statistika kartalari */}
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STAT_META.map((c) => (
-            <div key={c.key} className="rounded-xl p-5 text-[#0A0A0A]" style={{ backgroundColor: c.bg }}>
+            <div key={c.key} className=" p-5 text-[#0A0A0A]" style={{ backgroundColor: c.bg }}>
               <div className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.4px]">
-                {c.title} <ArrowUpRight className="h-3.5 w-3.5" />
+                {c.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
               </div>
-              <p className="mt-3 text-[22px] font-bold leading-tight">
+              <p className="mt-3 text-[20px] font-semibold leading-tight">
                 {formatNumber(org.stats[c.key], c.digits)}{c.suffix}
               </p>
             </div>
           ))}
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-row gap-2">
           {/* Filiallar jadvali */}
-          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>
+          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden', surface)}>
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
@@ -125,7 +127,7 @@ export default function TashkilotDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[360px]">
+          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
             <Panel title="Tashkilot ma’lumotlari:">
               <InfoRow label="INN" value={org.inn} onCopy={() => copy(org.inn, 'INN')} />
               <InfoRow label="Direktor" value={org.director} />
@@ -168,7 +170,7 @@ export default function TashkilotDetailPage() {
         </div>
 
         {/* Pastki panel */}
-        <div className="-mx-6 -mb-6 flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
           <Button
             onClick={() => setToast('Hisobot tayyorlanmoqda…')}
             className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
@@ -237,8 +239,8 @@ export default function TashkilotDetailPage() {
 
 function Panel({ title, children }) {
   return (
-    <div className={cn('overflow-hidden rounded-xl', surface)}>
-      <div className={cn('px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>{title}</div>
+    <div className={cn('overflow-y-auto', surface)}>
+      <div className={cn('px-4 py-2.5 text-[13px] font-semibold sticky top-0 z-10 text-[#0A0A0A] dark:text-white', headBg)}>{title}</div>
       <div className="divide-y divide-[#DFE4EF] dark:divide-white/5">{children}</div>
     </div>
   )

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Briefcase, Copy, Filter, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
+import { matchesDateRange } from '@/lib/format'
 import { holatLabel } from '@/features/filiallar/filiallarData'
 import { branchAdded } from '@/features/filiallar/filiallarSlice'
 import { Button } from '@/components/ui/button'
@@ -63,6 +64,8 @@ export default function FiliallarListPage() {
     if (filters.viloyat) out = out.filter((b) => b.viloyat === filters.viloyat)
     if (filters.turi) out = out.filter((b) => b.turi === filters.turi)
     if (filters.holat) out = out.filter((b) => (filters.holat === 'Faol' ? b.status === 'active' : b.status === 'closed'))
+    if (filters.sanaDan || filters.sanaGacha)
+      out = out.filter((b) => matchesDateRange(b.openedAt, filters.sanaDan, filters.sanaGacha))
     return out
   }, [branches, tab, search, filters])
 
@@ -109,14 +112,14 @@ export default function FiliallarListPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filial yoki manzil…"
-              className="h-9 w-[280px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-9 w-[280px] rounded-xl border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
             />
           </div>
           <Button
             variant="outline"
             onClick={() => setFilterOpen(true)}
             className={cn(
-              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 rounded-xl text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
@@ -124,94 +127,88 @@ export default function FiliallarListPage() {
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
-            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
+            className="h-9 gap-2 rounded-xl bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
           >
-            <Plus className="h-4 w-4" /> Yangi filial
+            <Plus className="h-4 w-4" /> Qo'shish
           </Button>
         </div>
       </div>
 
-      <p className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">
-        Filiallar, {shown.length} ta
-      </p>
-
       <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
-            <thead>
+        <table className="w-full border-separate border-spacing-0 text-sm">
+          <thead className='sticky top-0 z-10'>
+            <tr>
+              <th className={cn(TH, 'w-12 text-left')}>#</th>
+              <th className={cn(TH, 'text-left')}>NOMI</th>
+              <th className={cn(TH, 'text-left')}>TASHKILOT</th>
+              <th className={cn(TH, 'text-left')}>VILOYAT</th>
+              <th className={cn(TH, 'text-left')}>TUMAN</th>
+              <th className={cn(TH, 'text-left')}>MANZIL</th>
+              <th className={cn(TH, 'text-left')}>TELEFON</th>
+              <th className={cn(TH, 'text-right')}>OMBOR</th>
+              <th className={cn(TH, 'text-left')}>HOLAT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.length === 0 ? (
               <tr>
-                <th className={cn(TH, 'w-12 text-left')}>#</th>
-                <th className={cn(TH, 'text-left')}>NOMI</th>
-                <th className={cn(TH, 'text-left')}>TASHKILOT</th>
-                <th className={cn(TH, 'text-left')}>VILOYAT</th>
-                <th className={cn(TH, 'text-left')}>TUMAN</th>
-                <th className={cn(TH, 'text-left')}>MANZIL</th>
-                <th className={cn(TH, 'text-left')}>TELEFON</th>
-                <th className={cn(TH, 'text-right')}>OMBOR</th>
-                <th className={cn(TH, 'text-left')}>HOLAT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
-                        <Briefcase className="h-6 w-6 text-[#737373]" />
-                      </div>
-                      <p className="text-sm text-[#737373]">Filial topilmadi</p>
+                <td colSpan={9} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
+                      <Briefcase className="h-6 w-6 text-[#737373]" />
                     </div>
+                    <p className="text-sm text-[#737373]">Filial topilmadi</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              shown.map((b, i) => (
+                <tr
+                  key={b.id}
+                  onClick={() => navigate(`/filiallar/${b.id}`)}
+                  className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+                >
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
+                  <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{b.name}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{b.tashkilot}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{b.viloyat}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{b.tuman || '—'}</td>
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil}</td>
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
+                    {b.phone ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        {b.phone}
+                        <button
+                          type="button"
+                          onClick={(e) => copyPhone(e, b.phone)}
+                          className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                          aria-label="Nusxa olish"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor}</td>
+                  <td className="px-4">
+                    <span
+                      className={cn(
+                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
+                        b.status === 'active'
+                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
+                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+                      )}
+                    >
+                      {holatLabel(b.status)}
+                    </span>
                   </td>
                 </tr>
-              ) : (
-                shown.map((b, i) => (
-                  <tr
-                    key={b.id}
-                    onClick={() => navigate(`/filiallar/${b.id}`)}
-                    className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{b.name}</td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{b.tashkilot}</td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{b.viloyat}</td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{b.tuman || '—'}</td>
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil}</td>
-                    <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
-                      {b.phone ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          {b.phone}
-                          <button
-                            type="button"
-                            onClick={(e) => copyPhone(e, b.phone)}
-                            className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
-                            aria-label="Nusxa olish"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor}</td>
-                    <td className="px-4">
-                      <span
-                        className={cn(
-                          'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                          b.status === 'active'
-                            ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                            : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
-                        )}
-                      >
-                        {holatLabel(b.status)}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       <BranchModal

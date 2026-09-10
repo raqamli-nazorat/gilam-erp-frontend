@@ -25,18 +25,9 @@ export default function CloseBranchModal({ open, onOpenChange, branch, onConfirm
       <DialogContent className="p-5 sm:max-w-[520px]">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-[17px] font-semibold leading-[24px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            Filialni yopishmi?
+            Filialni yopishni tasdiqlash!
           </DialogTitle>
         </DialogHeader>
-
-        <div className="rounded-lg bg-[#FEECEC] px-4 py-3 text-[13px] leading-[19px] text-[#DC2626] dark:bg-[#DC2626]/15">
-          <p>Yopilgandan so‘ng filialda savdo va kirim rasmiylashtirilmaydi.</p>
-          <p className="mt-1.5">
-            Ma’lumotlar o‘chmaydi: hujjatlar, qoldiqlar va xodimlar tarixi saqlanib qoladi. Filial
-            «Yopilgan» holatiga o‘tadi va istalgan vaqtda qayta ochiladi.
-          </p>
-        </div>
-
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[
             ['Filial', branch.name],

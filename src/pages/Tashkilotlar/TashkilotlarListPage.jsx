@@ -118,14 +118,14 @@ export default function TashkilotlarListPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tashkilot yoki INN…"
-              className="h-9 w-[280px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-9 w-[280px] rounded-xl border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
             />
           </div>
           <Button
             variant="outline"
             onClick={() => setFilterOpen(true)}
             className={cn(
-              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+              'h-9 gap-2 border-[#E5E5E5] bg-white rounded-xl px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
@@ -133,9 +133,9 @@ export default function TashkilotlarListPage() {
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
-            className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white hover:bg-[#0047B8]"
+            className="h-9 gap-2 rounded-xl bg-[#0052D2] px-3.5 text-sm font-medium text-white hover:bg-[#0047B8]"
           >
-            <Plus className="h-4 w-4" /> Yangi tashkilot
+            <Plus className="h-4 w-4" /> Qo'shish
           </Button>
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function TashkilotlarListPage() {
                   >
                     <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                     <td className="px-4 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{o.name}</td>
-                    <td className="px-4 text-right text-[13px] font-normal leading-[18px] text-[#737373] dark:text-muted-foreground">
+                    <td className="px-4 text-right text-[13px] font-normal leading-[18px] text-[#0A0A0A] dark:text-muted-foreground">
                       <span className="inline-flex items-center justify-end gap-1.5">
                         {o.inn}
                         {o.inn && (
@@ -191,7 +191,7 @@ export default function TashkilotlarListPage() {
                         )}
                       </span>
                     </td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.director || '—'}</td>
+                    <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{o.director || '—'}</td>
                     <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
                       {o.phone ? (
                         <span className="inline-flex items-center gap-1.5">
@@ -209,8 +209,8 @@ export default function TashkilotlarListPage() {
                         '—'
                       )}
                     </td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.viloyat || '—'}</td>
-                    <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">{o.tuman || '—'}</td>
+                    <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{o.viloyat || '—'}</td>
+                    <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{o.tuman || '—'}</td>
                     <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.branchCount}</td>
                     <td className="px-4">
                       <span

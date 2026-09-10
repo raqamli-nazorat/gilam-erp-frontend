@@ -24,10 +24,10 @@ export default function FilialFooter({ branch }) {
 
   return (
     <>
-      <div className="-mx-6 -mb-6 flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-3 py-3 dark:border-white/10 dark:bg-white/5">
         <Button
           onClick={() => setToast('Hisobot tayyorlanmoqda…')}
-          className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+          className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium rounded-xl text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
         >
           <FileBarChart2 className="h-4 w-4" /> Xisobot
         </Button>
@@ -36,7 +36,7 @@ export default function FilialFooter({ branch }) {
             variant="outline"
             disabled={closed}
             onClick={() => setEditOpen(true)}
-            className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white"
+            className="h-9 gap-2 border-[#E5E5E5] rounded-xl bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white"
           >
             <Pencil className="h-4 w-4" /> Tahrirlash
           </Button>
@@ -46,14 +46,14 @@ export default function FilialFooter({ branch }) {
                 dispatch(branchOpened(branch.id))
                 setToast('Filial qayta ochildi')
               }}
-              className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+              className="h-9 gap-2 bg-[#0052D2] px-4 text-sm rounded-xl font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
             >
               <CheckCircle2 className="h-4 w-4" /> Qayta ochish
             </Button>
           ) : (
             <Button
               onClick={() => setCloseOpen(true)}
-              className="h-9 gap-2 bg-[#DC2626] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
+              className="h-9 gap-2 bg-[#DC2626] px-4 text-sm rounded-xl font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
             >
               <X className="h-4 w-4" /> Yopish
             </Button>

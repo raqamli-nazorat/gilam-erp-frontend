@@ -86,7 +86,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 rounded-[20px] p-0 sm:max-w-[600px]">
+      <DialogContent className="gap-0 rounded-2xl p-0 sm:max-w-[600px]">
         <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             {isEdit ? 'Filialni tahrirlash' : 'Yangi filial'}
@@ -144,7 +144,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="h-11 gap-2 rounded-lg border border-[#E5E5E5] bg-white px-5 text-[15px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+            className="h-9 gap-2 rounded-xl border border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
             <X className="h-4 w-4" /> Bekor qilish
           </Button>
@@ -152,7 +152,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             type="button"
             disabled={!canSave}
             onClick={handleSave}
-            className="h-11 gap-2 rounded-lg bg-[#0052D2] px-5 text-[15px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
+            className="h-9 gap-2 rounded-xl bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
           >
             <Check className="h-4 w-4" /> Saqlash
           </Button>

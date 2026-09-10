@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { FILIAL_TURLARI, TASHKILOT_NOMLARI, VILOYATLAR } from '@/features/filiallar/filiallarData'
-import { FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
+import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
 
-export const EMPTY_BRANCH_FILTERS = { tashkilot: '', viloyat: '', turi: '', holat: '' }
+export const EMPTY_BRANCH_FILTERS = {
+  tashkilot: '',
+  viloyat: '',
+  turi: '',
+  holat: '',
+  sanaDan: '',
+  sanaGacha: '',
+}
 
 export default function BranchFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
@@ -37,15 +44,7 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
           options={VILOYATLAR}
         />
       </FilterField>
-      <FilterField label="Filial turi">
-        <FilterSelect
-          value={draft.turi}
-          onChange={(v) => set('turi', v)}
-          placeholder="Barcha turlar"
-          options={FILIAL_TURLARI}
-        />
-      </FilterField>
-      <FilterField label="Holat">
+      <FilterField className="col-span-2!" label="Holat">
         <FilterSelect
           value={draft.holat}
           onChange={(v) => set('holat', v)}
@@ -53,6 +52,12 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
           options={['Faol', 'Yopilgan']}
         />
       </FilterField>
+      <FilterDateRange
+        from={draft.sanaDan}
+        to={draft.sanaGacha}
+        onFromChange={(v) => set('sanaDan', v)}
+        onToChange={(v) => set('sanaGacha', v)}
+      />
     </FilterModal>
   )
 }

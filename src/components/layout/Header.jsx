@@ -29,6 +29,28 @@ const BADGE_STYLES = {
 
 const BOOKING_WAREHOUSE = 'Bron ombori'
 
+function renderHeaderTitle(title) {
+  if (typeof title !== 'string' || !title.includes('›')) {
+    return title
+  }
+  const parts = title.split('›')
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {parts.map((part, index) => {
+        const isLast = index === parts.length - 1
+        return (
+          <span key={index} className="inline-flex items-center gap-1.5">
+            {index > 0 && <span className="text-[#B9C6E4]/50">›</span>}
+            <span className={isLast ? 'text-white font-medium' : 'text-[#B9C6E4]'}>
+              {part.trim()}
+            </span>
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
 export default function Header({ title, badge }) {
   const dispatch = useDispatch()
   const theme = useSelector((state) => state.ui.theme)
@@ -46,9 +68,9 @@ export default function Header({ title, badge }) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 bg-[#1B3E75] px-6">
       <div className="flex min-w-0 items-center gap-2.5">
-        <h1 className="truncate text-lg font-semibold text-white">{title}</h1>
+        <h1 className="truncate text-[14px] font-medium text-white">{renderHeaderTitle(title)}</h1>
         {badge && (
-          <Badge variant="outline" className={cn('rounded-full px-2.5', BADGE_STYLES[badge.variant] ?? BADGE_STYLES.count)}>
+          <Badge variant="outline" className={cn('rounded-full px-2.5 text-[13px] font-medium', BADGE_STYLES[badge.variant] ?? BADGE_STYLES.count)}>
             {badge.label}
           </Badge>
         )}

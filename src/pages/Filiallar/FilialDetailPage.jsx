@@ -60,9 +60,9 @@ export default function FilialDetailPage() {
           ]}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           {/* Xodimlar jadvali */}
-          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>
+          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden', surface)}>
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
@@ -82,8 +82,8 @@ export default function FilialDetailPage() {
                       <tr key={x.id} className="h-[60px] hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
-                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{x.lavozim}</td>
-                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">
+                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim}</td>
+                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5">
                             {x.phone}
                             <button
@@ -106,7 +106,7 @@ export default function FilialDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[360px]">
+          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
             <Panel title="Filial ma’lumotlari:">
               <InfoRow label="Tashkilot" value={branch.tashkilot} />
               <InfoRow label="Filial turi" value={branch.turi} />
