@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Check, Search, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { AMALLAR, AUDIT_FOYDALANUVCHILAR, AUDIT_TASHKILOTLAR, JADVALLAR } from '@/features/audit/auditData'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePicker, fromISODate, toISODate } from '@/components/ui/date-picker'
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
-export const EMPTY_AUDIT_FILTERS = { amal: '', jadval: '', foydalanuvchi: '', tashkilot: '', sana: '' }
+export const EMPTY_AUDIT_FILTERS = { amal: '', jadval: '', foydalanuvchi: '', tashkilot: '', from: '', to: '' }
 
 function F({ label, value, onChange, allLabel, options }) {
   return (
@@ -54,7 +54,7 @@ export default function AuditFilterModal({ open, onOpenChange, filters, onApply 
         onOpenChange(next)
       }}
     >
-      <DialogContent className="p-5 sm:max-w-[560px]">
+      <DialogContent className="p-5 sm:max-w-[560px] rounded-3xl!">
         <DialogHeader className="pb-1">
           <DialogTitle className="text-[15px] font-semibold leading-[20px] text-[#0A0A0A] dark:text-white">Filtr</DialogTitle>
         </DialogHeader>
@@ -65,14 +65,19 @@ export default function AuditFilterModal({ open, onOpenChange, filters, onApply 
           <F label="Foydalanuvchi" value={draft.foydalanuvchi} onChange={(v) => set('foydalanuvchi', v)} allLabel="Barchasi" options={AUDIT_FOYDALANUVCHILAR} />
           <F label="Tashkilot" value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} allLabel="Barchasi" options={AUDIT_TASHKILOTLAR} />
           <div className="col-span-2">
-            <Label className={labelCls}>Sana, dan</Label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A3A3A3]" />
-              <Input
-                readOnly
-                value={draft.sana || '01.09.2026 00:00'}
-                onChange={() => {}}
-                className={fieldCls.replace('px-3', 'pl-9 pr-3')}
+            <Label className={labelCls}>Sana</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <DatePicker
+                label="dan"
+                placeholder="0"
+                value={fromISODate(draft.from)}
+                onChange={(d) => set('from', toISODate(d))}
+              />
+              <DatePicker
+                label="gacha"
+                placeholder="0"
+                value={fromISODate(draft.to)}
+                onChange={(d) => set('to', toISODate(d))}
               />
             </div>
           </div>
@@ -83,14 +88,14 @@ export default function AuditFilterModal({ open, onOpenChange, filters, onApply 
             type="button"
             variant="outline"
             onClick={() => setDraft(EMPTY_AUDIT_FILTERS)}
-            className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+            className="h-9 gap-1.5 rounded-lg border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
             <X className="h-4 w-4" /> Tozalash
           </Button>
           <Button
             type="button"
             onClick={() => { onApply(draft); onOpenChange(false) }}
-            className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white hover:bg-[#0047B8]"
+            className="h-9 gap-1.5 rounded-xl! bg-[#0052D2] px-4 text-[14px] font-medium text-white hover:bg-[#0047B8]"
           >
             <Check className="h-4 w-4" /> Qo‘llash
           </Button>

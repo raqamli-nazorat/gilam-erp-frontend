@@ -31,6 +31,7 @@ export function DatePicker({
   value,
   onChange,
   placeholder = "KK.OO.YYYY",
+  label,
   className = "",
   inputClassName = "",
   disabled = false,
@@ -42,9 +43,12 @@ export function DatePicker({
   const fieldId = id || `date-${autoId}`
 
   const [open, setOpen] = useState(false)
+  const [focused, setFocused] = useState(false)
   const [date, setDate] = useState(() => toDateObj(value))
   const [month, setMonth] = useState(() => toDateObj(value) || new Date())
   const [text, setText] = useState(() => (toDateObj(value) ? dayjs(toDateObj(value)).format(FORMAT) : ""))
+
+  const isActive = focused || Boolean(text) || open
 
   // Tashqi value o'zgarsa — ichki holatni sinxronlaymiz
   useEffect(() => {
@@ -81,6 +85,90 @@ export function DatePicker({
         setMonth(parsed.toDate())
       }
     }
+  }
+
+  if (label) {
+    return (
+      <div
+        onClick={() => document.getElementById(fieldId)?.focus()}
+        className={cn(
+          "relative flex h-11 flex-col justify-end rounded-lg border bg-white px-3 pb-1 pt-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 cursor-text focus-within:border-[#0052D2] focus-within:ring-2 focus-within:ring-[#0052D2]/20 dark:bg-card",
+          error ? "border-destructive" : "border-[#E5E5E5] dark:border-white/10",
+          disabled && "cursor-not-allowed opacity-50",
+          className
+        )}
+      >
+        <label
+          htmlFor={fieldId}
+          className={cn(
+            "pointer-events-none absolute left-3 transition-all duration-200 ease-out select-none",
+            isActive
+              ? "top-1 text-[11px] font-normal leading-[14px] text-[#737373] dark:text-muted-foreground"
+              : "top-1/2 -translate-y-1/2 text-[14px] font-normal text-[#737373] dark:text-muted-foreground"
+          )}
+        >
+          {label}
+        </label>
+        <input
+          id={fieldId}
+          value={text}
+          placeholder={isActive ? (placeholder || "0") : ""}
+          maxLength={MAX}
+          disabled={disabled}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false)
+            setText(date ? dayjs(date).format(FORMAT) : "")
+          }}
+          onChange={handleType}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault()
+              setOpen(true)
+            }
+          }}
+          className={cn(
+            "h-5 w-full bg-transparent pr-7 text-[13px] font-normal text-[#0A0A0A] outline-none transition-opacity duration-150 placeholder:text-[#A3A3A3] dark:text-white",
+            !isActive && "opacity-0",
+            inputClassName
+          )}
+          {...props}
+        />
+
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger
+            render={
+              <button
+                type="button"
+                disabled={disabled}
+                aria-label="Sanani tanlash"
+                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] disabled:opacity-50 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
+              >
+                <CalendarIcon className="size-4" />
+              </button>
+            }
+          />
+          <PopoverContent className="w-auto overflow-hidden p-0" align="end" alignOffset={-8} sideOffset={10}>
+            <Calendar
+              mode="single"
+              captionLayout="dropdown"
+              startMonth={new Date(new Date().getFullYear() - 5, 0)}
+              endMonth={new Date(new Date().getFullYear() + 5, 11)}
+              selected={date}
+              month={month}
+              onMonthChange={setMonth}
+              locale={uz}
+              onSelect={(d) => {
+                if (!d) return
+                emit(d)
+                setText(dayjs(d).format(FORMAT))
+                setOpen(false)
+              }}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    )
   }
 
   return (
