@@ -100,6 +100,36 @@ export function FileTextIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={FileTextRaw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
+// Figma'dan berilgan aniq "Audit jurnali" ikonkasi (hujjat + tasdiq + lupa)
+export function Audit01Icon({ className, size = 18, ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" className={className} {...props}>
+      <path
+        d="M11.25 5.25C11.25 5.25 11.625 5.625 12 6.375C12 6.375 13.1911 4.5 14.25 4.125"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.51079 1.50434C5.63693 1.425 4.18924 1.64086 4.18924 1.64086C3.2751 1.70622 1.52324 2.21872 1.52326 5.21173C1.52327 8.17932 1.50388 11.8378 1.52326 13.2963C1.52326 14.1873 2.07497 16.2658 3.98459 16.3772C6.30572 16.5126 10.4867 16.5414 12.405 16.3772C12.9185 16.3482 14.6281 15.9451 14.8445 14.085C15.0686 12.158 15.024 10.8188 15.024 10.5001"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16.5145 5.25C16.5145 7.32107 14.834 9 12.7609 9C10.6879 9 9.00732 7.32107 9.00732 5.25C9.00732 3.17893 10.6879 1.5 12.7609 1.5C14.834 1.5 16.5145 3.17893 16.5145 5.25Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path d="M5.25 9.75H8.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M5.25 12.75H11.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function BalanceScaleIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={BalanceScaleRaw} size={size} className={className} strokeWidth={2} {...props} />
 }

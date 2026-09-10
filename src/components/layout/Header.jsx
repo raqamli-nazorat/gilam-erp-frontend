@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { ChevronDown, Moon, Sun } from 'lucide-react'
 import { toggleTheme } from '@/features/ui/uiSlice'
@@ -29,26 +29,38 @@ const BADGE_STYLES = {
 
 const BOOKING_WAREHOUSE = 'Bron ombori'
 
-function renderHeaderTitle(title) {
-  if (typeof title !== 'string' || !title.includes('›')) {
-    return title
-  }
-  const parts = title.split('›')
+function Breadcrumb({ items }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      {parts.map((part, index) => {
-        const isLast = index === parts.length - 1
+      {items.map((part, index) => {
+        const isLast = index === items.length - 1
+        const label = typeof part === 'string' ? part : part.label
+        const to = typeof part === 'string' ? undefined : part.to
         return (
           <span key={index} className="inline-flex items-center gap-1.5">
             {index > 0 && <span className="text-[#B9C6E4]/50">›</span>}
-            <span className={isLast ? 'text-white font-medium' : 'text-[#B9C6E4]'}>
-              {part.trim()}
-            </span>
+            {to && !isLast ? (
+              <Link to={to} className="text-[#B9C6E4] transition-colors hover:text-white">
+                {label}
+              </Link>
+            ) : (
+              <span className={isLast ? 'font-medium text-white' : 'text-[#B9C6E4]'}>{label}</span>
+            )}
           </span>
         )
       })}
     </span>
   )
+}
+
+function renderHeaderTitle(title) {
+  if (Array.isArray(title)) {
+    return <Breadcrumb items={title} />
+  }
+  if (typeof title !== 'string' || !title.includes('›')) {
+    return title
+  }
+  return <Breadcrumb items={title.split('›').map((s) => s.trim())} />
 }
 
 export default function Header({ title, badge }) {

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Copy, Filter, Plus, Search } from 'lucide-react'
+import { Briefcase, Filter, Plus, Search } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
@@ -28,7 +30,7 @@ export default function FiliallarListPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [toast, setToast] = useState('')
 
-  usePageHeader('Filiallar')
+  usePageHeader([{ label: 'Platforma' }, { label: 'Filiallar' }])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -184,7 +186,7 @@ export default function FiliallarListPage() {
                           className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                           aria-label="Nusxa olish"
                         >
-                          <Copy className="h-3.5 w-3.5" />
+                          <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                         </button>
                       </span>
                     ) : (

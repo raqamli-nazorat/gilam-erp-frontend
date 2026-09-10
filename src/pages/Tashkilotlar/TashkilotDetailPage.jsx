@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowUpRight, CheckCircle2, Copy, FileBarChart2, Pencil, X } from 'lucide-react'
+import { CheckCircle2, FileBarChart2, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -12,7 +12,7 @@ import OrgModal from './components/OrgModal'
 import SuspendOrgModal from './components/SuspendOrgModal'
 import ActivateOrgModal from './components/ActivateOrgModal'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons/index'
+import { ArrowUpRight01Icon, Copy01Icon, Edit02Icon } from '@hugeicons/core-free-icons/index'
 
 const THb =
   'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
@@ -182,9 +182,9 @@ export default function TashkilotDetailPage() {
               variant="outline"
               disabled={suspended}
               onClick={() => setEditOpen(true)}
-              className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
             >
-              <Pencil className="h-4 w-4" /> Tahrirlash
+              <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
             </Button>
             {suspended ? (
               <Button
@@ -239,8 +239,10 @@ export default function TashkilotDetailPage() {
 
 function Panel({ title, children }) {
   return (
-    <div className={cn('overflow-y-auto', surface)}>
-      <div className={cn('px-4 py-2.5 text-[13px] font-semibold sticky top-0 z-10 text-[#0A0A0A] dark:text-white', headBg)}>{title}</div>
+    <div className={surface}>
+      <div className={cn('sticky top-0 z-10 px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+        {title}
+      </div>
       <div className="divide-y divide-[#DFE4EF] dark:divide-white/5">{children}</div>
     </div>
   )
@@ -259,7 +261,7 @@ function InfoRow({ label, value, onCopy }) {
             className="shrink-0 text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
             aria-label="Nusxa olish"
           >
-            <Copy className="h-3.5 w-3.5" />
+            <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
           </button>
         )}
       </span>

@@ -25,6 +25,81 @@ const REGISTON_XODIMLAR = [
   { id: 'x13', name: 'Umarov Javohir', lavozim: 'Sotuvchi', phone: '+998 66 233-11-13', ishHaqiTuri: 'Savdodan foiz', ishgaKirgan: '03.12.2025 09:00', holat: 'Faol' },
 ]
 
+// ── Registon rulonlari — 46 ta (34 "Registon asosiy" + 12 "Registon zaxira") ──
+const REGISTON_RULONLAR = [
+  { id: 'r1', tovar: 'AKTUEL 1247, bej', rulonNo: 'RL-20411', ombor: 'Registon asosiy', boshlangich: 25, qoldiq: 19, obrezok: false, holat: 'Mavjud' },
+  { id: 'r2', tovar: 'AKTUEL 1247, bej', rulonNo: 'RL-20388', ombor: 'Registon asosiy', boshlangich: 25, qoldiq: 2.4, obrezok: true, holat: 'Mavjud' },
+  { id: 'r3', tovar: 'GRI MAVI YS17, ko‘k', rulonNo: 'RL-20390', ombor: 'Registon asosiy', boshlangich: 30, qoldiq: 11.6, obrezok: false, holat: 'Band' },
+  { id: 'r4', tovar: 'CREAM WHITE YK23', rulonNo: 'RL-20402', ombor: 'Registon asosiy', boshlangich: 25, qoldiq: 25, obrezok: false, holat: 'Mavjud' },
+  { id: 'r5', tovar: 'Sun‘iy maysa 4 m', rulonNo: 'RL-20502', ombor: 'Registon asosiy', boshlangich: 40, qoldiq: 18, obrezok: false, holat: 'Mavjud' },
+  { id: 'r6', tovar: 'Kovrolin STANDART', rulonNo: 'RL-20470', ombor: 'Registon asosiy', boshlangich: 30, qoldiq: 24.5, obrezok: false, holat: 'Mavjud' },
+  { id: 'r7', tovar: 'SHAGGY 5 sm, kulrang', rulonNo: 'RL-20520', ombor: 'Registon asosiy', boshlangich: 20, qoldiq: 20, obrezok: false, holat: 'Band' },
+  { id: 'r8', tovar: 'OSCAR 3200', rulonNo: 'RL-20506', ombor: 'Registon zaxira', boshlangich: 25, qoldiq: 25, obrezok: false, holat: 'Mavjud' },
+  { id: 'r9', tovar: 'ANTIK 770, ko‘k', rulonNo: 'RL-20488', ombor: 'Registon zaxira', boshlangich: 20, qoldiq: 8.4, obrezok: false, holat: 'Mavjud' },
+  { id: 'r10', tovar: 'Kovrolin LUX', rulonNo: 'RL-20509', ombor: 'Registon zaxira', boshlangich: 30, qoldiq: 30, obrezok: false, holat: 'Mavjud' },
+  { id: 'r11', tovar: 'Sun‘iy maysa 2 m', rulonNo: 'RL-20498', ombor: 'Registon zaxira', boshlangich: 40, qoldiq: 0, obrezok: false, holat: 'Tugagan' },
+  ...(() => {
+    const tovarlar = [
+      'FLORIDA 4400, qizil', 'PALERMO 900, bej', 'VISION 5100', 'MODENA 320, jigarrang',
+      'ATLAS 7700', 'CARAMEL YK9', 'LOTUS 220', 'DIAMOND 6000', 'VINTAGE 88, kulrang',
+      'SAHARA 1500, qumrang', 'MARMARIS 640', 'AZALIA 330, pushti', 'TROY 2100', 'EFES 4800, ko‘k',
+      'AKTUEL 1247, bej', 'GRI MAVI YS17, ko‘k', 'CREAM WHITE YK23', 'Kovrolin STANDART',
+    ]
+    const holatlar = ['Mavjud', 'Mavjud', 'Mavjud', 'Band', 'Mavjud', 'Mavjud', 'Tugagan', 'Mavjud']
+    const boshl = [20, 25, 30, 35, 40]
+    return Array.from({ length: 35 }, (_, i) => {
+      const b = boshl[i % boshl.length]
+      const qoldiq = Number((b * (((i * 41) % 100) / 100)).toFixed(1))
+      return {
+        id: `r${i + 12}`,
+        tovar: tovarlar[i % tovarlar.length],
+        rulonNo: `RL-${20521 + i * 6}`,
+        ombor: i < 27 ? 'Registon asosiy' : 'Registon zaxira',
+        boshlangich: b,
+        qoldiq,
+        obrezok: i % 6 === 2,
+        holat: qoldiq < 0.05 ? 'Tugagan' : holatlar[i % holatlar.length],
+      }
+    })
+  })(),
+]
+
+// ── Registon mijozlari — ro'yxatda 28 ta ko'rsatiladi ─────────────────────────
+const REGISTON_MIJOZLAR = [
+  { id: 'm1', name: '«TITAN GROUP» MCHJ', phone: '+998 90 111-22-33', buyurtma: 18, jamiXarid: 186420000, qarz: 42180000, oxirgi: '03.09.2026 10:05' },
+  { id: 'm2', name: 'Karimov Sanjar', phone: '+998 90 123-45-67', buyurtma: 9, jamiXarid: 38640000, qarz: 0, oxirgi: '03.09.2026 09:14' },
+  { id: 'm3', name: 'Nazarova Gulnora', phone: '+998 97 678-90-12', buyurtma: 7, jamiXarid: 18420000, qarz: 4260000, oxirgi: '03.09.2026 11:08' },
+  { id: 'm4', name: 'Rahmonov Aziz', phone: '+998 95 567-89-01', buyurtma: 4, jamiXarid: 9840000, qarz: 5140000, oxirgi: '03.09.2026 10:32' },
+  { id: 'm5', name: 'Abdullayev Sherzod', phone: '+998 90 901-23-45', buyurtma: 2, jamiXarid: 3180000, qarz: 0, oxirgi: '03.09.2026 16:22' },
+  { id: 'm6', name: 'Yusupov Anvar', phone: '+998 97 333-44-55', buyurtma: 6, jamiXarid: 14260000, qarz: 0, oxirgi: '02.09.2026 11:52' },
+  { id: 'm7', name: 'Ismoilov Bobur', phone: '+998 95 222-33-44', buyurtma: 5, jamiXarid: 11840000, qarz: 0, oxirgi: '02.09.2026 14:40' },
+  { id: 'm8', name: 'Qodirova Malika', phone: '+998 93 111-22-33', buyurtma: 4, jamiXarid: 8920000, qarz: 0, oxirgi: '01.09.2026 15:18' },
+  { id: 'm9', name: 'Toshev Jamshid', phone: '+998 88 555-66-77', buyurtma: 3, jamiXarid: 6480000, qarz: 1240000, oxirgi: '31.08.2026 12:04' },
+  { id: 'm10', name: 'Sobirova Zulfiya', phone: '+998 91 012-34-56', buyurtma: 3, jamiXarid: 5240000, qarz: 0, oxirgi: '30.08.2026 16:30' },
+  ...(() => {
+    const names = [
+      'Ergashev Qodir', 'Nazarov Jasur', 'Yo‘ldosheva Nilufar', 'Xolmatov Sardor', '«NUR SAVDO» MCHJ',
+      'Sattorov Bekzod', 'Umarova Dilnoza', 'Jo‘rayev Sardor', '«OLMOS TEKSTIL» MCHJ', 'Qurbonov Akmal',
+      'Hasanova Ziyoda', 'Mirzayev Ulug‘bek', 'Salimova Ra’no', '«BARAKA MEBEL» MCHJ', 'Tursunov Doston',
+      'Ochilova Malika', 'Rustamov Jahongir', '«ZAMIN QURILISH» MCHJ',
+    ]
+    const kunlar = ['29.08.2026', '28.08.2026', '27.08.2026', '26.08.2026', '25.08.2026', '24.08.2026', '23.08.2026', '22.08.2026', '21.08.2026', '20.08.2026', '19.08.2026', '18.08.2026', '17.08.2026', '16.08.2026', '15.08.2026', '14.08.2026', '13.08.2026', '12.08.2026']
+    return names.map((name, i) => {
+      const buyurtma = 1 + ((i * 3) % 6)
+      const hasQarz = i % 4 === 0
+      return {
+        id: `m${i + 11}`,
+        name,
+        phone: `+998 ${90 + (i % 9)} ${String(100 + i * 3).slice(0, 3)}-${String(10 + (i % 89)).padStart(2, '0')}-${String(10 + ((i * 7) % 89)).padStart(2, '0')}`,
+        buyurtma,
+        jamiXarid: 2400000 + ((i * 1370000) % 9200000) + buyurtma * 640000,
+        qarz: hasQarz ? 620000 + (i % 5) * 460000 : 0,
+        oxirgi: `${kunlar[i]} ${String(9 + (i % 9)).padStart(2, '0')}:${String((i * 13) % 60).padStart(2, '0')}`,
+      }
+    })
+  })(),
+]
+
 const REGISTON = {
   lastSales: [
     { date: '03.09.2026', amount: 4850000 },
@@ -50,37 +125,17 @@ const REGISTON = {
     { id: 'o1', name: 'Registon asosiy', manzil: 'Registon ko‘chasi 12', rulon: 34, qoldiq: 968.2, qiymat: 184320000, holat: 'Faol' },
     { id: 'o2', name: 'Registon zaxira', manzil: 'Registon ko‘chasi 12, 2-qavat', rulon: 12, qoldiq: 316.2, qiymat: 48640000, holat: 'Faol' },
   ],
-  omborStats: { omborlar: 2, rulon: 46, qoldiq: 1284.4, qiymat: 232960000 },
-  rulonlar: [
-    { id: 'r1', tovar: 'AKTUEL 1247, bej', rulonNo: 'RL-20411', ombor: 'Registon asosiy', boshlangich: 25, qoldiq: 19, obrezok: false, holat: 'Mavjud' },
-    { id: 'r2', tovar: 'AKTUEL 1247, bej', rulonNo: 'RL-20388', ombor: 'Registon asosiy', boshlangich: 25, qoldiq: 2.4, obrezok: true, holat: 'Mavjud' },
-    { id: 'r3', tovar: 'GRI MAVI YS17, ko‘k', rulonNo: 'RL-20390', ombor: 'Registon asosiy', boshlangich: 30, qoldiq: 11.6, obrezok: false, holat: 'Band' },
-    { id: 'r4', tovar: 'CREAM WHITE YK23', rulonNo: 'RL-20402', ombor: 'Registon asosiy', boshlangich: 25, qoldiq: 25, obrezok: false, holat: 'Mavjud' },
-    { id: 'r5', tovar: 'Sun‘iy maysa 4 m', rulonNo: 'RL-20502', ombor: 'Registon asosiy', boshlangich: 40, qoldiq: 18, obrezok: false, holat: 'Mavjud' },
-    { id: 'r6', tovar: 'Kovrolin STANDART', rulonNo: 'RL-20470', ombor: 'Registon asosiy', boshlangich: 30, qoldiq: 24.5, obrezok: false, holat: 'Mavjud' },
-    { id: 'r7', tovar: 'SHAGGY 5 sm, kulrang', rulonNo: 'RL-20520', ombor: 'Registon asosiy', boshlangich: 20, qoldiq: 20, obrezok: false, holat: 'Band' },
-    { id: 'r8', tovar: 'OSCAR 3200', rulonNo: 'RL-20506', ombor: 'Registon zaxira', boshlangich: 25, qoldiq: 25, obrezok: false, holat: 'Mavjud' },
-    { id: 'r9', tovar: 'ANTIK 770, ko‘k', rulonNo: 'RL-20488', ombor: 'Registon zaxira', boshlangich: 20, qoldiq: 8.4, obrezok: false, holat: 'Mavjud' },
-    { id: 'r10', tovar: 'Kovrolin LUX', rulonNo: 'RL-20509', ombor: 'Registon zaxira', boshlangich: 30, qoldiq: 30, obrezok: false, holat: 'Mavjud' },
-    { id: 'r11', tovar: 'Sun‘iy maysa 2 m', rulonNo: 'RL-20498', ombor: 'Registon zaxira', boshlangich: 40, qoldiq: 0, obrezok: false, holat: 'Tugagan' },
-  ],
-  mijozlar: [
-    { id: 'm1', name: '«TITAN GROUP» MCHJ', phone: '+998 90 111-22-33', buyurtma: 18, jamiXarid: 186420000, qarz: 42180000, oxirgi: '03.09.2026 10:05' },
-    { id: 'm2', name: 'Karimov Sanjar', phone: '+998 90 123-45-67', buyurtma: 9, jamiXarid: 38640000, qarz: 0, oxirgi: '03.09.2026 09:14' },
-    { id: 'm3', name: 'Nazarova Gulnora', phone: '+998 97 678-90-12', buyurtma: 7, jamiXarid: 18420000, qarz: 4260000, oxirgi: '03.09.2026 11:08' },
-    { id: 'm4', name: 'Rahmonov Aziz', phone: '+998 95 567-89-01', buyurtma: 4, jamiXarid: 9840000, qarz: 5140000, oxirgi: '03.09.2026 10:32' },
-    { id: 'm5', name: 'Abdullayev Sherzod', phone: '+998 90 901-23-45', buyurtma: 2, jamiXarid: 3180000, qarz: 0, oxirgi: '03.09.2026 16:22' },
-    { id: 'm6', name: 'Yusupov Anvar', phone: '+998 97 333-44-55', buyurtma: 6, jamiXarid: 14260000, qarz: 0, oxirgi: '02.09.2026 11:52' },
-    { id: 'm7', name: 'Ismoilov Bobur', phone: '+998 95 222-33-44', buyurtma: 5, jamiXarid: 11840000, qarz: 0, oxirgi: '02.09.2026 14:40' },
-    { id: 'm8', name: 'Qodirova Malika', phone: '+998 93 111-22-33', buyurtma: 4, jamiXarid: 8920000, qarz: 0, oxirgi: '01.09.2026 15:18' },
-    { id: 'm9', name: 'Toshev Jamshid', phone: '+998 88 555-66-77', buyurtma: 3, jamiXarid: 6480000, qarz: 1240000, oxirgi: '31.08.2026 12:04' },
-    { id: 'm10', name: 'Sobirova Zulfiya', phone: '+998 91 012-34-56', buyurtma: 3, jamiXarid: 5240000, qarz: 0, oxirgi: '30.08.2026 16:30' },
-  ],
+  omborStats: { omborlar: 2, rulon: REGISTON_RULONLAR.length, qoldiq: 1284.4, qiymat: 232960000 },
+  rulonlar: REGISTON_RULONLAR,
+  mijozlar: REGISTON_MIJOZLAR,
   mijozStats: { mijozlar: 640, qarziBor: 18, jamiQarz: 42180000, ortachaChek: 2306000 },
   savdo: {
     stats: { savdo12: 412800000, buyurtma: 172, ortachaChek: 2400000, qaytarish: 8640000 },
+    dinamikaDavr: '01.10.2025 — 31.09.2026',
+    dinamikaBirlik: 'mln UZS',
+    dinamikaMax: 48,
     oylar: ['Okt', 'Noy', 'Dek', 'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen'],
-    dinamika: [58, 72, 86, 44, 52, 68, 64, 74, 62, 78, 82, 100],
+    dinamika: [31.8, 35.5, 38.4, 27.2, 29.3, 34.6, 31.8, 35.0, 33.0, 36.3, 38.8, 41.1],
     tolov: [
       { usul: 'Naqd', pct: 54.8, summa: 226040000 },
       { usul: 'Karta', pct: 27.0, summa: 111456000 },
@@ -131,18 +186,23 @@ function synth(branch) {
     qiymat: 40000000 + i * 12000000,
     holat: 'Faol',
   }))
-  const rTovar = ['AKTUEL 1247, bej', 'GRI MAVI YS17, ko‘k', 'CREAM WHITE YK23', 'Sun‘iy maysa 4 m', 'Kovrolin STANDART', 'SHAGGY 5 sm, kulrang', 'OSCAR 3200', 'ANTIK 770, ko‘k']
-  const rHolat = ['Mavjud', 'Mavjud', 'Band', 'Mavjud', 'Tugagan']
-  const rulonlar = Array.from({ length: 8 }, (_, i) => ({
-    id: `r${i + 1}`,
-    tovar: rTovar[i % rTovar.length],
-    rulonNo: `RL-${20400 + i * 7}`,
-    ombor: omborlar[i % omborlar.length].name,
-    boshlangich: 20 + (i % 3) * 10,
-    qoldiq: [19, 2.4, 11.6, 25, 18, 24.5, 20, 8.4][i],
-    obrezok: i === 1,
-    holat: rHolat[i % rHolat.length],
-  }))
+  const rTovar = ['AKTUEL 1247, bej', 'GRI MAVI YS17, ko‘k', 'CREAM WHITE YK23', 'Sun‘iy maysa 4 m', 'Kovrolin STANDART', 'SHAGGY 5 sm, kulrang', 'OSCAR 3200', 'ANTIK 770, ko‘k', 'FLORIDA 4400, qizil', 'PALERMO 900, bej', 'VISION 5100', 'ATLAS 7700', 'LOTUS 220', 'DIAMOND 6000', 'SAHARA 1500, qumrang', 'TROY 2100']
+  const rHolat = ['Mavjud', 'Mavjud', 'Band', 'Mavjud', 'Mavjud', 'Tugagan', 'Mavjud', 'Band']
+  const rulonCount = omborlar.reduce((s, o) => s + o.rulon, 0)
+  const rulonlar = Array.from({ length: rulonCount }, (_, i) => {
+    const b = 20 + (i % 4) * 10
+    const qoldiq = Number((b * (((i * 41) % 100) / 100)).toFixed(1))
+    return {
+      id: `r${i + 1}`,
+      tovar: rTovar[i % rTovar.length],
+      rulonNo: `RL-${20400 + i * 6}`,
+      ombor: omborlar[i % omborlar.length].name,
+      boshlangich: b,
+      qoldiq,
+      obrezok: i % 6 === 1,
+      holat: qoldiq < 0.05 ? 'Tugagan' : rHolat[i % rHolat.length],
+    }
+  })
   const sotuvchi = xodimlar.filter((x) => x.lavozim === 'Sotuvchi').length
   const kassir = xodimlar.filter((x) => x.lavozim === 'Kassir').length
   const fond = n * 2600000
@@ -171,7 +231,7 @@ function synth(branch) {
       qoldiq: omborlar.reduce((s, o) => s + o.qoldiq, 0),
       qiymat: omborlar.reduce((s, o) => s + o.qiymat, 0),
     },
-    mijozlar: REGISTON.mijozlar.slice(0, 5),
+    mijozlar: REGISTON.mijozlar.slice(0, 16),
     mijozStats: { mijozlar: branch.stats.mijozlar, qarziBor: 4, jamiQarz: 9800000, ortachaChek: 1840000 },
     savdo: { ...REGISTON.savdo, stats: { savdo12: branch.stats.savdo, buyurtma: 60, ortachaChek: 1900000, qaytarish: 2400000 } },
   }

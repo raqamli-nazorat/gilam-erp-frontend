@@ -8,28 +8,30 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-export default function ActivateUserModal({ open, onOpenChange, user, onConfirm }) {
-  if (!user) return null
+export default function ReopenBranchModal({ open, onOpenChange, branch, onConfirm }) {
+  if (!branch) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-5 sm:max-w-[520px]">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            Foydalanuvchini faollashtirish?
+          <DialogTitle className="text-[17px] font-semibold leading-[24px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
+            Filial qayta ochilsinmi?
           </DialogTitle>
         </DialogHeader>
 
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[
-            ['Foydalanuvchi', user.name],
-            ['Roli', user.rol],
-            ['Bloklangan', user.block?.at ?? '—'],
-            ['Sababi', user.block?.reason ?? '—'],
+            ['Filial', branch.name],
+            ['Tashkilot', branch.tashkilot],
+            ['Xodimlar', `${branch.stats.xodimlar} ta`],
+            ['Omborlar', `${branch.stats.omborlar} ta`],
+            ['Yopilgan', branch.close?.at ?? '—'],
+            ['Sababi', branch.close?.reason ?? '—'],
           ].map(([k, v]) => (
-            <div key={k} className="flex items-center justify-between py-1">
-              <span className="text-[#737373] dark:text-muted-foreground">{k}</span>
-              <span className="font-medium text-[#0A0A0A] dark:text-white">{v}</span>
+            <div key={k} className="flex items-center justify-between gap-4 py-1">
+              <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{k}</span>
+              <span className="text-right font-medium text-[#0A0A0A] dark:text-white">{v}</span>
             </div>
           ))}
         </div>
@@ -51,7 +53,7 @@ export default function ActivateUserModal({ open, onOpenChange, user, onConfirm 
             }}
             className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
-            <Check className="h-4 w-4" /> Faollashtirish
+            <Check className="h-4 w-4" /> Qayta ochish
           </Button>
         </DialogFooter>
       </DialogContent>

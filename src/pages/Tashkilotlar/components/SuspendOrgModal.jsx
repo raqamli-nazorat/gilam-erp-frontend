@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Copy, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -47,7 +49,7 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
                     className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                     aria-label="Nusxa olish"
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                   </button>
                 )}
               </span>

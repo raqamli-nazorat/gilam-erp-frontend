@@ -25,7 +25,6 @@ import HisobotlarIndexPage from '@/pages/Hisobotlar/HisobotlarIndexPage'
 import HisobotRunnerPage from '@/pages/Hisobotlar/HisobotRunnerPage'
 import BalansPage from '@/pages/Balans/BalansPage'
 import KontragentBalansPage from '@/pages/Balans/KontragentBalansPage'
-import MalumotnomalarIndexPage from '@/pages/Malumotnomalar/MalumotnomalarIndexPage'
 import MalumotnomaDetailPage from '@/pages/Malumotnomalar/MalumotnomaDetailPage'
 import TashkilotlarListPage from '@/pages/Tashkilotlar/TashkilotlarListPage'
 import TashkilotDetailPage from '@/pages/Tashkilotlar/TashkilotDetailPage'
@@ -33,6 +32,7 @@ import FiliallarListPage from '@/pages/Filiallar/FiliallarListPage'
 import FilialDetailPage from '@/pages/Filiallar/FilialDetailPage'
 import FilialXodimlarPage from '@/pages/Filiallar/FilialXodimlarPage'
 import FilialOmborlarPage from '@/pages/Filiallar/FilialOmborlarPage'
+import FilialOmborDetailPage from '@/pages/Filiallar/FilialOmborDetailPage'
 import FilialMijozlarPage from '@/pages/Filiallar/FilialMijozlarPage'
 import FilialSavdoPage from '@/pages/Filiallar/FilialSavdoPage'
 import FoydalanuvchilarListPage from '@/pages/Foydalanuvchilar/FoydalanuvchilarListPage'
@@ -89,7 +89,13 @@ function App() {
           <Route path="/hisobotlar/:slug" element={<HisobotRunnerPage />} />
           <Route path="/balans" element={<BalansPage />} />
           <Route path="/balans/kontragent/:id" element={<KontragentBalansPage />} />
-          <Route path="/malumotnomalar" element={<MalumotnomalarIndexPage />} />
+          <Route path="/malumotnomalar" element={<Navigate to="/malumotnomalar/rollar" replace />} />
+          <Route path="/malumotnomalar/rollar" element={<RollarPage />} />
+          <Route path="/malumotnomalar/sifatlar" element={<MalumotnomaDetailPage slug="sifatlar" />} />
+          <Route path="/malumotnomalar/ranglar" element={<MalumotnomaDetailPage slug="ranglar" />} />
+          <Route path="/malumotnomalar/olchov-birliklari" element={<MalumotnomaDetailPage slug="olchov-birliklari" />} />
+          <Route path="/malumotnomalar/lavozimlar" element={<MalumotnomaDetailPage slug="lavozimlar" />} />
+          <Route path="/malumotnomalar/kontragent-turlari" element={<MalumotnomaDetailPage slug="kontragent-turlari" />} />
           <Route path="/malumotnomalar/:slug" element={<MalumotnomaDetailPage />} />
           <Route path="/tashkilotlar" element={<TashkilotlarListPage />} />
           <Route path="/tashkilotlar/:id" element={<TashkilotDetailPage />} />
@@ -97,10 +103,11 @@ function App() {
           <Route path="/filiallar/:id" element={<FilialDetailPage />} />
           <Route path="/filiallar/:id/xodimlar" element={<FilialXodimlarPage />} />
           <Route path="/filiallar/:id/omborlar" element={<FilialOmborlarPage />} />
+          <Route path="/filiallar/:id/omborlar/:omborId" element={<FilialOmborDetailPage />} />
           <Route path="/filiallar/:id/mijozlar" element={<FilialMijozlarPage />} />
           <Route path="/filiallar/:id/savdo" element={<FilialSavdoPage />} />
           <Route path="/foydalanuvchilar" element={<FoydalanuvchilarListPage />} />
-          <Route path="/foydalanuvchilar/rollar" element={<RollarPage />} />
+          <Route path="/foydalanuvchilar/rollar" element={<Navigate to="/malumotnomalar/rollar" replace />} />
           <Route path="/foydalanuvchilar/:id" element={<FoydalanuvchilarDetailPage />} />
           <Route path="/profil" element={<ProfilPage />} />
           <Route path="/boshqaruv-paneli" element={<DashboardPage />} />

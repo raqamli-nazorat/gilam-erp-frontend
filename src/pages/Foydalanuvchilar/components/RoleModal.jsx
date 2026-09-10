@@ -28,12 +28,23 @@ const TASHKILOT_OPTIONS = ['Barcha tashkilotlar', ...TASHKILOT_NOMLARI]
 
 const EMPTY = { name: '', tashkilot: 'Barcha tashkilotlar', holat: 'Faol', description: '' }
 
-export default function RoleModal({ open, onOpenChange, onSave }) {
+export default function RoleModal({ open, onOpenChange, role, onSave }) {
+  const isEdit = !!role
   const [draft, setDraft] = useState(EMPTY)
 
   useEffect(() => {
-    if (open) setDraft(EMPTY)
-  }, [open])
+    if (!open) return
+    setDraft(
+      role
+        ? {
+            name: role.name ?? '',
+            tashkilot: role.tashkilot ?? 'Barcha tashkilotlar',
+            holat: role.holat === 'active' ? 'Faol' : 'Nofaol',
+            description: role.description ?? '',
+          }
+        : EMPTY
+    )
+  }, [open, role])
 
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
   const canSave = draft.name.trim().length > 1
@@ -53,7 +64,7 @@ export default function RoleModal({ open, onOpenChange, onSave }) {
       <DialogContent className="gap-0 rounded-[20px] p-0 sm:max-w-[600px]">
         <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            Yangi rol
+            {isEdit ? 'Rol' : 'Yangi rol'}
           </DialogTitle>
         </DialogHeader>
 
