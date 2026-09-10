@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Copy, Filter, Plus, Search, Users } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
+import { matchesDateRange } from '@/lib/format'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { userAdded } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
@@ -14,28 +15,6 @@ import UserFilterModal, { EMPTY_USER_FILTERS } from './components/UserFilterModa
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
-
-// "14.02.2024 10:24" -> Date
-function parseDateTime(s) {
-  const m = String(s ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})/)
-  if (!m) return null
-  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
-}
-
-function matchesSanaFilter(yaratilgan, preset) {
-  if (!preset) return true
-  const d = parseDateTime(yaratilgan)
-  if (!d) return false
-  const now = new Date()
-  if (preset === 'Bugun') return d.toDateString() === now.toDateString()
-  if (preset === 'Shu hafta') {
-    const diff = (now - d) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 7
-  }
-  if (preset === 'Shu oy') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-  if (preset === 'Shu yil') return d.getFullYear() === now.getFullYear()
-  return true
-}
 
 export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
@@ -86,7 +65,8 @@ export default function FoydalanuvchilarListPage() {
     if (filters.filial) out = out.filter((u) => u.filial === filters.filial)
     if (filters.rol) out = out.filter((u) => u.rol === filters.rol)
     if (filters.holat) out = out.filter((u) => (filters.holat === 'Faol' ? u.holat === 'active' : u.holat === 'blocked'))
-    if (filters.sana) out = out.filter((u) => matchesSanaFilter(u.yaratilgan, filters.sana))
+    if (filters.sanaDan || filters.sanaGacha)
+      out = out.filter((u) => matchesDateRange(u.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
   }, [users, tab, search, filters])
 

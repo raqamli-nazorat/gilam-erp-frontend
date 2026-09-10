@@ -44,14 +44,15 @@ export default function SavdoDinamikasiChart() {
   const pct = prev ? ((value - prev) / prev) * 100 : null
   const positive = pct == null || pct >= 0
 
-  // Tooltip'ni chekka nuqtalarda qirqilmasligi uchun moslashtirish
-  const tipLeftPct = Math.min(78, Math.max(2, (xAt(hover) / W) * 100 - 8))
+  // Tooltip chekka nuqtalarda qirqilmasligi uchun: o'ng yarmida nuqtaga o'ng chetidan bog'lanadi
+  const xPct = (xAt(hover) / W) * 100
+  const anchorRight = xPct > 55
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#E5E5E5] bg-white p-4 dark:border-white/10 dark:bg-card lg:h-[306px]">
+    <div className="flex flex-col gap-3 rounded-xl bg-white p-4 dark:bg-card lg:h-[306px]">
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-[13px] font-semibold uppercase tracking-[0.4px] text-[#0A0A0A] dark:text-white">Savdo dinamikasi</p>
-        <p className="text-[12px] text-[#737373] dark:text-muted-foreground">Okt 2025 — Sen 2026, mln UZS</p>
+        <p className="text-[12px] text-[#737373] dark:text-muted-foreground">{SAVDO_DINAMIKASI.oraliq}</p>
       </div>
 
       <div className="relative flex-1">
@@ -66,8 +67,8 @@ export default function SavdoDinamikasiChart() {
         >
           <defs>
             <linearGradient id="savdoArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2a78d6" stopOpacity="0.16" />
-              <stop offset="100%" stopColor="#2a78d6" stopOpacity="0" />
+              <stop offset="0%" stopColor="#4C9AF5" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#4C9AF5" stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -100,7 +101,7 @@ export default function SavdoDinamikasiChart() {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="stroke-[#2a78d6] dark:stroke-[#3987e5]"
+            className="stroke-[#4C9AF5]"
           />
 
           {/* Krosxeyr */}
@@ -129,23 +130,25 @@ export default function SavdoDinamikasiChart() {
             cy={yAt(qiymatlarMln[hover])}
             r={6}
             strokeWidth="2.5"
-            className="fill-white stroke-[#2a78d6] dark:fill-card dark:stroke-[#3987e5]"
+            className="fill-white stroke-[#4C9AF5] dark:fill-card"
           />
         </svg>
 
         <div
-          className="pointer-events-none absolute top-2 w-[190px] rounded-lg border border-[#E5E5E5] bg-white px-3 py-2 shadow-md dark:border-white/10 dark:bg-card"
-          style={{ left: `${tipLeftPct}%` }}
+          className="pointer-events-none absolute top-2 w-max max-w-[96%] rounded-lg border border-[#E5E5E5] bg-white px-3 py-2 shadow-md dark:border-white/10 dark:bg-card"
+          style={anchorRight ? { right: `${100 - xPct}%` } : { left: `${xPct}%` }}
         >
-          <p className="text-[12px] font-medium text-[#0A0A0A] dark:text-white">{oylar[hover]} {hover === N - 1 ? '2026' : ''}</p>
-          <div className="mt-0.5 flex items-center gap-2">
-            <span className="text-[13px] font-semibold text-[#0A0A0A] dark:text-white">{formatNumber(value, 2)} UZS</span>
+          <p className="text-[12px] font-medium leading-4 text-[#737373] dark:text-white/70">
+            {hover === N - 1 ? SAVDO_DINAMIKASI.oxirgiSana : oylar[hover]}
+          </p>
+          <div className="mt-0.5 flex items-center gap-2 whitespace-nowrap">
+            <span className="text-[14px] font-semibold text-[#0A0A0A] dark:text-white">{formatNumber(value, 2)} UZS</span>
             {pct != null && (
               <span
                 className={cn(
-                  'inline-flex h-[18px] items-center rounded-full px-1.5 text-[10px] font-medium',
+                  'inline-flex items-center rounded-full px-2 py-0.5 text-[12px] font-medium leading-4',
                   positive
-                    ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
+                    ? 'bg-[#4C9AF5] text-[#0A0A0A]'
                     : 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
                 )}
               >

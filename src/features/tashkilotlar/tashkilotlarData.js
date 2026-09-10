@@ -77,6 +77,53 @@ const SAG_BRANCHES = [
   { id: 'b13', name: 'Zavod ombori', viloyat: 'Samarqand', tuman: 'Bulung‘ur', manzil: 'Sanoat zonasi 3', xodim: 9, ombor: 4 },
 ]
 
+// Qo'shimcha "sintez" tashkilotlar — ro'yxat aylanishini (sticky sarlavha/toolbar) sinash uchun.
+const X_NAMES = [
+  'Toshkent Gilam Fabrikasi', 'Chirchiq To‘qimachilik', 'Zarafshon Karpet', 'Marg‘ilon Ipak Gilam',
+  'Quva Palos', 'Rishton Hunarmand Gilam', 'Denov Gilam Savdo', 'Shahrisabz Gilam Markazi',
+  'G‘ijduvon Gilam Uyi', 'Kogon To‘qimachilik', 'Yangiyer Karpet', 'Chust Gilam',
+  'Pop To‘qimachilik', 'Uchqo‘rg‘on Gilam Savdo', 'Angren Palos', 'Bekobod Gilam',
+  'Guliston To‘qimachilik', 'Zomin Gilam Uyi', 'Nurota Karpet', 'Karmana Gilam',
+  'Beruniy To‘qimachilik', 'Xiva Gilam Ustaxonasi', 'Gurlan Karpet', 'Koson Gilam',
+  'G‘uzor To‘qimachilik', 'Termiz Ipak Yo‘li', 'Sho‘rchi Palos', 'Jarqo‘rg‘on Gilam',
+  'Urgut Gilam Savdo', 'Kattaqo‘rg‘on Karpet',
+]
+const X_DIRECTORS = [
+  'Islomov B.', 'Yusupov D.', 'Qodirov M.', 'Aliyev R.', 'Hakimov T.', 'Rahmonov S.', 'Umarov F.',
+  'Nazrullayev A.', 'Bekmurodov J.', 'Xasanov O.', 'Tursunov E.', 'Mahmudov I.', 'Sodiqov P.',
+  'Ergashev K.', 'Jo‘rayev N.',
+]
+const X_STREETS = ['Mustaqillik', 'Amir Temur', 'Navoiy', 'Bobur', 'Registon', 'Istiqlol', 'Yangi hayot', 'Do‘stlik']
+
+function xtraOrgs() {
+  return X_NAMES.map((name, i) => {
+    const viloyat = VILOYATLAR[(i + 2) % VILOYATLAR.length]
+    const tumanlar = TUMANLAR[viloyat] ?? [`${viloyat} shahri`]
+    const branchCount = 1 + (i % 6)
+    const foydalanuvchilar = 4 + branchCount * 5 + (i % 7)
+    const p2 = (n) => String(n).padStart(2, '0')
+    const suspended = i % 8 === 5
+    return {
+      id: `org-x${i + 1}`,
+      name,
+      titul: name.replace(/[‘’]/g, '').split(/\s+/).map((w) => w[0]).join('').slice(0, 3).toUpperCase(),
+      inn: String(320000117 + i * 137),
+      director: X_DIRECTORS[i % X_DIRECTORS.length],
+      phone: `+998 ${90 + (i % 9)} ${String(100 + i).padStart(3, '0')}-${p2(10 + (i % 89))}-${p2((i * 7) % 100)}`,
+      viloyat,
+      tuman: tumanlar[i % tumanlar.length],
+      manzil: `${X_STREETS[i % X_STREETS.length]} ko‘chasi ${5 + (i % 90)}`,
+      registeredAt: `${p2(3 + (i % 26))}.${p2(1 + (i % 12))}.2025 ${p2(9 + (i % 9))}:${p2((i * 13) % 60)}`,
+      status: suspended ? 'suspended' : 'active',
+      branchCount,
+      stats: { filiallar: branchCount, foydalanuvchilar, mijozlar: 45 + i * 19, savdo: 55_000_000 + i * 8_400_000 },
+      ...(suspended
+        ? { suspend: { at: '12.08.2026 10:00', reason: 'To‘lov kechikdi', by: 'Anvarov Sardorbek' } }
+        : {}),
+    }
+  })
+}
+
 // Xom ro'yxat — keyin to'ldiriladi (branches / users / stats)
 const RAW_ORGS = [
   { id: 'sag', name: 'SAG Gilamlari', titul: 'SAG', inn: '301234567', director: 'Salmonov S.', phone: '+998 90 123-45-67', viloyat: 'Samarqand', tuman: 'Samarqand tumani', manzil: 'Registon ko‘chasi 12', registeredAt: '14.02.2024 10:24', status: 'active', branchCount: 21, stats: { filiallar: 21, foydalanuvchilar: 148, mijozlar: 3240, savdo: 4812640000 }, branches: SAG_BRANCHES, users: [
@@ -98,6 +145,7 @@ const RAW_ORGS = [
   { id: 'jizzax-gilam', name: 'Jizzax Gilam', titul: 'JG', inn: '310334455', director: 'Nazarov J.', phone: '+998 91 012-34-56', viloyat: 'Jizzax', tuman: 'Jizzax shahri', manzil: 'Sharof Rashidov 12', registeredAt: '09.04.2025 10:30', status: 'active', branchCount: 1, stats: { filiallar: 1, foydalanuvchilar: 6, mijozlar: 95, savdo: 104600000 } },
   { id: 'sirdaryo-savdo', name: 'Sirdaryo Savdo', titul: 'SS', inn: '311776655', director: 'Abdullayev S.', phone: '+998 93 123-45-67', viloyat: 'Sirdaryo', tuman: 'Guliston shahri', manzil: 'Istiqlol 4', registeredAt: '22.04.2025 13:40', status: 'active', branchCount: 1, stats: { filiallar: 1, foydalanuvchilar: 5, mijozlar: 80, savdo: 88300000 } },
   { id: 'qoraqalpogiston-gilam', name: 'Qoraqalpog‘iston Gilam', titul: 'QQG', inn: '312001122', director: 'Seytov Q.', phone: '+998 94 234-56-78', viloyat: 'Qoraqalpog‘iston', tuman: 'Nukus shahri', manzil: 'Ernazar Alako‘z 30', registeredAt: '06.05.2025 11:25', status: 'suspended', branchCount: 1, stats: { filiallar: 1, foydalanuvchilar: 4, mijozlar: 60, savdo: 61900000 }, suspend: { at: '18.08.2026 09:12', reason: 'Shartnoma muddati tugadi, to‘lov kelmadi', by: 'Anvarov Sardorbek' } },
+  ...xtraOrgs(),
 ]
 
 export const initialOrgs = RAW_ORGS.map((o) => ({
