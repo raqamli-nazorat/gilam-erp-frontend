@@ -196,9 +196,22 @@ function CalendarDayButton({ className, day, modifiers, locale, ...props }) {
   const isStart = daterange ? isRangeStart : modifiers.range_start
   const isEnd = daterange ? isRangeEnd : modifiers.range_end
   const isMiddle = daterange ? isRangeMiddle : modifiers.range_middle
+  // daterange: from-only holati ham "range start" (ko'k pill) sifatida ko'rsatiladi,
+  // shuning uchun selected-single'ni faqat bitta-sana rejimida qo'llaymiz.
   const isSelectedSingle = daterange
-    ? selected?.from && !selected?.to && dayjs(day.date).isSame(selected.from, "day")
+    ? false
     : modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle
+
+  // Oraliq "band"ini har hafta qatori / oy chekkasida yumaloqlash (Figma: pill ko'rinishli segmentlar)
+  const dow = day.date.getDay() // 0=Ya (yakshanba) ... 1=Du (dushanba)
+  const isFirstOfMonth = day.date.getDate() === 1
+  const isLastOfMonth = dayjs(day.date).add(1, "day").date() === 1
+  const roundL =
+    isMiddle &&
+    (dow === 1 || isFirstOfMonth || dayjs(day.date).subtract(1, "day").isBefore(selected?.from, "day"))
+  const roundR =
+    isMiddle &&
+    (dow === 0 || isLastOfMonth || dayjs(day.date).add(1, "day").isAfter(selected?.to, "day"))
 
   const handleClick = (e) => {
     if (daterange) {
@@ -232,6 +245,8 @@ function CalendarDayButton({ className, day, modifiers, locale, ...props }) {
       data-range-start={isStart}
       data-range-end={isEnd}
       data-range-middle={isMiddle}
+      data-round-l={roundL || undefined}
+      data-round-r={roundR || undefined}
       data-today={modifiers.today}
       data-outside={modifiers.outside}
       data-disabled={modifiers.disabled}
@@ -242,9 +257,11 @@ function CalendarDayButton({ className, day, modifiers, locale, ...props }) {
         "hover:bg-accent hover:text-accent-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
         "data-[selected-single=true]:bg-foreground data-[selected-single=true]:text-background data-[selected-single=true]:rounded-md data-[selected-single=true]:hover:bg-foreground/90",
-        "data-[range-start=true]:bg-foreground data-[range-start=true]:text-background data-[range-start=true]:rounded-l-md",
-        "data-[range-end=true]:bg-foreground data-[range-end=true]:text-background data-[range-end=true]:rounded-r-md",
-        "data-[range-middle=true]:bg-[#f5f5f5] dark:data-[range-middle=true]:bg-[#262626] data-[range-middle=true]:text-foreground data-[range-middle=true]:rounded-none",
+        // Oraliq (daterange) — Figma: to'q ko'k boshi/oxiri (#0052D2), och-ko'k band (#EAF1FE), 8px radius
+        "data-[range-start=true]:bg-[#0052D2] data-[range-start=true]:text-white data-[range-start=true]:rounded-[8px] data-[range-start=true]:hover:bg-[#0047B8]",
+        "data-[range-end=true]:bg-[#0052D2] data-[range-end=true]:text-white data-[range-end=true]:rounded-[8px] data-[range-end=true]:hover:bg-[#0047B8]",
+        "data-[range-middle=true]:bg-[#EAF1FE] data-[range-middle=true]:text-[#0052D2] data-[range-middle=true]:rounded-none data-[range-middle=true]:hover:bg-[#DCE8FD]",
+        "data-[round-l=true]:rounded-l-[8px] data-[round-r=true]:rounded-r-[8px]",
         "data-[outside=true]:text-muted-foreground data-[outside=true]:opacity-50",
         "data-[disabled=true]:text-muted-foreground data-[disabled=true]:opacity-30 data-[disabled=true]:cursor-not-allowed data-[disabled=true]:pointer-events-none",
         className

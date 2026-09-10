@@ -1,42 +1,71 @@
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
-import MiniChart from './MiniChart'
 
-// Figma: width 279 / height 130 / padding 16 / gap 4 / bg var(--bg-surface, #FFFFFF)
-// "On click" -> navigate (instant)
-export default function DashboardStatCard({ title, value, suffix, digits = 0, chart, sub, delta, deltaSuffix = '', to }) {
+// Figma: rangli kartochka (bg-surface emas), radius 12, padding 16.
+// Sarlavha — Onest 11px/500, uppercase, 0.4px, #525252.
+// Qiymat — Onest 24px/600, -1px, #0A0A0A. O'ng-yuqorida doira ichida ArrowUpRight.
+// Har bir tur uchun: kartochka foni + doira/pill uchun to'qroq "accent" rang (Figma qiymatlari).
+const TONES = {
+  violet: { bg: '#E5E5FF', accent: '#D7D5FD' },
+  blue: { bg: '#E9F6FF', accent: '#CDE7FE' },
+  peach: { bg: '#FFDDD1', accent: '#F8C3B3' },
+  green: { bg: '#D9FFD1', accent: '#B3F8C5' },
+}
+
+export default function DashboardStatCard({
+  title,
+  value,
+  suffix = '',
+  digits = 0,
+  sub,
+  delta,
+  deltaSuffix = '',
+  to,
+  tone = 'violet',
+}) {
   const navigate = useNavigate()
   const positive = delta >= 0
+  const isPct = deltaSuffix.trim() === '%'
+  const t = TONES[tone] ?? TONES.violet
 
   return (
     <button
       type="button"
       onClick={() => to && navigate(to)}
-      className="flex h-[130px] flex-col gap-1 rounded-xl border border-[#E5E5E5] bg-white p-4 text-left transition-colors hover:border-[#0052D2]/30 hover:bg-[#F9FAFB] dark:border-white/10 dark:bg-card dark:hover:bg-white/5"
+      style={{ backgroundColor: t.bg }}
+      className={cn(
+        'flex h-[124px] flex-col justify-between rounded-xl p-4 text-left transition-transform',
+        to && 'hover:-translate-y-0.5'
+      )}
     >
-      <div className="flex items-center justify-between">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">{title}</p>
-        <ChevronRight className="h-4 w-4 shrink-0 text-[#A3A3A3]" />
+      <div className="flex items-start justify-between gap-2">
+        <span className="pt-1 text-[11px] font-medium uppercase leading-[14px] tracking-[0.4px] text-[#525252]">
+          {title}
+        </span>
+        <span
+          style={{ backgroundColor: t.accent }}
+          className="flex size-9 shrink-0 items-center justify-center rounded-full text-[#0A0A0A]"
+        >
+          <ArrowUpRight className="size-[18px]" />
+        </span>
       </div>
-      <p className="text-[22px] font-bold text-[#0A0A0A] dark:text-white">
-        {formatNumber(value, digits)}{suffix}
+
+      <p className="whitespace-nowrap text-[24px] font-semibold leading-[28px] tracking-[-1px] text-[#0A0A0A]">
+        {formatNumber(value, digits)}
+        {suffix}
       </p>
 
-      <MiniChart variant={chart} className="h-6 w-full" />
-
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-[12px] text-[#737373] dark:text-muted-foreground">{sub}</span>
+        <span className="truncate text-[13px] leading-[16px] text-[#525252]">{sub}</span>
         <span
-          className={cn(
-            'inline-flex h-[20px] shrink-0 items-center rounded-full px-2 text-[11px] font-medium',
-            positive
-              ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-              : 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
-          )}
+          style={{ backgroundColor: t.accent }}
+          className="inline-flex shrink-0 items-center rounded-full px-2 py-[3px] text-[11px] font-medium leading-none text-[#0A0A0A]"
         >
-          {positive ? '+' : ''}{formatNumber(delta, deltaSuffix === '%' ? 1 : 0)}{deltaSuffix}
+          {positive ? '+' : ''}
+          {formatNumber(delta, isPct ? 1 : 0)}
+          {deltaSuffix}
         </span>
       </div>
     </button>

@@ -12,6 +12,23 @@ export function formatNumber(value, fractionDigits = 2) {
   return fracPart ? `${withSpaces},${fracPart}` : withSpaces
 }
 
+// "14.02.2024" yoki "14.02.2024 10:24" -> 20240214 (raqam) yoki null
+export function dmyToNum(value) {
+  const m = String(value ?? '').trim().match(/^(\d{2})\.(\d{2})\.(\d{4})/)
+  return m ? Number(m[3] + m[2] + m[1]) : null
+}
+
+// Sana "dan"/"gacha" oralig'iga tushadimi (ikkalasi ham ixtiyoriy, format DD.MM.YYYY)
+export function matchesDateRange(value, danStr, gachaStr) {
+  const v = dmyToNum(value)
+  if (v == null) return true
+  const dan = dmyToNum(danStr)
+  const gacha = dmyToNum(gachaStr)
+  if (dan != null && v < dan) return false
+  if (gacha != null && v > gacha) return false
+  return true
+}
+
 export function formatDate(isoDate) {
   if (!isoDate) return '—'
   const [y, m, d] = isoDate.split('-')

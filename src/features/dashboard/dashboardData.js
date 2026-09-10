@@ -7,8 +7,11 @@ export const AS_OF = '04.09.2026 17:00'
 // "Savdo dinamikasi" — Okt 2025 – Sen 2026, mln UZS. Faqat oxirgi nuqta (Sen) Figma'da aniq
 // ko'rsatilgan (1 284 440 000 UZS, +27,2%); qolgani egri chiziq shakliga mos taxminiy qatordir.
 export const SAVDO_DINAMIKASI = {
-  oylar: ['Okt', 'Noy', 'Dek', 'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen'],
+  oylar: ['Okt', 'Noy', 'Dek', 'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen'],
   qiymatlarMln: [640, 700, 800, 580, 620, 680, 700, 780, 720, 850, 1010, 1284.44],
+  // Figma sarlavhasi va oxirgi nuqta tultipida ko'rsatilgan sanalar (aynan Figma matni)
+  oraliq: '01.10.2025 — 31.09.2026, mln UZS',
+  oxirgiSana: '31.09.2026',
 }
 
 // "Savdo kesimi, tashkilot" — donut (top 3 + qolganlari)

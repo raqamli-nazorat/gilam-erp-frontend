@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Building2, Copy, Filter, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
+import { matchesDateRange } from '@/lib/format'
 import { orgAdded } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,28 +20,6 @@ function matchesCountBucket(n, bucket) {
   if (bucket.endsWith('+ ta')) return n >= Number.parseInt(bucket, 10)
   const [lo, hi] = bucket.replace(' ta', '').split('–').map((s) => Number.parseInt(s, 10))
   return hi == null ? n === lo : n >= lo && n <= hi
-}
-
-// "14.02.2024 10:24" -> Date
-function parseDateTime(s) {
-  const m = String(s ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})/)
-  if (!m) return null
-  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
-}
-
-function matchesSanaFilter(sana, preset) {
-  if (!preset) return true
-  const d = parseDateTime(sana)
-  if (!d) return false
-  const now = new Date()
-  if (preset === 'Bugun') return d.toDateString() === now.toDateString()
-  if (preset === 'Shu hafta') {
-    const diff = (now - d) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 7
-  }
-  if (preset === 'Shu oy') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-  if (preset === 'Shu yil') return d.getFullYear() === now.getFullYear()
-  return true
 }
 
 export default function TashkilotlarListPage() {
@@ -91,12 +70,13 @@ export default function TashkilotlarListPage() {
     if (filters.holat) out = out.filter((o) => (filters.holat === 'Faol' ? o.status === 'active' : o.status === 'suspended'))
     if (filters.filiallarSoni) out = out.filter((o) => matchesCountBucket(o.branchCount, filters.filiallarSoni))
     if (filters.foydalanuvchilar) out = out.filter((o) => matchesCountBucket(o.stats?.foydalanuvchilar ?? 0, filters.foydalanuvchilar))
-    if (filters.sana) out = out.filter((o) => matchesSanaFilter(o.registeredAt, filters.sana))
+    if (filters.sanaDan || filters.sanaGacha)
+      out = out.filter((o) => matchesDateRange(o.registeredAt, filters.sanaDan, filters.sanaGacha))
     return out
   }, [orgs, tab, search, filters])
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-6">
           {[
@@ -160,9 +140,8 @@ export default function TashkilotlarListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+        <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
                 <th className={cn(TH, 'w-12 text-left')}>#</th>
@@ -193,11 +172,11 @@ export default function TashkilotlarListPage() {
                   <tr
                     key={o.id}
                     onClick={() => navigate(`/tashkilotlar/${o.id}`)}
-                    className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+                    className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                   >
                     <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{o.name}</td>
-                    <td className="px-4 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">
+                    <td className="px-4 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{o.name}</td>
+                    <td className="px-4 text-right text-[13px] font-normal leading-[18px] text-[#737373] dark:text-muted-foreground">
                       <span className="inline-flex items-center justify-end gap-1.5">
                         {o.inn}
                         {o.inn && (
@@ -249,8 +228,7 @@ export default function TashkilotlarListPage() {
                 ))
               )}
             </tbody>
-          </table>
-        </div>
+        </table>
       </div>
 
       <OrgModal

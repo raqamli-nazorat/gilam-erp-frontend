@@ -133,6 +133,23 @@
     @apply bg-background text-foreground;
   }
 
+  /* Yorug'/qorong'i mavzu almashganda ranglar keskin sakramasin — yumshoq o'tish.
+     Tailwind'ning `transition-*` utilitalari (utilities layer) bu qoidani bosib o'tadi,
+     shuning uchun hover/interaktiv animatsiyalar o'z tezligida qoladi. */
+  *,
+  ::before,
+  ::after {
+    transition: background-color 260ms ease, border-color 260ms ease, color 260ms ease, fill 260ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   button,
   [role="button"],
   a,
