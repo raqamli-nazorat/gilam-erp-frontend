@@ -9,10 +9,6 @@ export default function FilialMijozlarPage() {
 
   const s = branch.detail.mijozStats
   const rows = branch.detail.mijozlar
-  const tot = rows.reduce(
-    (a, m) => ({ buyurtma: a.buyurtma + m.buyurtma, xarid: a.xarid + m.jamiXarid, qarz: a.qarz + m.qarz }),
-    { buyurtma: 0, xarid: 0, qarz: 0 }
-  )
 
   return (
     <FilialSubShell
@@ -24,7 +20,6 @@ export default function FilialMijozlarPage() {
         { title: 'JAMI QARZ', value: `${formatNumber(s.jamiQarz, 2)} UZS` },
         { title: "O‘RTACHA CHEK", value: `${formatNumber(s.ortachaChek, 2)} UZS` },
       ]}
-      subtitle={`MIJOZLAR, ${branch.name}, ${s.mijozlar} ta`}
       head={[
         { label: '#' },
         { label: 'F.I.SH. / TASHKILOT' },
@@ -46,15 +41,6 @@ export default function FilialMijozlarPage() {
           <td className={cn(TD, 'text-[#737373]')}>{m.oxirgi}</td>
         </tr>
       ))}
-      <tr className="h-[52px] bg-[#F5F5F5] font-semibold dark:bg-white/5">
-        <td />
-        <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-white">JAMI</td>
-        <td />
-        <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(tot.buyurtma, 0)}</td>
-        <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(tot.xarid, 0)}</td>
-        <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(tot.qarz, 0)}</td>
-        <td />
-      </tr>
     </FilialSubShell>
   )
 }

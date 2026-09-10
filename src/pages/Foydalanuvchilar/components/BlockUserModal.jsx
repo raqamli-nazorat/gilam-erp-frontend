@@ -24,18 +24,10 @@ export default function BlockUserModal({ open, onOpenChange, user, onConfirm }) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-5 sm:max-w-[520px]">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            Foydalanuvchini bloklashmi?
+          <DialogTitle className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
+            Foydalanuvchini bloklash?
           </DialogTitle>
         </DialogHeader>
-
-        <div className="rounded-lg bg-[#FEECEC] px-4 py-3 text-[13px] leading-[19px] text-[#DC2626] dark:bg-[#DC2626]/15">
-          <p>Bloklangandan so‘ng foydalanuvchi tizimga kira olmaydi.</p>
-          <p className="mt-1.5">
-            Ma’lumotlar o‘chmaydi: uning hujjatlari, savdolari va amallari tarixda qoladi. Foydalanuvchi
-            «Bloklangan» holatiga o‘tadi va istalgan vaqtda qayta faollashtiriladi.
-          </p>
-        </div>
 
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[

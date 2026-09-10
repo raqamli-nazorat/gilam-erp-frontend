@@ -1,4 +1,6 @@
-import { Check, Copy, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -48,7 +50,7 @@ export default function ActivateOrgModal({ open, onOpenChange, org, onConfirm })
                     className="shrink-0 text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                     aria-label="Nusxa olish"
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                   </button>
                 )}
               </span>

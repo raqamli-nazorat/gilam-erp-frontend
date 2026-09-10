@@ -19,7 +19,7 @@ export default function FoydalanuvchilarDetailPage() {
   const user = useSelector((s) => s.foydalanuvchilar.list.find((u) => u.id === id))
   const [toast, setToast] = useState('')
 
-  usePageHeader(user ? `Foydalanuvchilar › ${user.name}` : 'Foydalanuvchilar')
+  usePageHeader(user ? [{ label: 'Foydalanuvchilar', to: '/foydalanuvchilar' }, { label: user.name }] : 'Foydalanuvchilar')
 
   useEffect(() => {
     if (!user) navigate('/foydalanuvchilar', { replace: true })

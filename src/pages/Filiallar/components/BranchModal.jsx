@@ -89,7 +89,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
       <DialogContent className="gap-0 rounded-2xl p-0 sm:max-w-[600px]">
         <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            {isEdit ? 'Filialni tahrirlash' : 'Yangi filial'}
+            {isEdit ? 'Filial' : 'Yangi filial'}
           </DialogTitle>
         </DialogHeader>
 

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Copy, Filter, Plus, Search, Users } from 'lucide-react'
+import { Filter, Plus, Search, Users } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Copy01Icon, UserGroupIcon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
@@ -20,7 +22,6 @@ export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const users = useSelector((s) => s.foydalanuvchilar.list)
-  const roles = useSelector((s) => s.foydalanuvchilar.roles)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -104,16 +105,6 @@ export default function FoydalanuvchilarListPage() {
               {tab === key && <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => navigate('/foydalanuvchilar/rollar')}
-            className="flex items-center gap-1.5 pb-2.5 pt-1 text-sm font-normal text-[#737373] transition-colors hover:text-[#0A0A0A] dark:text-muted-foreground"
-          >
-            Rollar
-            <span className="inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full bg-[#F5F5F5] px-1.5 text-[12px] font-medium text-[#737373] dark:bg-white/10 dark:text-muted-foreground">
-              {roles.length}
-            </span>
-          </button>
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
@@ -126,6 +117,13 @@ export default function FoydalanuvchilarListPage() {
               className="h-9 w-[280px] rounded-md border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
             />
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/malumotnomalar/rollar')}
+            className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground"
+          >
+            <HugeiconsIcon icon={UserGroupIcon} size={16} strokeWidth={2} /> Rollar
+          </Button>
           <Button
             variant="outline"
             onClick={() => setFilterOpen(true)}
@@ -145,25 +143,20 @@ export default function FoydalanuvchilarListPage() {
         </div>
       </div>
 
-      <p className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">
-        Foydalanuvchilar, {shown.length} ta
-      </p>
-
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
-            <thead>
-              <tr>
-                <th className={cn(TH, 'w-12 text-left')}>#</th>
-                <th className={cn(TH, 'text-left')}>F.I.SH.</th>
-                <th className={cn(TH, 'text-left')}>TELEFON</th>
-                <th className={cn(TH, 'text-left')}>TASHKILOT</th>
-                <th className={cn(TH, 'text-left')}>FILIAL</th>
-                <th className={cn(TH, 'text-left')}>ROL</th>
-                <th className={cn(TH, 'text-left')}>HOLAT</th>
-              </tr>
-            </thead>
-            <tbody>
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+        <table className="w-full border-separate border-spacing-0 text-sm">
+          <thead>
+            <tr>
+              <th className={cn(TH, 'w-12 text-left')}>#</th>
+              <th className={cn(TH, 'text-left')}>F.I.SH.</th>
+              <th className={cn(TH, 'text-left')}>TELEFON</th>
+              <th className={cn(TH, 'text-left')}>TASHKILOT</th>
+              <th className={cn(TH, 'text-left')}>FILIAL</th>
+              <th className={cn(TH, 'text-left')}>ROL</th>
+              <th className={cn(TH, 'text-left')}>HOLAT</th>
+            </tr>
+          </thead>
+          <tbody>
               {shown.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center">
@@ -194,7 +187,7 @@ export default function FoydalanuvchilarListPage() {
                             className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                             aria-label="Nusxa olish"
                           >
-                            <Copy className="h-3.5 w-3.5" />
+                            <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                           </button>
                         </span>
                       ) : (
@@ -219,9 +212,8 @@ export default function FoydalanuvchilarListPage() {
                   </tr>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       <UserModal
