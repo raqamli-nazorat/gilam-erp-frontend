@@ -45,6 +45,7 @@ const NAV_ITEMS = [
       { to: '/malumotnomalar/kontragent-turlari', label: 'Kontragent turlari' },
     ],
   },
+  { divider: true },
   { to: '/tovarlar-kirimi', label: 'Tovarlar kirimi', icon: ShoppingCartCheckIn01Icon },
   { to: '/bron-tovarlar', label: 'Bron tovarlar', icon: Tag01Icon },
   { to: '/tovarlar-savdosi', label: 'Tovarlar savdosi', icon: ShoppingCartCheckOut01Icon },
@@ -146,7 +147,12 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, children }) => {
+        {NAV_ITEMS.map((item, idx) => {
+          if (item.divider) {
+            return <div key={`divider-${idx}`} className="my-2 border-t border-white/10" />
+          }
+
+          const { to, label, icon: Icon, children } = item
           const active = isActive(to, Boolean(children))
           const expanded = Boolean(children) && isExpanded(to)
 
