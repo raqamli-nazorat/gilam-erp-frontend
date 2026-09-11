@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { SAVDO_KESIMI } from '@/features/dashboard/dashboardData'
 
@@ -15,6 +16,13 @@ function formatMlrd(sumUzs) {
 
 // Figma: yarim-doira gauge (chapdan tepaga, tepadan o'ngga) — to'liq donut emas.
 export default function SavdoKesimiDonut({ jamiUzs }) {
+  const [grown, setGrown] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const segments = SAVDO_KESIMI.reduce((acc, s) => {
     const len = s.pct * 0.5 // 0-100 pathLength'ning yarmi — yarim doira uchun
     const offset = acc.length ? acc[acc.length - 1].offset + acc[acc.length - 1].len : 0
@@ -40,10 +48,11 @@ export default function SavdoKesimiDonut({ jamiUzs }) {
             pathLength={100}
             strokeWidth="26"
             fill="none"
-            strokeDasharray={`${s.len} ${100 - s.len}`}
+            strokeDasharray={`${grown ? s.len : 0} ${100 - (grown ? s.len : 0)}`}
             strokeDashoffset={-s.offset}
             transform="rotate(180 100 100)"
             className={STEPS[i % STEPS.length].stroke}
+            style={{ transition: 'stroke-dasharray 800ms ease-out', transitionDelay: `${i * 120}ms` }}
           />
         ))}
         <text x="100" y="98" textAnchor="middle" className="fill-[#0A0A0A] text-[22px] font-bold dark:fill-white">

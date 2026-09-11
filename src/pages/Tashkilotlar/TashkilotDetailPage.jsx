@@ -20,10 +20,10 @@ const headBg = 'bg-[#9AC2FF] dark:bg-[#0052D2]/40'
 const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
 const STAT_META = [
-  { key: 'filiallar', title: 'FILIALLAR', bg: '#D7D5FD', suffix: ' ta', digits: 0 },
-  { key: 'foydalanuvchilar', title: 'FOYDALANUVCHILAR', bg: '#CDE7FE', suffix: ' ta', digits: 0 },
-  { key: 'mijozlar', title: 'MIJOZLAR', bg: '#F8C3B3', suffix: ' ta', digits: 0 },
-  { key: 'savdo', title: 'SAVDO', bg: '#B3F8C5', suffix: ' UZS', digits: 2 },
+  { key: 'filiallar', title: 'FILIALLAR', bg: '#D7D5FD', suffix: ' ta', digits: 0, to: '/filiallar' },
+  { key: 'foydalanuvchilar', title: 'FOYDALANUVCHILAR', bg: '#CDE7FE', suffix: ' ta', digits: 0, to: '/foydalanuvchilar' },
+  { key: 'mijozlar', title: 'MIJOZLAR', bg: '#F8C3B3', suffix: ' ta', digits: 0, to: '/hisobotlar/mijozlar-boyicha' },
+  { key: 'savdo', title: 'SAVDO', bg: '#B3F8C5', suffix: ' UZS', digits: 2, to: '/hisobotlar/savdo-boyicha' },
 ]
 
 export default function TashkilotDetailPage() {
@@ -60,9 +60,29 @@ export default function TashkilotDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col gap-3">
+        {/* Statistika kartalari */}
+        <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {STAT_META.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => navigate(c.to)}
+              style={{ backgroundColor: c.bg }}
+              className="cursor-pointer p-5 text-left text-[#0A0A0A] transition-[filter] duration-150 hover:brightness-95"
+            >
+              <div className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.4px]">
+                {c.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
+              </div>
+              <p className="mt-3 text-[20px] font-semibold leading-tight">
+                {formatNumber(org.stats[c.key], c.digits)}{c.suffix}
+              </p>
+            </button>
+          ))}
+        </div>
+
         {suspended && org.suspend && (
-          <div className="rounded-lg bg-[#FEECEC] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#DC2626] dark:bg-[#DC2626]/15">
+          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
             Tashkilot to‘xtatilgan, {org.suspend.at}. Sabab: {org.suspend.reason}. To‘xtatdi: {org.suspend.by}.
           </div>
         )}
@@ -72,20 +92,6 @@ export default function TashkilotDetailPage() {
             {org.activation.by}.
           </div>
         )}
-
-        {/* Statistika kartalari */}
-        <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {STAT_META.map((c) => (
-            <div key={c.key} className=" p-5 text-[#0A0A0A]" style={{ backgroundColor: c.bg }}>
-              <div className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.4px]">
-                {c.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
-              </div>
-              <p className="mt-3 text-[20px] font-semibold leading-tight">
-                {formatNumber(org.stats[c.key], c.digits)}{c.suffix}
-              </p>
-            </div>
-          ))}
-        </div>
 
         <div className="flex min-h-0 flex-1 flex-row gap-2">
           {/* Filiallar jadvali */}

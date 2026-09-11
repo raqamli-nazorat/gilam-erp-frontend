@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { formatNumber } from '@/lib/format'
 import { TOP_TASHKILOTLAR } from '@/features/dashboard/dashboardData'
 
@@ -5,6 +6,13 @@ import { TOP_TASHKILOTLAR } from '@/features/dashboard/dashboardData'
 const STEPS = ['#9BE3A8', '#C7C1F4', '#F2AC9B', '#F2AC9B', '#F2AC9B', '#F2AC9B']
 
 export default function TopTashkilotlarCard({ totalCount }) {
+  const [grown, setGrown] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const max = Math.max(...TOP_TASHKILOTLAR.map((t) => t.summa))
 
   return (
@@ -28,8 +36,12 @@ export default function TopTashkilotlarCard({ totalCount }) {
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#F0F0F0] dark:bg-white/10">
               <div
-                className="h-full rounded-full"
-                style={{ width: `${(t.summa / max) * 100}%`, backgroundColor: STEPS[i % STEPS.length] }}
+                className="h-full rounded-full transition-[width] duration-700 ease-out"
+                style={{
+                  width: grown ? `${(t.summa / max) * 100}%` : '0%',
+                  backgroundColor: STEPS[i % STEPS.length],
+                  transitionDelay: `${i * 80}ms`,
+                }}
               />
             </div>
           </div>

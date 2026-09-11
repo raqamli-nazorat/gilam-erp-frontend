@@ -36,8 +36,8 @@ export default function DashboardStatCard({
       onClick={() => to && navigate(to)}
       style={{ backgroundColor: t.bg }}
       className={cn(
-        'flex h-[124px] flex-col justify-between rounded-xl p-4 text-left transition-transform',
-        to && 'hover:-translate-y-0.5'
+        'flex h-[124px] flex-col justify-between rounded-xl p-4 text-left transition-[filter,transform] duration-150',
+        to && 'cursor-pointer hover:-translate-y-0.5 hover:brightness-95'
       )}
     >
       <div className="flex items-start justify-between gap-2">

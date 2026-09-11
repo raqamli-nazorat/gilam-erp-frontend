@@ -43,9 +43,18 @@ export default function FoydalanuvchilarDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col gap-3">
+        <StatCards
+          items={[
+            { title: 'SAVDOLARI', value: `${formatNumber(d.stats.savdolar, 0)} ta` },
+            { title: 'SAVDO SUMMASI', value: `${formatNumber(d.stats.savdoSummasi, 2)} UZS` },
+            { title: 'QAYTARISHLAR', value: `${formatNumber(d.stats.qaytarishlar, 0)} ta` },
+            { title: 'OXIRGI KIRISH', value: d.stats.oxirgiKirish },
+          ]}
+        />
+
         {blocked && user.block && (
-          <div className="rounded-lg bg-[#FEECEC] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#DC2626] dark:bg-[#DC2626]/15">
+          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
             Foydalanuvchi bloklangan, {user.block.at}. Sabab: {user.block.reason}. Blokladi: {user.block.by}.
           </div>
         )}
@@ -55,15 +64,6 @@ export default function FoydalanuvchilarDetailPage() {
             jurnalida saqlangan.
           </div>
         )}
-
-        <StatCards
-          items={[
-            { title: 'SAVDOLARI', value: `${formatNumber(d.stats.savdolar, 0)} ta` },
-            { title: 'SAVDO SUMMASI', value: `${formatNumber(d.stats.savdoSummasi, 2)} UZS` },
-            { title: 'QAYTARISHLAR', value: `${formatNumber(d.stats.qaytarishlar, 0)} ta` },
-            { title: 'OXIRGI KIRISH', value: d.stats.oxirgiKirish },
-          ]}
-        />
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
           {/* Audit jadvali */}
