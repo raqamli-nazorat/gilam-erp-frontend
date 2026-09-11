@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Filter, Plus } from 'lucide-react'
+import { Filter, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber, formatDateTime, matchesDateRange } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -12,6 +12,7 @@ import {
   withRecordMeta,
 } from '@/features/malumotnomalar/malumotnomalarData'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import CopyButton from '@/components/ui/copy-button'
 import RecordModal from './components/RecordModal'
 import DeleteRecordModal from './components/DeleteRecordModal'
@@ -36,21 +37,27 @@ function ListDetail({ slug, name, config }) {
   const [rows, setRows] = useState(() => withRecordMeta(config.rows))
   const [modalRec, setModalRec] = useState(null) // record | 'new' | null
   const [delRec, setDelRec] = useState(null)
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_MALUMOTNOMA_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
 
   const hasFilter = Object.values(filters).some(Boolean)
+  const searchKeys = config.searchKeys ?? ['name']
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: name }])
 
   const shown = useMemo(() => {
     let out = rows
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      out = out.filter((r) => searchKeys.some((k) => String(r[k] ?? '').toLowerCase().includes(q)))
+    }
     if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.active : !r.active))
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     if (filters.tashkilot) out = out.filter((r) => !r.tashkilot || r.tashkilot === filters.tashkilot)
     return out
-  }, [rows, filters])
+  }, [rows, search, searchKeys, filters])
 
   function saveRecord(values) {
     if (modalRec === 'new') {
@@ -66,17 +73,29 @@ function ListDetail({ slug, name, config }) {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex shrink-0 items-center justify-end gap-2.5">
-        <Button
-          variant="outline"
-          onClick={() => setFilterOpen(true)}
-          className={cn(
-            'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
-            hasFilter && 'border-[#0052D2] text-[#0052D2]'
-          )}
-        >
-          <Filter className="h-4 w-4" /> Filtr
-        </Button>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-[260px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={config.searchPlaceholder || 'Qidirish'}
+              className="h-9 w-[260px] rounded-lg border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setFilterOpen(true)}
+            className={cn(
+              'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+              hasFilter && 'border-[#0052D2] text-[#0052D2]'
+            )}
+          >
+            <Filter className="h-4 w-4" /> Filtr
+          </Button>
+        </div>
+
         <Button
           onClick={() => setModalRec('new')}
           className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
