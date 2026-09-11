@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { maskDateTime } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -77,6 +76,19 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
                     ))}
                   </SelectContent>
                 </Select>
+              ) : f.swatchKey ? (
+                <div className="relative">
+                  <Input
+                    value={draft[f.key] ?? ''}
+                    onChange={(e) => set(f.key, e.target.value)}
+                    placeholder={f.placeholder || 'Kiriting'}
+                    className={cn(fieldCls, 'pr-9')}
+                  />
+                  <span
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-black/5"
+                    style={{ backgroundColor: draft[f.swatchKey] || '#E5E5E5' }}
+                  />
+                </div>
               ) : (
                 <Input
                   value={draft[f.key] ?? ''}
@@ -94,9 +106,7 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
                 <Label className={labelCls}>Yaratilgan</Label>
                 <Input
                   value={draft.yaratilgan ?? ''}
-                  onChange={(e) => set('yaratilgan', maskDateTime(e.target.value))}
-                  placeholder="01.01.2026 09:00"
-                  inputMode="numeric"
+                  disabled
                   className={fieldCls}
                 />
               </div>
@@ -104,9 +114,7 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
                 <Label className={labelCls}>Yangilangan</Label>
                 <Input
                   value={draft.ozgartirilgan ?? ''}
-                  onChange={(e) => set('ozgartirilgan', maskDateTime(e.target.value))}
-                  placeholder="01.01.2026 09:00"
-                  inputMode="numeric"
+                  disabled
                   className={fieldCls}
                 />
               </div>
@@ -121,7 +129,7 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
               onClick={() => onDelete?.()}
               className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
             >
-              <X className="h-4 w-4" /> O‘chirish
+              <Trash2 className="h-4 w-4" /> O‘chirish
             </Button>
           ) : (
             <span />

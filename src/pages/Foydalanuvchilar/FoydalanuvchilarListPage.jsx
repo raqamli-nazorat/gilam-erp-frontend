@@ -74,37 +74,39 @@ export default function FoydalanuvchilarListPage() {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-6">
+        <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
           {[
             ['all', 'Barchasi', counts.all],
             ['active', 'Faol', counts.active],
             ['blocked', 'Bloklangan', counts.blocked],
-          ].map(([key, label, n]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className={cn(
-                'relative flex items-center gap-1.5 pb-2.5 pt-1 text-sm transition-colors',
-                tab === key
-                  ? 'font-medium text-[#0A0A0A] dark:text-white'
-                  : 'font-normal text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground'
-              )}
-            >
-              {label}
-              <span
+          ].map(([key, label, n]) => {
+            const active = tab === key
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
                 className={cn(
-                  'inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
-                  tab === key
-                    ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                    : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+                  'flex h-7 items-center gap-1.5 rounded-[7px] px-2 text-[13px] font-medium transition-colors',
+                  active
+                    ? 'bg-white text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white'
+                    : 'text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground dark:hover:text-white'
                 )}
               >
-                {n}
-              </span>
-              {tab === key && <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />}
-            </button>
-          ))}
+                {label}
+                <span
+                  className={cn(
+                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
+                    active
+                      ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
+                      : 'text-[#A3A3A3] dark:text-muted-foreground'
+                  )}
+                >
+                  {n}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
@@ -173,7 +175,7 @@ export default function FoydalanuvchilarListPage() {
                   <tr
                     key={u.id}
                     onClick={() => navigate(`/foydalanuvchilar/${u.id}`)}
-                    className="h-[72px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+                    className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                   >
                     <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                     <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{u.name}</td>

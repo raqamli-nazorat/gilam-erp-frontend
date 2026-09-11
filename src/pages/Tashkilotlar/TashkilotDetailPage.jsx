@@ -69,7 +69,7 @@ export default function TashkilotDetailPage() {
               type="button"
               onClick={() => navigate(c.to)}
               style={{ backgroundColor: c.bg }}
-              className="cursor-pointer p-5 text-left text-[#0A0A0A] transition-[filter] duration-150 hover:brightness-95"
+              className="cursor-pointer rounded-lg p-5 text-left text-[#0A0A0A] transition-[filter] duration-150 hover:brightness-95"
             >
               <div className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.4px]">
                 {c.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
@@ -95,7 +95,7 @@ export default function TashkilotDetailPage() {
 
         <div className="flex min-h-0 flex-1 flex-row gap-2">
           {/* Filiallar jadvali */}
-          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden', surface)}>
+          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg', surface)}>
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
@@ -245,7 +245,7 @@ export default function TashkilotDetailPage() {
 
 function Panel({ title, children }) {
   return (
-    <div className={surface}>
+    <div className={cn('overflow-hidden rounded-lg', surface)}>
       <div className={cn('sticky top-0 z-10 px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
         {title}
       </div>

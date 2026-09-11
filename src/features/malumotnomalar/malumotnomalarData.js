@@ -291,7 +291,7 @@ export const MALUMOTNOMA_CONFIG = {
       { key: 'tavsif', label: 'TAVSIF', align: 'left' },
     ],
     modalFields: [
-      { key: 'name', label: 'Rang nomi', kind: 'text', required: true, placeholder: 'Masalan: Pushti' },
+      { key: 'name', label: 'Rang nomi', kind: 'text', required: true, placeholder: 'Masalan: Pushti', swatchKey: 'hex' },
       { key: 'hex', label: 'HEX kodi', kind: 'text', placeholder: '#E8A0B0', copyable: true },
       { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
     ],

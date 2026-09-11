@@ -91,7 +91,7 @@ export default function RollarPage() {
                 <tr
                   key={r.id}
                   onClick={() => setEditRole(r)}
-                  className="h-[60px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+                  className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                 >
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>

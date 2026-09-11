@@ -69,7 +69,7 @@ export default function CloseBranchModal({ open, onOpenChange, branch, onConfirm
               onConfirm(reason.trim())
               onOpenChange(false)
             }}
-            className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
+            className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C] disabled:bg-[#F5F5F5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
           >
             <X className="h-4 w-4" /> Yopish
           </Button>
