@@ -37,7 +37,7 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
       ozgartirilgan: record?.ozgartirilgan ?? '',
     }
     fields.forEach((f) => {
-      base[f.key] = record?.[f.key] ?? ''
+      base[f.key] = record?.[f.key] ?? f.defaultValue ?? ''
     })
     setDraft(base)
     // eslint-disable-next-line react-hooks/exhaustive-deps

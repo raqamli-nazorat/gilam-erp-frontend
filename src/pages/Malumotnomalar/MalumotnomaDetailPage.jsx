@@ -131,7 +131,7 @@ function ListDetail({ slug, name, config }) {
                 <tr
                   key={r.id}
                   onClick={() => setModalRec(r)}
-                  className="h-[60px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+                  className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                 >
                   <td className={TD_MUTED}>{i + 1}</td>
                   {config.columns.map((c, ci) => (
