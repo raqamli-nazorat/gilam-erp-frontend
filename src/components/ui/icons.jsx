@@ -138,6 +138,34 @@ export function Book01Icon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Book01Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
+// Figma'dan berilgan aniq "Ma'lumotnomalar" ikonkasi (public/malumotnomalar.svg bilan bir xil)
+export function MalumotnomalarIcon({ className, size = 18, ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" className={className} {...props}>
+      <path
+        d="M12.1971 7.875H5.80298C3.86682 7.875 2.89874 7.875 2.45361 8.51445C2.00848 9.15391 2.33932 10.0693 3.00099 11.9002L3.81412 14.1502C4.15913 15.1049 4.33163 15.5822 4.71671 15.8536C5.1018 16.125 5.60657 16.125 6.61611 16.125H11.384C12.3935 16.125 12.8983 16.125 13.2834 15.8536C13.6684 15.5822 13.8409 15.1049 14.186 14.1502L14.9991 11.9002C15.6608 10.0693 15.9916 9.15391 15.5465 8.51445C15.1013 7.875 14.1333 7.875 12.1971 7.875Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="square"
+      />
+      <path
+        d="M14.25 6C14.25 5.65054 14.25 5.47582 14.1929 5.33799C14.1168 5.15422 13.9708 5.00821 13.787 4.93209C13.6492 4.875 13.4745 4.875 13.125 4.875H4.875C4.52554 4.875 4.35082 4.875 4.21299 4.93209C4.02922 5.00821 3.88321 5.15422 3.80709 5.33799C3.75 5.47582 3.75 5.65054 3.75 6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12.375 3C12.375 2.65054 12.375 2.47582 12.3179 2.33799C12.2418 2.15422 12.0958 2.00821 11.912 1.93209C11.7742 1.875 11.5995 1.875 11.25 1.875H6.75C6.40054 1.875 6.22582 1.875 6.08799 1.93209C5.90422 2.00821 5.75821 2.15422 5.68209 2.33799C5.625 2.47582 5.625 2.65054 5.625 3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function Building03Icon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Building03Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
