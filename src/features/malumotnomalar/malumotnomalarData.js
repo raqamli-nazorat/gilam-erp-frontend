@@ -459,6 +459,41 @@ export const MALUMOTNOMA_CONFIG = {
   },
 }
 
+// "Viloyat va tuman" sahifasi uchun mock ma'lumotlar (Figma: har bir viloyat + tumanlar soni)
+export const VILOYAT_NOMLARI = [
+  'Andijon',
+  'Buxoro',
+  "Farg'ona",
+  'Jizzax',
+  'Xorazm',
+  'Namangan',
+  'Navoiy',
+  'Qashqadaryo',
+  "Qoraqalpog'iston",
+  'Samarqand',
+  'Sirdaryo',
+  'Surxondaryo',
+  'Toshkent viloyati',
+  'Toshkent shahri',
+]
+
+export const VILOYAT_TUMAN_ROWS = [
+  { id: 'vt1', name: 'Andijon', davlat: "O'zbekiston", tumanlar: 14, active: true },
+  { id: 'vt2', name: 'Buxoro', davlat: "O'zbekiston", tumanlar: 11, active: true },
+  { id: 'vt3', name: "Farg'ona", davlat: "O'zbekiston", tumanlar: 15, active: true },
+  { id: 'vt4', name: 'Jizzax', davlat: "O'zbekiston", tumanlar: 12, active: true },
+  { id: 'vt5', name: 'Xorazm', davlat: "O'zbekiston", tumanlar: 10, active: true },
+  { id: 'vt6', name: 'Namangan', davlat: "O'zbekiston", tumanlar: 11, active: true },
+  { id: 'vt7', name: 'Navoiy', davlat: "O'zbekiston", tumanlar: 8, active: true },
+  { id: 'vt8', name: 'Qashqadaryo', davlat: "O'zbekiston", tumanlar: 14, active: true },
+  { id: 'vt9', name: "Qoraqalpog'iston", davlat: "O'zbekiston", tumanlar: 16, active: true },
+  { id: 'vt10', name: 'Samarqand', davlat: "O'zbekiston", tumanlar: 14, active: true },
+  { id: 'vt11', name: 'Sirdaryo', davlat: "O'zbekiston", tumanlar: 8, active: true },
+  { id: 'vt12', name: 'Surxondaryo', davlat: "O'zbekiston", tumanlar: 14, active: true },
+  { id: 'vt13', name: 'Toshkent viloyati', davlat: "O'zbekiston", tumanlar: 15, active: true },
+  { id: 'vt14', name: 'Toshkent shahri', davlat: "O'zbekiston", tumanlar: 12, active: true },
+]
+
 // Batafsil config bo'lmaganlar uchun umumiy ro'yxat
 export function genericListConfig(name) {
   return {

@@ -1,48 +1,50 @@
 import { useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { Filter, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { roleAdded, roleUpdated } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { VILOYAT_NOMLARI, VILOYAT_TUMAN_ROWS } from '@/features/malumotnomalar/malumotnomalarData'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import RoleModal from './components/RoleModal'
-import RoleFilterModal, { EMPTY_ROLE_FILTERS } from './components/RoleFilterModal'
+import RecordModal from './components/RecordModal'
+import ViloyatTumanFilterModal, { EMPTY_VILOYAT_TUMAN_FILTERS } from './components/ViloyatTumanFilterModal'
 
 const TH =
   'sticky top-0 z-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#525252] dark:bg-white/5 dark:text-muted-foreground'
 const TD_MUTED = 'px-4 text-[13px] text-[#737373] dark:text-muted-foreground'
 
-export default function RollarPage() {
-  const dispatch = useDispatch()
-  const roles = useSelector((s) => s.foydalanuvchilar.roles)
-  const users = useSelector((s) => s.foydalanuvchilar.list)
+const TUMAN_FIELDS = [
+  { key: 'name', label: 'Tuman nomi', kind: 'text', required: true, placeholder: 'Masalan: Payariq', full: true },
+  { key: 'davlat', label: 'Davlat', kind: 'select', required: true, options: ["O'zbekiston"], defaultValue: "O'zbekiston" },
+  { key: 'viloyat', label: 'Viloyat', kind: 'select', required: true, options: VILOYAT_NOMLARI },
+  { key: 'kodi', label: 'Kodi', kind: 'text', placeholder: 'UZ-SA-15', full: true },
+]
 
+export default function ViloyatTumanPage() {
+  const [rows, setRows] = useState(VILOYAT_TUMAN_ROWS)
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState(EMPTY_ROLE_FILTERS)
+  const [filters, setFilters] = useState(EMPTY_VILOYAT_TUMAN_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [editRole, setEditRole] = useState(null)
 
-  usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Rollar' }])
-
-  const countOf = (name) => users.filter((u) => u.rol === name).length
   const hasFilter = Object.values(filters).some(Boolean)
 
-  const shownRoles = useMemo(() => {
-    let out = roles
+  usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Viloyat va tuman' }])
+
+  const shown = useMemo(() => {
+    let out = rows
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       out = out.filter((r) => r.name.toLowerCase().includes(q))
     }
-    if (filters.tashkilot) out = out.filter((r) => r.tashkilot === filters.tashkilot)
-    if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.holat === 'active' : r.holat !== 'active'))
-    const dan = Number(filters.foydalanuvchiDan) || 0
-    const gacha = Number(filters.foydalanuvchiGacha) || 0
-    if (dan) out = out.filter((r) => countOf(r.name) >= dan)
-    if (gacha) out = out.filter((r) => countOf(r.name) <= gacha)
+    if (filters.davlat) out = out.filter((r) => r.davlat === filters.davlat)
+    if (filters.viloyat) out = out.filter((r) => r.name === filters.viloyat)
+    if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.active : !r.active))
     return out
-  }, [roles, search, filters]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows, search, filters])
+
+  function addTuman(values) {
+    setRows((rs) => rs.map((r) => (r.name === values.viloyat ? { ...r, tumanlar: r.tumanlar + 1 } : r)))
+  }
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -82,42 +84,36 @@ export default function RollarPage() {
           <thead>
             <tr>
               <th className={cn(TH, 'h-10 w-12 text-left')}>#</th>
-              <th className={cn(TH, 'h-10 text-left')}>NOMI</th>
-              <th className={cn(TH, 'h-10 text-right')}>FOYDALANUVCHILAR</th>
-              <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
+              <th className={cn(TH, 'h-10 text-left')}>VILOYAT</th>
+              <th className={cn(TH, 'h-10 text-left')}>DAVLAT</th>
+              <th className={cn(TH, 'h-10 text-left')}>TUMANLAR</th>
               <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
-            {shownRoles.length === 0 ? (
+            {shown.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
-                  Rol topilmadi
+                <td colSpan={5} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                  Yozuv yo‘q
                 </td>
               </tr>
             ) : (
-              shownRoles.map((r, i) => (
-                <tr
-                  key={r.id}
-                  onClick={() => setEditRole(r)}
-                  className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
-                >
+              shown.map((r, i) => (
+                <tr key={r.id} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
-                  <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{countOf(r.name)}</td>
-                  <td className={TD_MUTED}>{r.yaratilgan}</td>
-                  <td className={TD_MUTED}>{r.ozgartirilgan}</td>
+                  <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-muted-foreground">{r.davlat}</td>
+                  <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-muted-foreground">{r.tumanlar} ta</td>
                   <td className="px-4">
                     <span
                       className={cn(
                         'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.holat === 'active'
+                        r.active
                           ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
                           : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
                       )}
                     >
-                      {r.holat === 'active' ? 'Faol' : 'Nofaol'}
+                      {r.active ? 'Faol' : 'Arxiv'}
                     </span>
                   </td>
                 </tr>
@@ -127,14 +123,8 @@ export default function RollarPage() {
         </table>
       </div>
 
-      <RoleModal open={addOpen} onOpenChange={setAddOpen} onSave={(values) => dispatch(roleAdded(values))} />
-      <RoleModal
-        open={!!editRole}
-        onOpenChange={(o) => !o && setEditRole(null)}
-        role={editRole}
-        onSave={(values) => editRole && dispatch(roleUpdated({ id: editRole.id, patch: values }))}
-      />
-      <RoleFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <RecordModal open={addOpen} onOpenChange={setAddOpen} entity="tuman" fields={TUMAN_FIELDS} record={null} onSave={addTuman} />
+      <ViloyatTumanFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
     </div>
   )
 }
