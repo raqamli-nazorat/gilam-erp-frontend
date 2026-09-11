@@ -80,6 +80,8 @@
   --fg-success: #047A47;
   --bg-warning-subtle: #FFF8E6;
   --fg-warning: #B45309;
+  --bg-danger-subtle: #FEECEC;
+  --fg-danger: #B42318;
 
   --scrollbar-track: transparent;
   --scrollbar-thumb: #D1D5DB;

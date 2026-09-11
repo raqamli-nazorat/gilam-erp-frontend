@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { SAVDO_DINAMIKASI } from '@/features/dashboard/dashboardData'
@@ -28,6 +28,12 @@ const areaPoints = `${xAt(0)},${yAt(0)} ${linePoints} ${xAt(N - 1)},${yAt(0)}`
 export default function SavdoDinamikasiChart() {
   const [hover, setHover] = useState(N - 1)
   const svgRef = useRef(null)
+  const [grown, setGrown] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   function handleMove(e) {
     const svg = svgRef.current
@@ -70,6 +76,15 @@ export default function SavdoDinamikasiChart() {
               <stop offset="0%" stopColor="#4C9AF5" stopOpacity="0.18" />
               <stop offset="100%" stopColor="#4C9AF5" stopOpacity="0" />
             </linearGradient>
+            <clipPath id="savdoReveal">
+              <rect
+                x="0"
+                y="0"
+                height={H}
+                width={grown ? W : 0}
+                style={{ transition: 'width 1400ms ease-out' }}
+              />
+            </clipPath>
           </defs>
 
           {Y_TICKS.map((t) => (
@@ -94,15 +109,25 @@ export default function SavdoDinamikasiChart() {
             </text>
           ))}
 
-          <polygon points={areaPoints} fill="url(#savdoArea)" />
-          <polyline
-            points={linePoints}
-            fill="none"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="stroke-[#4C9AF5]"
-          />
+          <g clipPath="url(#savdoReveal)">
+            <polygon points={areaPoints} fill="url(#savdoArea)" />
+            <polyline
+              points={linePoints}
+              fill="none"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="stroke-[#4C9AF5]"
+            />
+            {/* Ochiq (hollow) belgi — faol nuqtada */}
+            <circle
+              cx={xAt(hover)}
+              cy={yAt(qiymatlarMln[hover])}
+              r={6}
+              strokeWidth="2.5"
+              className="fill-white stroke-[#4C9AF5] dark:fill-card"
+            />
+          </g>
 
           {/* Krosxeyr */}
           <line
@@ -124,14 +149,6 @@ export default function SavdoDinamikasiChart() {
               onMouseEnter={() => setHover(i)}
             />
           ))}
-          {/* Ochiq (hollow) belgi — faol nuqtada */}
-          <circle
-            cx={xAt(hover)}
-            cy={yAt(qiymatlarMln[hover])}
-            r={6}
-            strokeWidth="2.5"
-            className="fill-white stroke-[#4C9AF5] dark:fill-card"
-          />
         </svg>
 
         <div
