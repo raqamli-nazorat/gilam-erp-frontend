@@ -5,13 +5,7 @@ import { TASHKILOT_NOMLARI } from '@/features/foydalanuvchilar/foydalanuvchilarD
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -21,12 +15,12 @@ import {
 } from '@/components/ui/select'
 
 const fieldCls =
-  'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
-const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
+  'h-9 w-full rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+const labelCls = 'mb-1.5 block text-[12px] font-medium leading-4 text-[#525252] dark:text-muted-foreground'
 
 const TASHKILOT_OPTIONS = ['Barcha tashkilotlar', ...TASHKILOT_NOMLARI]
 
-const EMPTY = { name: '', tashkilot: 'Barcha tashkilotlar', holat: 'Faol', description: '' }
+const EMPTY = { name: '', tashkilot: 'Barcha tashkilotlar', holat: 'Faol' }
 
 export default function RoleModal({ open, onOpenChange, role, onSave }) {
   const isEdit = !!role
@@ -40,7 +34,6 @@ export default function RoleModal({ open, onOpenChange, role, onSave }) {
             name: role.name ?? '',
             tashkilot: role.tashkilot ?? 'Barcha tashkilotlar',
             holat: role.holat === 'active' ? 'Faol' : 'Nofaol',
-            description: role.description ?? '',
           }
         : EMPTY
     )
@@ -54,21 +47,34 @@ export default function RoleModal({ open, onOpenChange, role, onSave }) {
       name: draft.name.trim(),
       tashkilot: draft.tashkilot,
       holat: draft.holat === 'Faol' ? 'active' : 'inactive',
-      description: draft.description.trim(),
     })
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 rounded-[20px] p-0 sm:max-w-[600px]">
-        <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
-          <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            {isEdit ? 'Rol' : 'Yangi rol'}
+      <DialogContent
+        showCloseButton={false}
+        className="w-full gap-0 overflow-hidden rounded-[12px] p-0 shadow-[0px_12px_24px_-6px_#01091C24] ring-0 sm:max-w-[560px] dark:bg-card"
+      >
+        <div className="flex h-[60px] shrink-0 items-center justify-between gap-2 pl-6 pr-4">
+          <DialogTitle className="text-[18px] font-semibold leading-6 text-[#0A0A0A] dark:text-white">
+            {isEdit ? 'Tahrirlash' : 'Yangi rol'}
           </DialogTitle>
-        </DialogHeader>
+          <DialogClose
+            render={
+              <button
+                type="button"
+                aria-label="Yopish"
+                className="flex size-8 items-center justify-center rounded-md text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] dark:text-white/70 dark:hover:bg-white/10"
+              >
+                <X className="size-5" />
+              </button>
+            }
+          />
+        </div>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-5 px-6 pb-4 pt-2">
+        <div className="grid grid-cols-2 gap-4 px-6 pb-6 pt-2">
           <div className="col-span-2">
             <Label className={labelCls}>Rol nomi</Label>
             <Input
@@ -86,7 +92,11 @@ export default function RoleModal({ open, onOpenChange, role, onSave }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TASHKILOT_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {TASHKILOT_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -102,38 +112,28 @@ export default function RoleModal({ open, onOpenChange, role, onSave }) {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="col-span-2">
-            <Label className={labelCls}>Tavsif</Label>
-            <Input
-              value={draft.description}
-              onChange={(e) => set('description', e.target.value)}
-              placeholder="Rol nima uchun kerakligi"
-              className={fieldCls}
-            />
-          </div>
         </div>
 
-        <DialogFooter className="mx-0 mb-0 mt-2 gap-2.5 rounded-b-[20px] border-t-0 bg-[#F5F5F5] px-6 py-4 dark:bg-white/5 sm:flex-row sm:justify-end">
+        <div className="flex h-[72px] shrink-0 items-center justify-end gap-2 bg-[#F5F5F5] px-6 dark:bg-white/5">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="h-11 gap-2 rounded-lg border border-[#E5E5E5] bg-white px-5 text-[15px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+            className="h-9 gap-2 rounded-[8px] border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
-            <X className="h-4 w-4" /> Bekor qilish
+            <X className="size-4" /> Bekor qilish
           </Button>
           <Button
             type="button"
             disabled={!canSave}
             onClick={handleSave}
             className={cn(
-              'h-11 gap-2 rounded-lg bg-[#0052D2] px-5 text-[15px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10'
+              'h-9 gap-2 rounded-[8px] bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10'
             )}
           >
-            <Check className="h-4 w-4" /> Saqlash
+            <Check className="size-4" /> Saqlash
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

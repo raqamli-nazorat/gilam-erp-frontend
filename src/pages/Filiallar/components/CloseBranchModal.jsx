@@ -43,7 +43,7 @@ export default function CloseBranchModal({ open, onOpenChange, branch, onConfirm
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-[13px] font-normal text-[#525252] dark:text-muted-foreground">Yopish sababi</Label>
+          <Label className="mb-1.5 block text-[12px] font-medium leading-[16px] text-[#0A0A0A] dark:text-white">Yopish sababi</Label>
           <Input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -53,7 +53,7 @@ export default function CloseBranchModal({ open, onOpenChange, branch, onConfirm
           <p className="mt-1.5 text-[12px] text-[#737373] dark:text-muted-foreground">Majburiy. Sabab audit jurnaliga yoziladi.</p>
         </div>
 
-        <DialogFooter className="mx-0 mb-0 mt-1 gap-2 border-0 bg-transparent p-0">
+        <DialogFooter className="-mx-5 -mb-5 mt-1 h-[72px] flex-row items-center justify-end gap-2 rounded-b-xl border-0 bg-[#F5F5F5] px-6 py-0 dark:bg-white/5">
           <Button
             type="button"
             variant="outline"
