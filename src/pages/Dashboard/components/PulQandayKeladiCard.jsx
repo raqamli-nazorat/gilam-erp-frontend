@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
 import { PUL_QANDAY_KELADI } from '@/features/dashboard/dashboardData'
@@ -11,6 +12,13 @@ const STEPS = [
 ]
 
 export default function PulQandayKeladiCard({ jamiUzs }) {
+  const [grown, setGrown] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGrown(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-white p-4 dark:bg-card lg:h-[306px]">
       <div className="flex items-baseline justify-between gap-3">
@@ -27,8 +35,8 @@ export default function PulQandayKeladiCard({ jamiUzs }) {
         {PUL_QANDAY_KELADI.map((p, i) => (
           <div
             key={p.name}
-            className={cn('rounded-full', STEPS[i % STEPS.length].bar)}
-            style={{ width: `${p.pct}%` }}
+            className={cn('rounded-full transition-[width] duration-700 ease-out', STEPS[i % STEPS.length].bar)}
+            style={{ width: grown ? `${p.pct}%` : '0%', transitionDelay: `${i * 80}ms` }}
           />
         ))}
       </div>

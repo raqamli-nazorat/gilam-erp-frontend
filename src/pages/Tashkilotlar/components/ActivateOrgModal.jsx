@@ -22,14 +22,6 @@ export default function ActivateOrgModal({ open, onOpenChange, org, onConfirm })
           </DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-          <p>Faollashtirilgandan so‘ng tashkilot foydalanuvchilari tizimga qayta kira oladi.</p>
-          <p className="mt-1.5">
-            Filiallar, savdolar va foydalanuvchilar huquqlari o‘zgarmaydi. Tashkilot «Faol» holatiga
-            qaytadi, faollashtirish audit jurnaliga yoziladi.
-          </p>
-        </div>
-
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[
             ['Tashkilot', org.name, false],

@@ -45,13 +45,7 @@ export default function FilialDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-4">
-        {closed && branch.close && (
-          <div className="rounded-lg bg-[#FEECEC] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#DC2626] dark:bg-[#DC2626]/15">
-            Filial yopilgan, {branch.close.at}. Sabab: {branch.close.reason}. Yopdi: {branch.close.by}.
-          </div>
-        )}
-
+      <div className="flex h-full flex-col gap-3">
         <StatCards
           items={[
             { title: 'XODIMLAR', value: `${formatNumber(branch.stats.xodimlar, 0)} ta`, to: `/filiallar/${id}/xodimlar` },
@@ -60,6 +54,12 @@ export default function FilialDetailPage() {
             { title: 'SAVDO', value: `${formatNumber(branch.stats.savdo, 2)} UZS`, to: `/filiallar/${id}/savdo` },
           ]}
         />
+
+        {closed && branch.close && (
+          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+            Filial yopilgan, {branch.close.at}. Sabab: {branch.close.reason}. Yopdi: {branch.close.by}.
+          </div>
+        )}
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           {/* Xodimlar jadvali */}

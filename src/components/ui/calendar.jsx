@@ -99,7 +99,7 @@ function Calendar({
       <DayPicker
         showOutsideDays={showOutsideDays}
         className={cn(
-          "group/calendar bg-background p-3 [--cell-radius:6px] [--cell-size:36px]",
+          "group/calendar bg-card p-3 [--cell-radius:8px] [--cell-size:36px]",
           String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
           String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
           className
@@ -140,7 +140,7 @@ function Calendar({
           week: cn("mt-1 flex w-full", defaultClassNames.week),
           week_number_header: cn("w-9 select-none", defaultClassNames.week_number_header),
           week_number: cn("text-[0.8rem] text-muted-foreground select-none", defaultClassNames.week_number),
-          day: cn("relative h-9 w-9 select-none p-0 text-center", defaultClassNames.day),
+          day: cn("relative h-8 w-9 select-none p-0 text-center", defaultClassNames.day),
           range_start: cn("rounded-l-md bg-accent", defaultClassNames.range_start),
           range_middle: cn("rounded-none bg-accent", defaultClassNames.range_middle),
           range_end: cn("rounded-r-md bg-accent", defaultClassNames.range_end),
@@ -252,11 +252,12 @@ function CalendarDayButton({ className, day, modifiers, locale, ...props }) {
       data-disabled={modifiers.disabled}
       title={daterange ? "Tanlash uchun bosing" : undefined}
       className={cn(
-        "inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-normal transition-colors",
+        "inline-flex h-8 w-9 items-center justify-center rounded-[8px] text-sm font-normal transition-colors",
         "cursor-pointer select-none outline-none",
         "hover:bg-accent hover:text-accent-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-        "data-[selected-single=true]:bg-foreground data-[selected-single=true]:text-background data-[selected-single=true]:rounded-md data-[selected-single=true]:hover:bg-foreground/90",
+        // Bitta sana tanlash — Figma: accent-default (#0052D2) fon, oq matn, 8px radius
+        "data-[selected-single=true]:bg-[#0052D2] data-[selected-single=true]:text-white data-[selected-single=true]:rounded-[8px] data-[selected-single=true]:hover:bg-[#0047B8]",
         // Oraliq (daterange) — Figma: to'q ko'k boshi/oxiri (#0052D2), och-ko'k band (#EAF1FE), 8px radius
         "data-[range-start=true]:bg-[#0052D2] data-[range-start=true]:text-white data-[range-start=true]:rounded-[8px] data-[range-start=true]:hover:bg-[#0047B8]",
         "data-[range-end=true]:bg-[#0052D2] data-[range-end=true]:text-white data-[range-end=true]:rounded-[8px] data-[range-end=true]:hover:bg-[#0047B8]",
