@@ -65,7 +65,7 @@ export default function FoydalanuvchilarDetailPage() {
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           {/* Audit jadvali */}
           <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>
             <div className="min-h-0 flex-1 overflow-auto">
@@ -84,7 +84,7 @@ export default function FoydalanuvchilarDetailPage() {
                     <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Amallar yo‘q</td></tr>
                   ) : (
                     d.audit.map((row, i) => (
-                      <tr key={`${row.at}-${i}`} className="h-[60px] hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr key={`${row.at}-${i}`} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{row.at}</td>
                         <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">{row.amal}</td>
@@ -101,7 +101,7 @@ export default function FoydalanuvchilarDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[360px]">
+          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
             <Panel title="FOYDALANUVCHI MA’LUMOTLARI">
               <InfoRow label="Tashkiloti" value={user.tashkilot} />
               <InfoRow label="Filiali" value={user.filial} />
@@ -130,12 +130,12 @@ export default function FoydalanuvchilarDetailPage() {
               {d.lastSales.map((r) => (
                 <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
                   <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
-                  <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.amount, 2)}</span>
+                  <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.amount, 2)} UZS</span>
                 </div>
               ))}
               <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
                 <span>JAMI, 7 kun</span>
-                <span>{formatNumber(salesTotal, 2)}</span>
+                <span>{formatNumber(salesTotal, 2)} UZS</span>
               </div>
             </Panel>
           </div>

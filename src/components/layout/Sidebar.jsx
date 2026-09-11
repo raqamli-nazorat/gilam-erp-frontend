@@ -8,13 +8,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Audit01Icon,
   BalanceScaleIcon,
-  Book01Icon,
   Briefcase01Icon,
   Building03Icon,
   CashierIcon,
   Chart01Icon,
   DashboardSquare01Icon,
   Invoice01Icon,
+  MalumotnomalarIcon,
   PackageReceive01Icon,
   Settings01Icon,
   ShoppingCartCheckIn01Icon,
@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   {
     to: '/malumotnomalar',
     label: "Ma'lumotnomalar",
-    icon: Book01Icon,
+    icon: MalumotnomalarIcon,
     children: [
       { to: '/malumotnomalar/rollar', label: 'Rollar' },
       { to: '/malumotnomalar/sifatlar', label: 'Sifatlar' },
