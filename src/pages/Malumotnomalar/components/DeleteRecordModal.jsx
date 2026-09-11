@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import CopyButton from '@/components/ui/copy-button'
 import {
@@ -61,7 +61,7 @@ export default function DeleteRecordModal({ open, onOpenChange, entity, record, 
             }}
             className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
           >
-            <X className="h-4 w-4" /> O‘chirish
+            <Trash2 className="h-4 w-4" /> O‘chirish
           </Button>
         </DialogFooter>
       </DialogContent>
