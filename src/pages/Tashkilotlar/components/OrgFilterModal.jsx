@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { VILOYATLAR } from '@/features/tashkilotlar/tashkilotlarData'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchRegions } from '@/features/geo/geoSlice'
 import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
 
 export const FILIALLAR_SONI_BUCKETS = ['1 ta', '2–5 ta', '6–10 ta', '10+ ta']
@@ -17,6 +18,12 @@ export const EMPTY_ORG_FILTERS = {
 export default function OrgFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
+  const dispatch = useDispatch()
+  const regions = useSelector((s) => s.geo.regions)
+
+  useEffect(() => {
+    if (open) dispatch(fetchRegions())
+  }, [open, dispatch])
 
   return (
     <FilterModal
@@ -32,7 +39,7 @@ export default function OrgFilterModal({ open, onOpenChange, filters, onApply })
       }}
     >
       <FilterField label="Viloyat">
-        <FilterSelect value={draft.hudud} onChange={(v) => set('hudud', v)} options={VILOYATLAR} />
+        <FilterSelect value={draft.hudud} onChange={(v) => set('hudud', v)} options={regions.map((r) => r.name)} />
       </FilterField>
       <FilterField label="Holat">
         <FilterSelect value={draft.holat} onChange={(v) => set('holat', v)} options={['Faol', 'To‘xtatilgan']} />

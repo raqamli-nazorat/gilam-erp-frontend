@@ -24,8 +24,8 @@ export default function ReopenBranchModal({ open, onOpenChange, branch, onConfir
           {[
             ['Filial', branch.name],
             ['Tashkilot', branch.tashkilot],
-            ['Xodimlar', `${branch.stats.xodimlar} ta`],
-            ['Omborlar', `${branch.stats.omborlar} ta`],
+            ['Xodimlar', branch.stats.xodimlar == null ? '—' : `${branch.stats.xodimlar} ta`],
+            ['Omborlar', `${branch.stats.omborlar ?? '—'} ta`],
             ['Yopilgan', branch.close?.at ?? '—'],
             ['Sababi', branch.close?.reason ?? '—'],
           ].map(([k, v]) => (

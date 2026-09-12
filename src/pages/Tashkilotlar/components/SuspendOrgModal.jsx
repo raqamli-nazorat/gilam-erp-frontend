@@ -35,8 +35,8 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
           {[
             ['Tashkilot', org.name, false],
             ['INN', org.inn, true],
-            ['Filiallar', `${org.stats.filiallar} ta`, false],
-            ['Foydalanuvchilar', `${org.stats.foydalanuvchilar} ta`, false],
+            ['Filiallar', `${org.stats.filiallar ?? '—'} ta`, false],
+            ['Foydalanuvchilar', org.stats.foydalanuvchilar == null ? '—' : `${org.stats.foydalanuvchilar} ta`, false],
           ].map(([k, v, copyable]) => (
             <div key={k} className="flex items-center justify-between py-1">
               <span className="text-[#737373] dark:text-muted-foreground">{k}</span>

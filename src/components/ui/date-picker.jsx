@@ -92,7 +92,7 @@ export function DatePicker({
       <div
         onClick={() => document.getElementById(fieldId)?.focus()}
         className={cn(
-          "relative flex h-11 flex-col justify-end rounded-lg border bg-white px-3 pb-1 pt-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 cursor-text focus-within:border-[#0052D2] focus-within:ring-2 focus-within:ring-[#0052D2]/20 dark:bg-card",
+          "relative flex h-11 flex-col justify-end rounded-xl border bg-white px-3 pb-1 pt-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 cursor-text focus-within:border-[#0052D2] focus-within:ring-2 focus-within:ring-[#0052D2]/20 dark:bg-card",
           error ? "border-destructive" : "border-[#E5E5E5] dark:border-white/10",
           disabled && "cursor-not-allowed opacity-50",
           className

@@ -35,7 +35,7 @@ export default function FilialOmborlarPage() {
         <tr
           key={o.id}
           onClick={() => navigate(`/filiallar/${branch.id}/omborlar/${o.id}`)}
-          className="h-[60px] cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+          className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
         >
           <td className={TD_LINK}>{o.name}</td>
           <td className={cn(TD, 'text-[#737373]')}>{o.manzil}</td>

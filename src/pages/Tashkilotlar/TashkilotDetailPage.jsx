@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, FileBarChart2, X } from 'lucide-react'
+import { CheckCircle2, FileBarChart2, Loader2, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { orgActivated, orgSuspended, orgUpdated } from '@/features/tashkilotlar/tashkilotlarSlice'
+import {
+  activateOrganization,
+  fetchOrganizationDetail,
+  fetchOrgBranches,
+  suspendOrganization,
+  updateOrganization,
+} from '@/features/tashkilotlar/tashkilotlarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import OrgModal from './components/OrgModal'
@@ -30,8 +36,10 @@ export default function TashkilotDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const org = useSelector((s) => s.tashkilotlar.list.find((o) => o.id === id))
-  const currentUser = useSelector((s) => s.auth.user)
+  const org = useSelector((s) => (s.tashkilotlar.current?.id === id ? s.tashkilotlar.current : null))
+  const detailStatus = useSelector((s) => s.tashkilotlar.detailStatus)
+  const detailError = useSelector((s) => s.tashkilotlar.detailError)
+  const branchesStatus = useSelector((s) => s.tashkilotlar.branchesStatus)
 
   const [editOpen, setEditOpen] = useState(false)
   const [suspendOpen, setSuspendOpen] = useState(false)
@@ -41,13 +49,39 @@ export default function TashkilotDetailPage() {
   usePageHeader(org ? `Tashkilotlar › ${org.name}` : 'Tashkilotlar')
 
   useEffect(() => {
-    if (!org) navigate('/tashkilotlar', { replace: true })
-  }, [org, navigate])
+    dispatch(fetchOrganizationDetail(id))
+    dispatch(fetchOrgBranches(id))
+  }, [id, dispatch])
+
   useEffect(() => {
     if (!toast) return undefined
     const t = setTimeout(() => setToast(''), 3000)
     return () => clearTimeout(t)
   }, [toast])
+
+  if (detailStatus === 'loading' && !org) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+        <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
+      </div>
+    )
+  }
+
+  if (detailStatus === 'failed' && !org) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <p className="text-sm text-[#DC2626]">{detailError || 'Tashkilot topilmadi'}</p>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/tashkilotlar', { replace: true })}
+          className="h-9 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+        >
+          Tashkilotlarga qaytish
+        </Button>
+      </div>
+    )
+  }
 
   if (!org) return null
 
@@ -110,19 +144,23 @@ export default function TashkilotDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {org.branches.length === 0 ? (
+                  {branchesStatus === 'loading' && org.branches.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-14 text-center text-sm text-[#737373]">Yuklanmoqda…</td>
+                    </tr>
+                  ) : org.branches.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-14 text-center text-sm text-[#737373]">Filial yo‘q</td>
                     </tr>
                   ) : (
                     org.branches.map((b, i) => (
-                      <tr key={b.id} className="h-[60px] hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr key={b.id} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{b.name}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{b.viloyat}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{b.tuman}</td>
                         <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil}</td>
-                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.xodim}</td>
+                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.xodim ?? '—'}</td>
                         <td className="px-3 pr-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor}</td>
                       </tr>
                     ))
@@ -161,16 +199,24 @@ export default function TashkilotDetailPage() {
             </Panel>
 
             <Panel title="Foydalanuvchilar:">
-              {org.users.map((u) => (
-                <div key={u.role} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
-                  <span className="text-[#525252] dark:text-muted-foreground">{u.role}</span>
-                  <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 2)} UZS</span>
+              {org.users.length === 0 ? (
+                <div className="px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
+                  Bu ma’lumot hali mavjud emas
                 </div>
-              ))}
-              <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
-                <span>JAMI</span>
-                <span>{formatNumber(org.stats.foydalanuvchilar, 2)} UZS</span>
-              </div>
+              ) : (
+                <>
+                  {org.users.map((u) => (
+                    <div key={u.role} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
+                      <span className="text-[#525252] dark:text-muted-foreground">{u.role}</span>
+                      <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 2)} UZS</span>
+                    </div>
+                  ))}
+                  <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+                    <span>JAMI</span>
+                    <span>{formatNumber(org.stats.foydalanuvchilar, 2)} UZS</span>
+                  </div>
+                </>
+              )}
             </Panel>
           </div>
         </div>
@@ -216,8 +262,10 @@ export default function TashkilotDetailPage() {
         onOpenChange={setEditOpen}
         org={org}
         onSave={(values) => {
-          dispatch(orgUpdated({ id: org.id, patch: values }))
-          setToast('O‘zgarishlar saqlandi')
+          dispatch(updateOrganization({ id: org.id, draft: values }))
+            .unwrap()
+            .then(() => setToast('O‘zgarishlar saqlandi'))
+            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <SuspendOrgModal
@@ -225,8 +273,10 @@ export default function TashkilotDetailPage() {
         onOpenChange={setSuspendOpen}
         org={org}
         onConfirm={(reason) => {
-          dispatch(orgSuspended({ id: org.id, reason, by: currentUser?.fullName ?? 'Administrator' }))
-          setToast('Tashkilot to‘xtatildi')
+          dispatch(suspendOrganization({ id: org.id, reason }))
+            .unwrap()
+            .then(() => setToast('Tashkilot to‘xtatildi'))
+            .catch((err) => setToast(err || 'To‘xtatishda xatolik yuz berdi'))
         }}
       />
       <ActivateOrgModal
@@ -234,8 +284,10 @@ export default function TashkilotDetailPage() {
         onOpenChange={setActivateOpen}
         org={org}
         onConfirm={() => {
-          dispatch(orgActivated({ id: org.id, by: currentUser?.fullName ?? 'Administrator' }))
-          setToast('Tashkilot faollashtirildi')
+          dispatch(activateOrganization(org.id))
+            .unwrap()
+            .then(() => setToast('Tashkilot faollashtirildi'))
+            .catch((err) => setToast(err || 'Faollashtirishda xatolik yuz berdi'))
         }}
       />
       <Toast message={toast} />
@@ -245,11 +297,11 @@ export default function TashkilotDetailPage() {
 
 function Panel({ title, children }) {
   return (
-    <div className={cn('overflow-hidden rounded-lg', surface)}>
-      <div className={cn('sticky top-0 z-10 px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+    <div className={cn('rounded-lg', surface)}>
+      <div className={cn('sticky top-0 z-10 rounded-t-lg px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
         {title}
       </div>
-      <div className="divide-y divide-[#DFE4EF] dark:divide-white/5">{children}</div>
+      <div className="divide-y divide-[#DFE4EF] [&>*:last-child]:rounded-b-lg dark:divide-white/5">{children}</div>
     </div>
   )
 }

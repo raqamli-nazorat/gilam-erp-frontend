@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Check, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isValidUzPhone } from '@/lib/format'
-import { FILIAL_TURLARI, TASHKILOT_NOMLARI, VILOYATLAR, TUMANLAR } from '@/features/filiallar/filiallarData'
+import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { fetchDistricts, fetchRegions } from '@/features/geo/geoSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -26,17 +28,28 @@ const fieldCls =
   'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-const EMPTY = { name: '', tashkilot: '', turi: '', viloyat: '', tuman: '', manzil: '', phone: '' }
-const KEYS = Object.keys(EMPTY)
+// tashkilot/viloyat/tuman bu yerda backend UUID'lari sifatida saqlanadi (Select value'lari uchun)
+const EMPTY = { name: '', tashkilot: '', viloyat: '', tuman: '', manzil: '', phone: '' }
 
-function Picker({ value, onChange, placeholder, options, disabled }) {
+function Picker({ value, onChange, placeholder, options, disabled, loading }) {
   return (
     <Select value={value || '__none'} onValueChange={(v) => onChange(v === '__none' ? '' : v)} disabled={disabled}>
       <SelectTrigger className={cn(fieldCls, disabled && 'opacity-60')}>
-        <SelectValue>{(v) => (v === '__none' ? <span className="text-[#737373]">{placeholder}</span> : v)}</SelectValue>
+        <SelectValue>
+          {(v) => {
+            if (v === '__none') return <span className="text-[#737373]">{placeholder}</span>
+            return options.find((o) => o.id === v)?.name ?? ''
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+        {loading ? (
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
+            <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
+          </div>
+        ) : (
+          options.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)
+        )}
       </SelectContent>
     </Select>
   )
@@ -45,17 +58,33 @@ function Picker({ value, onChange, placeholder, options, disabled }) {
 export default function BranchModal({ open, onOpenChange, branch, onSave }) {
   const isEdit = !!branch
   const [draft, setDraft] = useState(EMPTY)
+  const dispatch = useDispatch()
+
+  const orgs = useSelector((s) => s.tashkilotlar.list)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
+  const regions = useSelector((s) => s.geo.regions)
+  const regionsStatus = useSelector((s) => s.geo.regionsStatus)
+  const districtsByRegion = useSelector((s) => s.geo.districtsByRegion)
+  const districtsStatus = useSelector((s) => s.geo.districtsStatus)
 
   useEffect(() => {
     if (!open) return
+    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
+    dispatch(fetchRegions())
     if (branch) {
-      const base = {}
-      KEYS.forEach((k) => { base[k] = branch[k] ?? '' })
-      setDraft(base)
+      setDraft({
+        name: branch.name ?? '',
+        tashkilot: branch.tashkilotId ?? '',
+        viloyat: branch.viloyatId ?? '',
+        tuman: branch.tumanId ?? '',
+        manzil: branch.manzil ?? '',
+        phone: branch.phone ?? '',
+      })
+      if (branch.viloyatId) dispatch(fetchDistricts(branch.viloyatId))
     } else {
       setDraft(EMPTY)
     }
-  }, [open, branch])
+  }, [open, branch, dispatch, orgsStatus])
 
   const set = (k, v) => setDraft((d) => {
     const next = { ...d, [k]: v }
@@ -63,18 +92,30 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
     return next
   })
 
-  const tumanOptions = TUMANLAR[draft.viloyat] ?? []
+  function setViloyat(regionId) {
+    set('viloyat', regionId)
+    if (regionId) dispatch(fetchDistricts(regionId))
+  }
+
+  const tumanOptions = districtsByRegion[draft.viloyat] ?? []
+  const districtsLoading = districtsStatus[draft.viloyat] === 'loading'
 
   const dirty = useMemo(() => {
     if (!branch) return true
-    return KEYS.some((k) => (draft[k] ?? '') !== (branch[k] ?? ''))
+    return (
+      draft.name !== (branch.name ?? '') ||
+      draft.tashkilot !== (branch.tashkilotId ?? '') ||
+      draft.viloyat !== (branch.viloyatId ?? '') ||
+      draft.tuman !== (branch.tumanId ?? '') ||
+      draft.manzil !== (branch.manzil ?? '') ||
+      draft.phone !== (branch.phone ?? '')
+    )
   }, [draft, branch])
 
   const canSave =
     dirty &&
     draft.name.trim().length > 1 &&
     !!draft.tashkilot &&
-    !!draft.turi &&
     !!draft.viloyat &&
     !!draft.tuman &&
     (!draft.phone || isValidUzPhone(draft.phone))
@@ -89,7 +130,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
       <DialogContent className="gap-0 rounded-2xl p-0 sm:max-w-[600px]">
         <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            {isEdit ? 'Filial' : 'Yangi filial'}
+            {isEdit ? 'Tahrirlash' : 'Yangi filial'}
           </DialogTitle>
         </DialogHeader>
 
@@ -104,18 +145,26 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             />
           </div>
 
-          <div>
+          <div className="col-span-2">
             <Label className={labelCls}>Tashkilot</Label>
-            <Picker value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} placeholder="Tashkilotni tanlang" options={TASHKILOT_NOMLARI} />
-          </div>
-          <div>
-            <Label className={labelCls}>Filial turi</Label>
-            <Picker value={draft.turi} onChange={(v) => set('turi', v)} placeholder="Turini tanlang" options={FILIAL_TURLARI} />
+            <Picker
+              value={draft.tashkilot}
+              onChange={(v) => set('tashkilot', v)}
+              placeholder="Tashkilotni tanlang"
+              options={orgs}
+              loading={orgsStatus === 'loading'}
+            />
           </div>
 
           <div>
             <Label className={labelCls}>Viloyat</Label>
-            <Picker value={draft.viloyat} onChange={(v) => set('viloyat', v)} placeholder="Viloyatni tanlang" options={VILOYATLAR} />
+            <Picker
+              value={draft.viloyat}
+              onChange={setViloyat}
+              placeholder="Viloyatni tanlang"
+              options={regions}
+              loading={regionsStatus === 'loading'}
+            />
           </div>
           <div>
             <Label className={labelCls}>Tuman</Label>
@@ -125,6 +174,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
               placeholder={draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}
               options={tumanOptions}
               disabled={!draft.viloyat}
+              loading={districtsLoading}
             />
           </div>
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { CheckCircle2, FileBarChart2, X } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
-import { branchClosed, branchOpened, branchUpdated } from '@/features/filiallar/filiallarSlice'
+import { closeBranch, openBranch, updateBranch } from '@/features/filiallar/filiallarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import BranchModal from './BranchModal'
@@ -12,7 +12,6 @@ import ReopenBranchModal from './ReopenBranchModal'
 
 export default function FilialFooter({ branch }) {
   const dispatch = useDispatch()
-  const currentUser = useSelector((s) => s.auth.user)
   const [editOpen, setEditOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
   const [reopenOpen, setReopenOpen] = useState(false)
@@ -67,8 +66,10 @@ export default function FilialFooter({ branch }) {
         onOpenChange={setEditOpen}
         branch={branch}
         onSave={(values) => {
-          dispatch(branchUpdated({ id: branch.id, patch: values }))
-          setToast('O‘zgarishlar saqlandi')
+          dispatch(updateBranch({ id: branch.id, draft: values }))
+            .unwrap()
+            .then(() => setToast('O‘zgarishlar saqlandi'))
+            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <CloseBranchModal
@@ -76,8 +77,10 @@ export default function FilialFooter({ branch }) {
         onOpenChange={setCloseOpen}
         branch={branch}
         onConfirm={(reason) => {
-          dispatch(branchClosed({ id: branch.id, reason, by: currentUser?.fullName ?? 'Administrator' }))
-          setToast('Filial yopildi')
+          dispatch(closeBranch({ id: branch.id, reason }))
+            .unwrap()
+            .then(() => setToast('Filial yopildi'))
+            .catch((err) => setToast(err || 'Yopishda xatolik yuz berdi'))
         }}
       />
       <ReopenBranchModal
@@ -85,8 +88,10 @@ export default function FilialFooter({ branch }) {
         onOpenChange={setReopenOpen}
         branch={branch}
         onConfirm={() => {
-          dispatch(branchOpened(branch.id))
-          setToast('Filial qayta ochildi')
+          dispatch(openBranch(branch.id))
+            .unwrap()
+            .then(() => setToast('Filial qayta ochildi'))
+            .catch((err) => setToast(err || 'Ochishda xatolik yuz berdi'))
         }}
       />
       <Toast message={toast} />

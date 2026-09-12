@@ -26,7 +26,11 @@ import HisobotRunnerPage from '@/pages/Hisobotlar/HisobotRunnerPage'
 import BalansPage from '@/pages/Balans/BalansPage'
 import KontragentBalansPage from '@/pages/Balans/KontragentBalansPage'
 import MalumotnomaDetailPage from '@/pages/Malumotnomalar/MalumotnomaDetailPage'
-import ViloyatTumanPage from '@/pages/Malumotnomalar/ViloyatTumanPage'
+import DavlatPage from '@/pages/Malumotnomalar/DavlatPage'
+import ViloyatPage from '@/pages/Malumotnomalar/ViloyatPage'
+import TumanPage from '@/pages/Malumotnomalar/TumanPage'
+import XodimlarListPage from '@/pages/Xodimlar/XodimlarListPage'
+import XodimlarDetailPage from '@/pages/Xodimlar/XodimlarDetailPage'
 import TashkilotlarListPage from '@/pages/Tashkilotlar/TashkilotlarListPage'
 import TashkilotDetailPage from '@/pages/Tashkilotlar/TashkilotDetailPage'
 import FiliallarListPage from '@/pages/Filiallar/FiliallarListPage'
@@ -91,7 +95,11 @@ function App() {
           <Route path="/balans" element={<BalansPage />} />
           <Route path="/balans/kontragent/:id" element={<KontragentBalansPage />} />
           <Route path="/malumotnomalar" element={<Navigate to="/malumotnomalar/rollar" replace />} />
-          <Route path="/malumotnomalar/viloyat-va-tuman" element={<ViloyatTumanPage />} />
+          <Route path="/malumotnomalar/davlat" element={<DavlatPage />} />
+          <Route path="/malumotnomalar/viloyat" element={<ViloyatPage />} />
+          <Route path="/malumotnomalar/tuman" element={<TumanPage />} />
+          <Route path="/malumotnomalar/xodimlar" element={<XodimlarListPage />} />
+          <Route path="/malumotnomalar/xodimlar/:id" element={<XodimlarDetailPage />} />
           <Route path="/malumotnomalar/rollar" element={<RollarPage />} />
           <Route path="/malumotnomalar/sifatlar" element={<MalumotnomaDetailPage slug="sifatlar" />} />
           <Route path="/malumotnomalar/ranglar" element={<MalumotnomaDetailPage slug="ranglar" />} />

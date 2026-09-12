@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Filter, Plus, Search } from 'lucide-react'
+import { Building2, Filter, Loader2, Plus, Search } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
-import { orgAdded } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { createOrganization, fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -28,6 +28,8 @@ export default function TashkilotlarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const orgs = useSelector((s) => s.tashkilotlar.list)
+  const listStatus = useSelector((s) => s.tashkilotlar.listStatus)
+  const listError = useSelector((s) => s.tashkilotlar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -37,6 +39,10 @@ export default function TashkilotlarListPage() {
   const [toast, setToast] = useState('')
 
   usePageHeader('Tashkilotlar')
+
+  useEffect(() => {
+    if (listStatus === 'idle') dispatch(fetchOrganizations())
+  }, [listStatus, dispatch])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -160,7 +166,31 @@ export default function TashkilotlarListPage() {
               </tr>
             </thead>
             <tbody>
-              {shown.length === 0 ? (
+              {listStatus === 'loading' ? (
+                <tr>
+                  <td colSpan={9} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+                      <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : listStatus === 'failed' ? (
+                <tr>
+                  <td colSpan={9} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => dispatch(fetchOrganizations())}
+                        className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+                      >
+                        Qayta urinish
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ) : shown.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -240,8 +270,10 @@ export default function TashkilotlarListPage() {
         onOpenChange={setModalOpen}
         org={null}
         onSave={(values) => {
-          const action = dispatch(orgAdded(values))
-          navigate(`/tashkilotlar/${action.payload.id}`)
+          dispatch(createOrganization(values))
+            .unwrap()
+            .then((created) => navigate(`/tashkilotlar/${created.id}`))
+            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <OrgFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
