@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Check, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isValidUzPhone } from '@/lib/format'
-import { VILOYATLAR, TUMANLAR } from '@/features/tashkilotlar/tashkilotlarData'
+import { fetchDistricts, fetchRegions } from '@/features/geo/geoSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -26,23 +27,37 @@ const fieldCls =
   'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-const EMPTY = { name: '', inn: '', phone: '', director: '', viloyat: '', tuman: '', manzil: '' }
-const KEYS = Object.keys(EMPTY)
+// viloyat/tuman bu yerda backend UUID'lari sifatida saqlanadi (Select value'lari uchun)
+const EMPTY = { name: '', inn: '', phone: '', director: '', viloyat: '', tuman: '', manzil: '', titul: '' }
 
 export default function OrgModal({ open, onOpenChange, org, onSave }) {
   const isEdit = !!org
   const [draft, setDraft] = useState(EMPTY)
+  const dispatch = useDispatch()
+  const regions = useSelector((s) => s.geo.regions)
+  const regionsStatus = useSelector((s) => s.geo.regionsStatus)
+  const districtsByRegion = useSelector((s) => s.geo.districtsByRegion)
+  const districtsStatus = useSelector((s) => s.geo.districtsStatus)
 
   useEffect(() => {
     if (!open) return
+    dispatch(fetchRegions())
     if (org) {
-      const base = {}
-      KEYS.forEach((k) => { base[k] = org[k] ?? '' })
-      setDraft(base)
+      setDraft({
+        name: org.name ?? '',
+        inn: org.inn ?? '',
+        phone: org.phone ?? '',
+        director: org.director ?? '',
+        viloyat: org.viloyatId ?? '',
+        tuman: org.tumanId ?? '',
+        manzil: org.manzil ?? '',
+        titul: org.titul ?? '',
+      })
+      if (org.viloyatId) dispatch(fetchDistricts(org.viloyatId))
     } else {
       setDraft(EMPTY)
     }
-  }, [open, org])
+  }, [open, org, dispatch])
 
   const set = (k, v) => setDraft((d) => {
     const next = { ...d, [k]: v }
@@ -50,12 +65,27 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
     return next
   })
 
-  const tumanOptions = TUMANLAR[draft.viloyat] ?? []
+  function setViloyat(regionId) {
+    set('viloyat', regionId)
+    if (regionId) dispatch(fetchDistricts(regionId))
+  }
+
+  const tumanOptions = districtsByRegion[draft.viloyat] ?? []
+  const districtsLoading = districtsStatus[draft.viloyat] === 'loading'
   const innDigits = draft.inn.replace(/\D/g, '')
 
   const dirty = useMemo(() => {
     if (!org) return true
-    return KEYS.some((k) => (draft[k] ?? '') !== (org[k] ?? ''))
+    return (
+      draft.name !== (org.name ?? '') ||
+      draft.inn !== (org.inn ?? '') ||
+      draft.phone !== (org.phone ?? '') ||
+      draft.director !== (org.director ?? '') ||
+      draft.viloyat !== (org.viloyatId ?? '') ||
+      draft.tuman !== (org.tumanId ?? '') ||
+      draft.manzil !== (org.manzil ?? '') ||
+      draft.titul !== (org.titul ?? '')
+    )
   }, [draft, org])
 
   const canSave =
@@ -77,7 +107,7 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
       <DialogContent className="gap-0 rounded-[20px] p-0 sm:max-w-[600px]">
         <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            {isEdit ? 'Tashkilotni tahrirlash' : 'Yangi tashkilot'}
+            {isEdit ? 'Tahrirlash' : 'Yangi tashkilot'}
           </DialogTitle>
         </DialogHeader>
 
@@ -111,7 +141,7 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
             />
           </div>
 
-          <div className="col-span-2">
+          <div>
             <Label className={labelCls}>Direktor</Label>
             <Input
               value={draft.director}
@@ -120,15 +150,35 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
               className={fieldCls}
             />
           </div>
+          <div>
+            <Label className={labelCls}>Titul</Label>
+            <Input
+              value={draft.titul}
+              onChange={(e) => set('titul', e.target.value)}
+              placeholder="Masalan: SAG"
+              className={fieldCls}
+            />
+          </div>
 
           <div>
             <Label className={labelCls}>Viloyat</Label>
-            <Select value={draft.viloyat || '__none'} onValueChange={(v) => set('viloyat', v === '__none' ? '' : v)}>
+            <Select value={draft.viloyat || '__none'} onValueChange={(v) => setViloyat(v === '__none' ? '' : v)}>
               <SelectTrigger className={fieldCls}>
-                <SelectValue>{(v) => (v === '__none' ? <span className="text-[#737373]">Viloyatni tanlang</span> : v)}</SelectValue>
+                <SelectValue>
+                  {(v) => {
+                    if (v === '__none') return <span className="text-[#737373]">Viloyatni tanlang</span>
+                    return regions.find((r) => r.id === v)?.name ?? ''
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {VILOYATLAR.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                {regionsStatus === 'loading' ? (
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
+                  </div>
+                ) : (
+                  regions.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -141,13 +191,22 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
             >
               <SelectTrigger className={cn(fieldCls, !draft.viloyat && 'opacity-60')}>
                 <SelectValue>
-                  {(v) => (v === '__none'
-                    ? <span className="text-[#737373]">{draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}</span>
-                    : v)}
+                  {(v) => {
+                    if (v === '__none') {
+                      return <span className="text-[#737373]">{draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}</span>
+                    }
+                    return tumanOptions.find((t) => t.id === v)?.name ?? ''
+                  }}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {tumanOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {districtsLoading ? (
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
+                  </div>
+                ) : (
+                  tumanOptions.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)
+                )}
               </SelectContent>
             </Select>
           </div>

@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { FILIAL_TURLARI, TASHKILOT_NOMLARI, VILOYATLAR } from '@/features/filiallar/filiallarData'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { fetchRegions } from '@/features/geo/geoSlice'
 import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
 
 export const EMPTY_BRANCH_FILTERS = {
   tashkilot: '',
   viloyat: '',
-  turi: '',
   holat: '',
   sanaDan: '',
   sanaGacha: '',
@@ -14,6 +15,15 @@ export const EMPTY_BRANCH_FILTERS = {
 export default function BranchFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
+  const dispatch = useDispatch()
+  const orgs = useSelector((s) => s.tashkilotlar.list)
+  const regions = useSelector((s) => s.geo.regions)
+
+  useEffect(() => {
+    if (!open) return
+    dispatch(fetchOrganizations())
+    dispatch(fetchRegions())
+  }, [open, dispatch])
 
   return (
     <FilterModal
@@ -33,7 +43,7 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
           value={draft.tashkilot}
           onChange={(v) => set('tashkilot', v)}
           placeholder="Barcha tashkilotlar"
-          options={TASHKILOT_NOMLARI}
+          options={orgs.map((o) => o.name)}
         />
       </FilterField>
       <FilterField label="Viloyat">
@@ -41,7 +51,7 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
           value={draft.viloyat}
           onChange={(v) => set('viloyat', v)}
           placeholder="Barcha viloyatlar"
-          options={VILOYATLAR}
+          options={regions.map((r) => r.name)}
         />
       </FilterField>
       <FilterField className="col-span-2!" label="Holat">

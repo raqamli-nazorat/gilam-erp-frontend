@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Check, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isValidUzPhone } from '@/lib/format'
-import { FILIALLAR_BY_TASHKILOT, ROLLAR_NOMLARI, TASHKILOT_NOMLARI } from '@/features/foydalanuvchilar/foydalanuvchilarData'
+import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { fetchBranches } from '@/features/filiallar/filiallarSlice'
+import { fetchRoles } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -26,45 +29,57 @@ const fieldCls =
   'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-// Yangi foydalanuvchi modali ro'yxatdagi birinchi tashkilot/filial/rol bilan ochiladi (Figma bilan bir xil)
-const DEFAULT_TASHKILOT = TASHKILOT_NOMLARI[0] ?? ''
-const EMPTY = {
-  name: '',
-  tashkilot: DEFAULT_TASHKILOT,
-  filial: (FILIALLAR_BY_TASHKILOT[DEFAULT_TASHKILOT] ?? [])[0] ?? '',
-  rol: ROLLAR_NOMLARI[0] ?? '',
-  holat: 'Faol',
-  phone: '',
-  password: '',
-}
-const KEYS = ['name', 'tashkilot', 'filial', 'rol', 'holat', 'phone']
+// tashkilot/filial/rol bu yerda backend UUID'lari sifatida saqlanadi (Select value'lari uchun)
+const EMPTY = { name: '', tashkilot: '', filial: '', rol: '', holat: 'Faol', phone: '', password: '' }
 
-function Picker({ value, onChange, placeholder, options, disabled }) {
+function Picker({ value, onChange, placeholder, options, disabled, loading }) {
   return (
     <Select value={value || '__none'} onValueChange={(v) => onChange(v === '__none' ? '' : v)} disabled={disabled}>
       <SelectTrigger className={cn(fieldCls, disabled && 'opacity-60')}>
-        <SelectValue>{(v) => (v === '__none' ? <span className="text-[#737373]">{placeholder}</span> : v)}</SelectValue>
+        <SelectValue>
+          {(v) => {
+            if (v === '__none') return <span className="text-[#737373]">{placeholder}</span>
+            return options.find((o) => o.id === v)?.name ?? ''
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+        {loading ? (
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
+            <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
+          </div>
+        ) : (
+          options.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)
+        )}
       </SelectContent>
     </Select>
   )
 }
 
-// user: null (yangi) | { ...record, holat: 'active'|'blocked' }
+// user: null (yangi) | { ...record, tashkilotId, filialId, rolId, holat: 'active'|'blocked' }
 export default function UserModal({ open, onOpenChange, user, onSave }) {
   const isEdit = !!user
   const [draft, setDraft] = useState(EMPTY)
+  const dispatch = useDispatch()
+
+  const orgs = useSelector((s) => s.tashkilotlar.list)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
+  const branches = useSelector((s) => s.filiallar.list)
+  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
+  const roles = useSelector((s) => s.foydalanuvchilar.roles)
+  const rolesStatus = useSelector((s) => s.foydalanuvchilar.rolesStatus)
 
   useEffect(() => {
     if (!open) return
+    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
+    if (branchesStatus === 'idle') dispatch(fetchBranches())
+    if (rolesStatus === 'idle') dispatch(fetchRoles())
     if (user) {
       setDraft({
         name: user.name ?? '',
-        tashkilot: user.tashkilot ?? '',
-        filial: user.filial ?? '',
-        rol: user.rol ?? '',
+        tashkilot: user.tashkilotId ?? '',
+        filial: user.filialId ?? '',
+        rol: user.rolId ?? '',
         holat: user.holat === 'blocked' ? 'Bloklangan' : 'Faol',
         phone: user.phone ?? '',
         password: '',
@@ -72,7 +87,7 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
     } else {
       setDraft(EMPTY)
     }
-  }, [open, user])
+  }, [open, user, dispatch, orgsStatus, branchesStatus, rolesStatus])
 
   const set = (k, v) => setDraft((d) => {
     const next = { ...d, [k]: v }
@@ -80,15 +95,22 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
     return next
   })
 
-  const filialOptions = FILIALLAR_BY_TASHKILOT[draft.tashkilot] ?? []
+  const filialOptions = useMemo(
+    () => branches.filter((b) => b.tashkilotId === draft.tashkilot),
+    [branches, draft.tashkilot]
+  )
+  const rolOptions = useMemo(
+    () => roles.filter((r) => !r.tashkilotId || r.tashkilotId === draft.tashkilot),
+    [roles, draft.tashkilot]
+  )
 
   const baseline = useMemo(() => {
     if (!user) return null
     return {
       name: user.name ?? '',
-      tashkilot: user.tashkilot ?? '',
-      filial: user.filial ?? '',
-      rol: user.rol ?? '',
+      tashkilot: user.tashkilotId ?? '',
+      filial: user.filialId ?? '',
+      rol: user.rolId ?? '',
       holat: user.holat === 'blocked' ? 'Bloklangan' : 'Faol',
       phone: user.phone ?? '',
     }
@@ -96,7 +118,15 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
 
   const dirty = useMemo(() => {
     if (!baseline) return true
-    return KEYS.some((k) => (draft[k] ?? '') !== (baseline[k] ?? ''))
+    return (
+      draft.name !== baseline.name ||
+      draft.tashkilot !== baseline.tashkilot ||
+      draft.filial !== baseline.filial ||
+      draft.rol !== baseline.rol ||
+      draft.holat !== baseline.holat ||
+      draft.phone !== baseline.phone ||
+      !!draft.password
+    )
   }, [draft, baseline])
 
   const canSave =
@@ -110,15 +140,7 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
     (isEdit || draft.password.trim().length >= 8)
 
   function handleSave() {
-    const patch = {
-      name: draft.name.trim(),
-      tashkilot: draft.tashkilot,
-      filial: draft.filial,
-      rol: draft.rol,
-      holat: draft.holat === 'Bloklangan' ? 'blocked' : 'active',
-      phone: draft.phone,
-    }
-    onSave(patch)
+    onSave({ ...draft, name: draft.name.trim() })
     onOpenChange(false)
   }
 
@@ -144,7 +166,13 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
 
           <div>
             <Label className={labelCls}>Tashkilot</Label>
-            <Picker value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} placeholder="Tashkilotni tanlang" options={TASHKILOT_NOMLARI} />
+            <Picker
+              value={draft.tashkilot}
+              onChange={(v) => set('tashkilot', v)}
+              placeholder="Tashkilotni tanlang"
+              options={orgs}
+              loading={orgsStatus === 'loading'}
+            />
           </div>
           <div>
             <Label className={labelCls}>Filial</Label>
@@ -154,16 +182,31 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
               placeholder={draft.tashkilot ? 'Filialni tanlang' : 'Avval tashkilotni tanlang'}
               options={filialOptions}
               disabled={!draft.tashkilot}
+              loading={branchesStatus === 'loading'}
             />
           </div>
 
           <div>
             <Label className={labelCls}>Rol</Label>
-            <Picker value={draft.rol} onChange={(v) => set('rol', v)} placeholder="Rolni tanlang" options={ROLLAR_NOMLARI} />
+            <Picker
+              value={draft.rol}
+              onChange={(v) => set('rol', v)}
+              placeholder="Rolni tanlang"
+              options={rolOptions}
+              loading={rolesStatus === 'loading'}
+            />
           </div>
           <div>
             <Label className={labelCls}>Holat</Label>
-            <Picker value={draft.holat} onChange={(v) => set('holat', v)} placeholder="Holatni tanlang" options={['Faol', 'Bloklangan']} />
+            <Select value={draft.holat} onValueChange={(v) => set('holat', v)}>
+              <SelectTrigger className={fieldCls}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Faol">Faol</SelectItem>
+                <SelectItem value="Bloklangan">Bloklangan</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="col-span-2">
@@ -171,18 +214,16 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
             <PhoneInput value={draft.phone} onChange={(v) => set('phone', v)} className={fieldCls} />
           </div>
 
-          {!isEdit && (
-            <div className="col-span-2">
-              <Label className={labelCls}>Parol</Label>
-              <Input
-                type="password"
-                value={draft.password}
-                onChange={(e) => set('password', e.target.value)}
-                placeholder="Kamida 8 belgi"
-                className={fieldCls}
-              />
-            </div>
-          )}
+          <div className="col-span-2">
+            <Label className={labelCls}>Parol{isEdit ? ' (ixtiyoriy)' : ''}</Label>
+            <Input
+              type="password"
+              value={draft.password}
+              onChange={(e) => set('password', e.target.value)}
+              placeholder={isEdit ? "O'zgartirmaslik uchun bo'sh qoldiring" : 'Kamida 8 belgi'}
+              className={fieldCls}
+            />
+          </div>
         </div>
 
         <DialogFooter className="mx-0 mb-0 mt-2 gap-2.5 rounded-b-[20px] border-t-0 bg-[#F5F5F5] px-6 py-4 dark:bg-white/5 sm:flex-row sm:justify-end">

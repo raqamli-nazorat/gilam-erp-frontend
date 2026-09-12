@@ -31,7 +31,7 @@ export default function FilialMijozlarPage() {
       ]}
     >
       {rows.map((m, i) => (
-        <tr key={m.id} className="h-[60px] hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+        <tr key={m.id} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
           <td className={TD_IDX}>{i + 1}</td>
           <td className={TD_LINK}>{m.name}</td>
           <td className={cn(TD, 'text-[#737373]')}>{m.phone}<CopyBtn value={m.phone} /></td>

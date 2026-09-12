@@ -32,8 +32,8 @@ export default function CloseBranchModal({ open, onOpenChange, branch, onConfirm
           {[
             ['Filial', branch.name],
             ['Tashkilot', branch.tashkilot],
-            ['Xodimlar', `${branch.stats.xodimlar} ta`],
-            ['Omborlar', `${branch.stats.omborlar} ta`],
+            ['Xodimlar', branch.stats.xodimlar == null ? '—' : `${branch.stats.xodimlar} ta`],
+            ['Omborlar', `${branch.stats.omborlar ?? '—'} ta`],
           ].map(([k, v]) => (
             <div key={k} className="flex items-center justify-between py-1">
               <span className="text-[#737373] dark:text-muted-foreground">{k}</span>

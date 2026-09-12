@@ -16,20 +16,69 @@ axiosAPI.interceptors.request.use((config) => {
      return config
 })
 
-// ── 401 (token yaroqsiz/eskirgan) markazlashgan ishlovi ──
-// Login so'rovini istisno qilamiz — u xatoni o'zi ko'rsatadi.
+// ── 401 bo'lganda avval "auth/token/refresh/" orqali yangi access token olishga urinamiz;
+// bir vaqtning o'zida bir nechta so'rov 401 qaytarsa ham, refresh faqat bitta marta yuboriladi
+// (parallel so'rovlar shu bitta natijani kutadi). Faqat muvaffaqiyatsiz bo'lsa (yoki refresh
+// token umuman yo'q bo'lsa) foydalanuvchi tizimdan chiqariladi.
+let refreshPromise = null
+
+function clearAuthAndRedirect() {
+     localStorage.removeItem("access_token")
+     localStorage.removeItem("refresh_token")
+     localStorage.removeItem("gilam-auth-token")
+     localStorage.removeItem("gilam-auth-user")
+     if (window.location.pathname !== "/login") {
+          window.location.href = "/login"
+     }
+}
+
+function refreshAccessToken() {
+     if (!refreshPromise) {
+          const refreshToken = localStorage.getItem("refresh_token")
+          if (!refreshToken) {
+               refreshPromise = Promise.reject(new Error("Refresh token yo'q"))
+          } else {
+               refreshPromise = axios
+                    .post(`${import.meta.env.VITE_BASE_URL}auth/token/refresh/`, { refresh: refreshToken })
+                    .then((response) => {
+                         const payload = response.data?.data || response.data
+                         const access = payload?.access
+                         if (!access) throw new Error("Yangi token olinmadi")
+                         localStorage.setItem("access_token", access)
+                         localStorage.setItem("gilam-auth-token", access)
+                         if (payload?.refresh) localStorage.setItem("refresh_token", payload.refresh)
+                         return access
+                    })
+                    .finally(() => {
+                         refreshPromise = null
+                    })
+          }
+     }
+     return refreshPromise
+}
+
 axiosAPI.interceptors.response.use(
      (response) => response,
-     (error) => {
+     async (error) => {
           const status = error?.response?.status
-          const url = error?.config?.url || ""
-          const isAuthRequest = url.includes("auth/login")
+          const config = error?.config || {}
+          const url = config.url || ""
+          // Login va refresh so'rovlarining o'zini istisno qilamiz — ular xatoni to'g'ridan-to'g'ri ko'rsatadi.
+          const isAuthRequest = url.includes("auth/login") || url.includes("auth/token/refresh")
 
           if (status === 401 && !isAuthRequest) {
-               localStorage.removeItem("gilam-auth-token")
-               localStorage.removeItem("gilam-auth-user")
-               if (window.location.pathname !== "/login") {
-                    window.location.href = "/login"
+               if (config._retried) {
+                    clearAuthAndRedirect()
+                    return Promise.reject(error)
+               }
+               config._retried = true
+               try {
+                    const access = await refreshAccessToken()
+                    config.headers = { ...config.headers, Authorization: `Bearer ${access}` }
+                    return axiosAPI(config)
+               } catch {
+                    clearAuthAndRedirect()
+                    return Promise.reject(error)
                }
           }
           return Promise.reject(error)

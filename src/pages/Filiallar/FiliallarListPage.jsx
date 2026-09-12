@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Filter, Plus, Search } from 'lucide-react'
+import { Briefcase, Filter, Loader2, Plus, Search } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { holatLabel } from '@/features/filiallar/filiallarData'
-import { branchAdded } from '@/features/filiallar/filiallarSlice'
+import { createBranch, fetchBranches } from '@/features/filiallar/filiallarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -22,6 +22,8 @@ export default function FiliallarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const branches = useSelector((s) => s.filiallar.list)
+  const listStatus = useSelector((s) => s.filiallar.listStatus)
+  const listError = useSelector((s) => s.filiallar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -31,6 +33,10 @@ export default function FiliallarListPage() {
   const [toast, setToast] = useState('')
 
   usePageHeader([{ label: 'Platforma' }, { label: 'Filiallar' }])
+
+  useEffect(() => {
+    if (listStatus === 'idle') dispatch(fetchBranches())
+  }, [listStatus, dispatch])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -64,7 +70,6 @@ export default function FiliallarListPage() {
     }
     if (filters.tashkilot) out = out.filter((b) => b.tashkilot === filters.tashkilot)
     if (filters.viloyat) out = out.filter((b) => b.viloyat === filters.viloyat)
-    if (filters.turi) out = out.filter((b) => b.turi === filters.turi)
     if (filters.holat) out = out.filter((b) => (filters.holat === 'Faol' ? b.status === 'active' : b.status === 'closed'))
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((b) => matchesDateRange(b.openedAt, filters.sanaDan, filters.sanaGacha))
@@ -154,7 +159,31 @@ export default function FiliallarListPage() {
             </tr>
           </thead>
           <tbody>
-            {shown.length === 0 ? (
+            {listStatus === 'loading' ? (
+              <tr>
+                <td colSpan={9} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+                    <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
+                  </div>
+                </td>
+              </tr>
+            ) : listStatus === 'failed' ? (
+              <tr>
+                <td colSpan={9} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => dispatch(fetchBranches())}
+                      className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+                    >
+                      Qayta urinish
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ) : shown.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -220,8 +249,10 @@ export default function FiliallarListPage() {
         onOpenChange={setModalOpen}
         branch={null}
         onSave={(values) => {
-          const action = dispatch(branchAdded(values))
-          navigate(`/filiallar/${action.payload.id}`)
+          dispatch(createBranch(values))
+            .unwrap()
+            .then((created) => navigate(`/filiallar/${created.id}`))
+            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <BranchFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />

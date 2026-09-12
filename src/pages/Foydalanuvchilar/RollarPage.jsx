@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Filter, Plus, Search } from 'lucide-react'
+import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { roleAdded, roleUpdated } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { createRole, deleteRole, fetchRoles, updateRole } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Toast from '@/components/Toast'
 import RoleModal from './components/RoleModal'
 import RoleFilterModal, { EMPTY_ROLE_FILTERS } from './components/RoleFilterModal'
 
@@ -16,17 +17,28 @@ const TD_MUTED = 'px-4 text-[13px] text-[#737373] dark:text-muted-foreground'
 export default function RollarPage() {
   const dispatch = useDispatch()
   const roles = useSelector((s) => s.foydalanuvchilar.roles)
-  const users = useSelector((s) => s.foydalanuvchilar.list)
+  const rolesStatus = useSelector((s) => s.foydalanuvchilar.rolesStatus)
+  const rolesError = useSelector((s) => s.foydalanuvchilar.rolesError)
 
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_ROLE_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editRole, setEditRole] = useState(null)
+  const [toast, setToast] = useState('')
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Rollar' }])
 
-  const countOf = (name) => users.filter((u) => u.rol === name).length
+  useEffect(() => {
+    if (rolesStatus === 'idle') dispatch(fetchRoles())
+  }, [rolesStatus, dispatch])
+
+  useEffect(() => {
+    if (!toast) return undefined
+    const t = setTimeout(() => setToast(''), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+
   const hasFilter = Object.values(filters).some(Boolean)
 
   const shownRoles = useMemo(() => {
@@ -35,14 +47,31 @@ export default function RollarPage() {
       const q = search.trim().toLowerCase()
       out = out.filter((r) => r.name.toLowerCase().includes(q))
     }
-    if (filters.tashkilot) out = out.filter((r) => r.tashkilot === filters.tashkilot)
-    if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.holat === 'active' : r.holat !== 'active'))
+    if (filters.tashkilot) {
+      out = out.filter((r) => (filters.tashkilot === 'Barcha tashkilotlar' ? !r.tashkilotId : r.tashkilot === filters.tashkilot))
+    }
+    if (filters.holat) out = out.filter((r) => (filters.holat === 'Tizim roli' ? r.isSystem : !r.isSystem))
     const dan = Number(filters.foydalanuvchiDan) || 0
     const gacha = Number(filters.foydalanuvchiGacha) || 0
-    if (dan) out = out.filter((r) => countOf(r.name) >= dan)
-    if (gacha) out = out.filter((r) => countOf(r.name) <= gacha)
+    if (dan) out = out.filter((r) => r.usersCount >= dan)
+    if (gacha) out = out.filter((r) => r.usersCount <= gacha)
     return out
-  }, [roles, search, filters]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [roles, search, filters])
+
+  function saveRole(values) {
+    const action = editRole ? updateRole({ id: editRole.id, draft: values }) : createRole(values)
+    dispatch(action)
+      .unwrap()
+      .then(() => setToast('Saqlandi'))
+      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+  }
+
+  function removeRole() {
+    dispatch(deleteRole(editRole.id))
+      .unwrap()
+      .then(() => setToast('O‘chirildi'))
+      .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
+  }
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -83,16 +112,32 @@ export default function RollarPage() {
             <tr>
               <th className={cn(TH, 'h-10 w-12 text-left')}>#</th>
               <th className={cn(TH, 'h-10 text-left')}>NOMI</th>
+              <th className={cn(TH, 'h-10 text-left')}>TASHKILOT</th>
               <th className={cn(TH, 'h-10 text-right')}>FOYDALANUVCHILAR</th>
               <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
+              <th className={cn(TH, 'h-10 text-left')}>TURI</th>
             </tr>
           </thead>
           <tbody>
-            {shownRoles.length === 0 ? (
+            {rolesStatus === 'loading' && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={7} className="py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+                    <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
+                  </div>
+                </td>
+              </tr>
+            ) : rolesStatus === 'failed' && shownRoles.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-16 text-center">
+                  <p className="text-sm text-[#DC2626]">{rolesError || 'Xatolik yuz berdi'}</p>
+                </td>
+              </tr>
+            ) : shownRoles.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Rol topilmadi
                 </td>
               </tr>
@@ -105,19 +150,20 @@ export default function RollarPage() {
                 >
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
-                  <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{countOf(r.name)}</td>
+                  <td className={TD_MUTED}>{r.tashkilot}</td>
+                  <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.usersCount}</td>
                   <td className={TD_MUTED}>{r.yaratilgan}</td>
                   <td className={TD_MUTED}>{r.ozgartirilgan}</td>
                   <td className="px-4">
                     <span
                       className={cn(
                         'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.holat === 'active'
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
+                        r.isSystem
+                          ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
                           : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
                       )}
                     >
-                      {r.holat === 'active' ? 'Faol' : 'Nofaol'}
+                      {r.isSystem ? 'Tizim roli' : 'Odatiy rol'}
                     </span>
                   </td>
                 </tr>
@@ -127,14 +173,19 @@ export default function RollarPage() {
         </table>
       </div>
 
-      <RoleModal open={addOpen} onOpenChange={setAddOpen} onSave={(values) => dispatch(roleAdded(values))} />
+      <RoleModal open={addOpen} onOpenChange={setAddOpen} onSave={saveRole} />
       <RoleModal
         open={!!editRole}
         onOpenChange={(o) => !o && setEditRole(null)}
         role={editRole}
-        onSave={(values) => editRole && dispatch(roleUpdated({ id: editRole.id, patch: values }))}
+        onSave={saveRole}
+        onDelete={() => {
+          removeRole()
+          setEditRole(null)
+        }}
       />
       <RoleFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <Toast message={toast} />
     </div>
   )
 }
