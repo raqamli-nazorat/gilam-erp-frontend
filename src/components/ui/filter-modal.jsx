@@ -104,20 +104,28 @@ export function FilterRangeInput({ label, value, onChange, placeholder = '0', in
   const floating = focused || Boolean(value)
 
   return (
-    <label className="flex h-11 cursor-text flex-col justify-center rounded-[8px] border border-[#E5E5E5] bg-white px-3 shadow-[0px_1px_2px_0px_#0000001A] transition-colors focus-within:border-[#0052D2] dark:border-white/10 dark:bg-card">
-      {floating && (
-        <span className="text-[11px] font-medium leading-[14px] tracking-[0.4px] text-[#525252] dark:text-muted-foreground">
-          {label}
-        </span>
-      )}
+    <label className="relative flex h-11 cursor-text flex-col justify-end rounded-[8px] border border-[#E5E5E5] bg-white px-3 pb-1.5 pt-3 shadow-[0px_1px_2px_0px_#0000001A] transition-colors duration-200 focus-within:border-[#0052D2] dark:border-white/10 dark:bg-card">
+      <span
+        className={cn(
+          'pointer-events-none absolute left-3 select-none transition-all duration-200 ease-out',
+          floating
+            ? 'top-1.5 text-[11px] font-medium leading-[14px] tracking-[0.4px] text-[#525252] dark:text-muted-foreground'
+            : 'top-1/2 -translate-y-1/2 text-[14px] font-normal text-[#737373] dark:text-muted-foreground'
+        )}
+      >
+        {label}
+      </span>
       <input
         value={value}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={floating ? placeholder : label}
+        placeholder={floating ? placeholder : ''}
         inputMode={inputMode}
-        className="w-full bg-transparent text-[14px] font-normal leading-5 text-[#0A0A0A] outline-none placeholder:text-[#737373] dark:text-white"
+        className={cn(
+          'h-5 w-full bg-transparent text-[14px] font-normal leading-5 text-[#0A0A0A] outline-none transition-opacity duration-150 placeholder:text-[#737373] dark:text-white',
+          floating ? 'opacity-100' : 'opacity-0'
+        )}
       />
     </label>
   )
@@ -166,6 +174,7 @@ export function FilterDateRange({ label = 'Yaratilgan sana', from, to, onFromCha
       onFromChange={onFromChange}
       onToChange={onToChange}
       transform={maskDate}
+      placeholder="KK.OO.YYYY"
       inputMode="numeric"
     />
   )
