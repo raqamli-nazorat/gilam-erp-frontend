@@ -7,6 +7,8 @@ import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { fetchUserDetail } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { holatBadgeCls as xodimHolatBadgeCls, holatLabel as xodimHolatLabel } from '@/features/xodimlar/xodimlarData'
+import { fetchXodimDetail } from '@/features/xodimlar/xodimlarSlice'
 import { getAuditLogs } from '@/services/auditService'
 import { getActionInfo, formatAuditDateTime } from '@/features/audit/auditData'
 import { Button } from '@/components/ui/button'
@@ -25,6 +27,9 @@ export default function FoydalanuvchilarDetailPage() {
   const user = useSelector((s) => (s.foydalanuvchilar.current?.id === id ? s.foydalanuvchilar.current : null))
   const detailStatus = useSelector((s) => s.foydalanuvchilar.detailStatus)
   const detailError = useSelector((s) => s.foydalanuvchilar.detailError)
+  // Foydalanuvchiga bog'langan Xodim profili (bo'lsa) — Tahrirlash/Ishdan chiqarish/Qayta ishga
+  // olish shu orqali ishlaydi (hr/employees + hr/recruitment-dismissals).
+  const xodim = useSelector((s) => (s.xodimlar.current?.id === user?.employeeId ? s.xodimlar.current : null))
   const [toast, setToast] = useState('')
 
   // Foydalanuvchining audit jurnali — haqiqiy /audits/logs/?actor=<id> orqali
@@ -36,6 +41,10 @@ export default function FoydalanuvchilarDetailPage() {
   useEffect(() => {
     dispatch(fetchUserDetail(id))
   }, [id, dispatch])
+
+  useEffect(() => {
+    if (user?.employeeId) dispatch(fetchXodimDetail(user.employeeId))
+  }, [user?.employeeId, dispatch])
 
   useEffect(() => {
     let cancelled = false
@@ -87,7 +96,7 @@ export default function FoydalanuvchilarDetailPage() {
 
   if (!user) return null
 
-  const blocked = user.holat === 'blocked'
+  const blocked = !xodim && user.holat === 'blocked'
   const d = user.detail
 
   function copy(text, label) {
@@ -107,6 +116,11 @@ export default function FoydalanuvchilarDetailPage() {
           ]}
         />
 
+        {xodim?.holat === 'boshagan' && xodim.termination && (
+          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+            Xodim ishdan chiqarildi, {xodim.termination.at}. Sabab: {xodim.termination.reason}.
+          </div>
+        )}
         {blocked && user.block && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
             Foydalanuvchi bloklangan, {user.block.at}. Sabab: {user.block.reason}. Blokladi: {user.block.by}.
@@ -179,12 +193,14 @@ export default function FoydalanuvchilarDetailPage() {
                   <span
                     className={cn(
                       'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                      blocked
-                        ? 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
-                        : 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
+                      xodim
+                        ? xodimHolatBadgeCls(xodim.holat)
+                        : blocked
+                          ? 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
+                          : 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
                     )}
                   >
-                    {holatLabel(user.holat)}
+                    {xodim ? xodimHolatLabel(xodim.holat) : holatLabel(user.holat)}
                   </span>
                 }
               />
@@ -207,7 +223,7 @@ export default function FoydalanuvchilarDetailPage() {
           </div>
         </div>
 
-        <UserFooter user={user} />
+        <UserFooter user={user} xodim={xodim} />
       </div>
       <Toast message={toast} />
     </>

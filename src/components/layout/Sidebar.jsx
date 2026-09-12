@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { ChevronDown } from 'lucide-react'
 import { toggleSidebar, setSidebarCollapsed } from '@/features/ui/uiSlice'
+import { logout } from '@/features/auth/authSlice'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -14,6 +15,7 @@ import {
   Chart01Icon,
   DashboardSquare01Icon,
   Invoice01Icon,
+  Logout01Icon,
   MalumotnomalarIcon,
   PackageReceive01Icon,
   Settings01Icon,
@@ -90,9 +92,19 @@ const ITEM_IDLE = 'text-white/60 hover:bg-white/10 hover:text-white'
 
 export default function Sidebar() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const user = useSelector((state) => state.auth.user)
   const collapsed = useSelector((state) => state.ui.sidebarCollapsed)
   const { pathname } = useLocation()
+
+  // Hozircha faqat frontend tomonda chiqish (token/user tozalanadi) — backendda alohida
+  // logout endpoint yo'q, shuning uchun serverga so'rov yubormaymiz.
+  const handleLogout = (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    dispatch(logout())
+    navigate('/login')
+  }
 
   // Bo'limlar qo'lda yig'ib/yoyiladi. `undefined` — marshrutga qarab (o'sha bo'limda bo'lsak — ochiq).
   const [openGroups, setOpenGroups] = useState({})
@@ -276,19 +288,46 @@ export default function Sidebar() {
       </div>
 
       {collapsed ? (
-        <div className="flex items-center justify-center border-t border-white/10 py-4">{avatar}</div>
-      ) : (
-        <NavLink
-          to="/profil"
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-3 border-t border-white/10 px-5 py-4 transition-colors hover:bg-white/10"
-        >
+        <div className="flex flex-col items-center gap-2 border-t border-white/10 py-4">
           {avatar}
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{user?.fullName ?? 'Foydalanuvchi'}</p>
-            <p className="truncate text-xs text-white/60">{user?.role ?? '—'}</p>
-          </div>
-        </NavLink>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Chiqish"
+                >
+                  <Logout01Icon className="shrink-0" />
+                </button>
+              }
+            />
+            <TooltipContent side="right">Chiqish</TooltipContent>
+          </Tooltip>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 border-t border-white/10 px-5 py-4">
+          <NavLink
+            to="/profil"
+            onClick={(e) => e.stopPropagation()}
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors hover:bg-white/10"
+          >
+            {avatar}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{user?.fullName ?? 'Foydalanuvchi'}</p>
+              <p className="truncate text-xs text-white/60">{user?.role ?? '—'}</p>
+            </div>
+          </NavLink>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Chiqish"
+          >
+            <Logout01Icon className="shrink-0" />
+          </button>
+        </div>
       )}
     </aside>
   )
