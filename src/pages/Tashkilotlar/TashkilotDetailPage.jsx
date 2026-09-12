@@ -245,11 +245,11 @@ export default function TashkilotDetailPage() {
 
 function Panel({ title, children }) {
   return (
-    <div className={cn('overflow-hidden rounded-lg', surface)}>
-      <div className={cn('sticky top-0 z-10 px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+    <div className={cn('rounded-lg', surface)}>
+      <div className={cn('sticky top-0 z-10 rounded-t-lg px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
         {title}
       </div>
-      <div className="divide-y divide-[#DFE4EF] dark:divide-white/5">{children}</div>
+      <div className="divide-y divide-[#DFE4EF] [&>*:last-child]:rounded-b-lg dark:divide-white/5">{children}</div>
     </div>
   )
 }
