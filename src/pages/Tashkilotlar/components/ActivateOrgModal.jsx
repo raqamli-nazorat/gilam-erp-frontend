@@ -26,8 +26,8 @@ export default function ActivateOrgModal({ open, onOpenChange, org, onConfirm })
           {[
             ['Tashkilot', org.name, false],
             ['INN', org.inn, true],
-            ['Filiallar', `${org.stats.filiallar} ta`, false],
-            ['Foydalanuvchilar', `${org.stats.foydalanuvchilar} ta`, false],
+            ['Filiallar', `${org.stats.filiallar ?? '—'} ta`, false],
+            ['Foydalanuvchilar', org.stats.foydalanuvchilar == null ? '—' : `${org.stats.foydalanuvchilar} ta`, false],
             ['To‘xtatilgan', org.suspend?.at ?? '—', false],
             ['Sababi', org.suspend?.reason ?? '—', false],
           ].map(([k, v, copyable]) => (

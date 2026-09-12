@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Plus, Search, Users } from 'lucide-react'
+import { Filter, Loader2, Plus, Search, Users } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon, UserGroupIcon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
-import { userAdded } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { createUser, fetchUsers } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -22,6 +22,8 @@ export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const users = useSelector((s) => s.foydalanuvchilar.list)
+  const listStatus = useSelector((s) => s.foydalanuvchilar.listStatus)
+  const listError = useSelector((s) => s.foydalanuvchilar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -31,6 +33,10 @@ export default function FoydalanuvchilarListPage() {
   const [toast, setToast] = useState('')
 
   usePageHeader('Platforma › Foydalanuvchilar')
+
+  useEffect(() => {
+    if (listStatus === 'idle') dispatch(fetchUsers())
+  }, [listStatus, dispatch])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -159,7 +165,31 @@ export default function FoydalanuvchilarListPage() {
             </tr>
           </thead>
           <tbody>
-              {shown.length === 0 ? (
+              {listStatus === 'loading' ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+                      <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : listStatus === 'failed' ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => dispatch(fetchUsers())}
+                        className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+                      >
+                        Qayta urinish
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ) : shown.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -223,8 +253,10 @@ export default function FoydalanuvchilarListPage() {
         onOpenChange={setModalOpen}
         user={null}
         onSave={(values) => {
-          const action = dispatch(userAdded(values))
-          navigate(`/foydalanuvchilar/${action.payload.id}`)
+          dispatch(createUser(values))
+            .unwrap()
+            .then((created) => navigate(`/foydalanuvchilar/${created.id}`))
+            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <UserFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />

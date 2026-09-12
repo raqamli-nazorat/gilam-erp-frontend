@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { TASHKILOT_NOMLARI } from '@/features/foydalanuvchilar/foydalanuvchilarData'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { FilterDateRange, FilterField, FilterModal, FilterRangeRow, FilterSelect } from '@/components/ui/filter-modal'
 
 export const EMPTY_ROLE_FILTERS = {
@@ -16,6 +17,12 @@ const onlyDigits = (v) => v.replace(/\D/g, '')
 export default function RoleFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
+  const dispatch = useDispatch()
+  const orgs = useSelector((s) => s.tashkilotlar.list)
+
+  useEffect(() => {
+    if (open) dispatch(fetchOrganizations())
+  }, [open, dispatch])
 
   return (
     <FilterModal
@@ -34,11 +41,11 @@ export default function RoleFilterModal({ open, onOpenChange, filters, onApply }
         <FilterSelect
           value={draft.tashkilot}
           onChange={(v) => set('tashkilot', v)}
-          options={['Barcha tashkilotlar', ...TASHKILOT_NOMLARI]}
+          options={['Barcha tashkilotlar', ...orgs.map((o) => o.name)]}
         />
       </FilterField>
-      <FilterField label="Holat">
-        <FilterSelect value={draft.holat} onChange={(v) => set('holat', v)} options={['Faol', 'Nofaol']} />
+      <FilterField label="Turi">
+        <FilterSelect value={draft.holat} onChange={(v) => set('holat', v)} options={['Tizim roli', 'Odatiy rol']} />
       </FilterField>
       <FilterRangeRow
         label="Foydalanuvchi soni"

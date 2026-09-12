@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { PLATFORM_REPORTS } from '@/features/hisobotlar/platformReportsData'
+import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { fetchBranches } from '@/features/filiallar/filiallarSlice'
+import { fetchUsers } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import DashboardStatCard from './components/DashboardStatCard'
@@ -16,12 +19,22 @@ import PulQandayKeladiCard from './components/PulQandayKeladiCard'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const orgs = useSelector((s) => s.tashkilotlar.list)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
   const branches = useSelector((s) => s.filiallar.list)
+  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
   const users = useSelector((s) => s.foydalanuvchilar.list)
+  const usersStatus = useSelector((s) => s.foydalanuvchilar.listStatus)
   const [toast, setToast] = useState('')
 
   usePageHeader('Platforma › Boshqaruv paneli')
+
+  useEffect(() => {
+    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
+    if (branchesStatus === 'idle') dispatch(fetchBranches())
+    if (usersStatus === 'idle') dispatch(fetchUsers())
+  }, [orgsStatus, branchesStatus, usersStatus, dispatch])
 
   useEffect(() => {
     if (!toast) return undefined

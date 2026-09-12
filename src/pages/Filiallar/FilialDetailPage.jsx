@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
+import { Loader2 } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/filiallar/filiallarData'
+import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
+import { useBranch } from './useBranch'
 import StatCards from './components/StatCards'
 import FilialFooter from './components/FilialFooter'
 import { Panel, InfoRow, headBg, surface } from './components/InfoPanel'
@@ -16,21 +19,43 @@ const THb =
   'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
 
 export default function FilialDetailPage() {
-  const { id } = useParams()
   const navigate = useNavigate()
-  const branch = useSelector((s) => s.filiallar.list.find((b) => b.id === id))
+  const branch = useBranch()
+  const detailStatus = useSelector((s) => s.filiallar.detailStatus)
+  const detailError = useSelector((s) => s.filiallar.detailError)
   const [toast, setToast] = useState('')
 
   usePageHeader(branch ? [{ label: 'Filiallar', to: '/filiallar' }, { label: branch.name }] : 'Filiallar')
 
   useEffect(() => {
-    if (!branch) navigate('/filiallar', { replace: true })
-  }, [branch, navigate])
-  useEffect(() => {
     if (!toast) return undefined
     const t = setTimeout(() => setToast(''), 3000)
     return () => clearTimeout(t)
   }, [toast])
+
+  if (detailStatus === 'loading' && !branch) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+        <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
+      </div>
+    )
+  }
+
+  if (detailStatus === 'failed' && !branch) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <p className="text-sm text-[#DC2626]">{detailError || 'Filial topilmadi'}</p>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/filiallar', { replace: true })}
+          className="h-9 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+        >
+          Filiallarga qaytish
+        </Button>
+      </div>
+    )
+  }
 
   if (!branch) return null
 
@@ -48,10 +73,10 @@ export default function FilialDetailPage() {
       <div className="flex h-full flex-col gap-3">
         <StatCards
           items={[
-            { title: 'XODIMLAR', value: `${formatNumber(branch.stats.xodimlar, 0)} ta`, to: `/filiallar/${id}/xodimlar` },
-            { title: 'OMBORLAR', value: `${formatNumber(branch.stats.omborlar, 0)} ta`, to: `/filiallar/${id}/omborlar` },
-            { title: 'MIJOZLAR', value: `${formatNumber(branch.stats.mijozlar, 0)} ta`, to: `/filiallar/${id}/mijozlar` },
-            { title: 'SAVDO', value: `${formatNumber(branch.stats.savdo, 2)} UZS`, to: `/filiallar/${id}/savdo` },
+            { title: 'XODIMLAR', value: `${formatNumber(branch.stats.xodimlar, 0)} ta`, to: `/filiallar/${branch.id}/xodimlar` },
+            { title: 'OMBORLAR', value: `${formatNumber(branch.stats.omborlar, 0)} ta`, to: `/filiallar/${branch.id}/omborlar` },
+            { title: 'MIJOZLAR', value: `${formatNumber(branch.stats.mijozlar, 0)} ta`, to: `/filiallar/${branch.id}/mijozlar` },
+            { title: 'SAVDO', value: `${formatNumber(branch.stats.savdo, 2)} UZS`, to: `/filiallar/${branch.id}/savdo` },
           ]}
         />
 
@@ -77,10 +102,10 @@ export default function FilialDetailPage() {
                 </thead>
                 <tbody>
                   {d.xodimlar.length === 0 ? (
-                    <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Xodim yo‘q</td></tr>
+                    <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Bu ma’lumot hali mavjud emas</td></tr>
                   ) : (
                     d.xodimlar.map((x, i) => (
-                      <tr key={x.id} className="h-[60px] hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr key={x.id} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
                         <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim}</td>
@@ -110,8 +135,6 @@ export default function FilialDetailPage() {
           <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
             <Panel title="Filial ma’lumotlari:">
               <InfoRow label="Tashkilot" value={branch.tashkilot} />
-              <InfoRow label="Filial turi" value={branch.turi} />
-              <InfoRow label="Direktor" value={branch.director} />
               <InfoRow label="Telefon" value={branch.phone} onCopy={() => copy(branch.phone, 'Telefon')} />
               <InfoRow label="Viloyat" value={branch.viloyat} />
               <InfoRow label="Tuman" value={branch.tuman} />
@@ -135,18 +158,26 @@ export default function FilialDetailPage() {
             </Panel>
 
             <Panel title="Oxirgi savdolar:">
-              {d.lastSales.map((r, i) => (
-                <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
-                  <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
-                  <span className="font-medium text-[#0A0A0A] dark:text-white">
-                    {formatNumber(r.amount, 2)}{i === 0 ? ' UZS' : ''}
-                  </span>
+              {d.lastSales.length === 0 ? (
+                <div className="px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
+                  Bu ma’lumot hali mavjud emas
                 </div>
-              ))}
-              <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
-                <span>JAMI, 7 kun</span>
-                <span>{formatNumber(salesTotal, 2)}</span>
-              </div>
+              ) : (
+                <>
+                  {d.lastSales.map((r, i) => (
+                    <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
+                      <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
+                      <span className="font-medium text-[#0A0A0A] dark:text-white">
+                        {formatNumber(r.amount, 2)}{i === 0 ? ' UZS' : ''}
+                      </span>
+                    </div>
+                  ))}
+                  <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+                    <span>JAMI, 7 kun</span>
+                    <span>{formatNumber(salesTotal, 2)}</span>
+                  </div>
+                </>
+              )}
             </Panel>
           </div>
         </div>

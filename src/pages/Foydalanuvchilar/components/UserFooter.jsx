@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { CheckCircle2, X } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
-import { userActivated, userBlocked, userUpdated } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { updateUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import UserModal from './UserModal'
@@ -12,7 +12,6 @@ import ActivateUserModal from './ActivateUserModal'
 
 export default function UserFooter({ user }) {
   const dispatch = useDispatch()
-  const currentUser = useSelector((s) => s.auth.user)
   const [editOpen, setEditOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
   const [activateOpen, setActivateOpen] = useState(false)
@@ -59,17 +58,19 @@ export default function UserFooter({ user }) {
         onOpenChange={setEditOpen}
         user={user}
         onSave={(patch) => {
-          dispatch(userUpdated({ id: user.id, patch }))
-          setToast('O‘zgarishlar saqlandi')
+          dispatch(updateUser({ id: user.id, draft: patch }))
+            .unwrap()
+            .then(() => setToast('O‘zgarishlar saqlandi'))
+            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <BlockUserModal
         open={blockOpen}
         onOpenChange={setBlockOpen}
         user={user}
-        onConfirm={(reason) => {
-          dispatch(userBlocked({ id: user.id, reason, by: currentUser?.fullName ?? 'Administrator' }))
-          setToast('Foydalanuvchi bloklandi')
+        onConfirm={() => {
+          // Backend hali foydalanuvchini bloklash/faollashtirish uchun maydon taqdim etmagan.
+          setToast('Bu funksiya hozircha backendda mavjud emas')
         }}
       />
       <ActivateUserModal
@@ -77,8 +78,7 @@ export default function UserFooter({ user }) {
         onOpenChange={setActivateOpen}
         user={user}
         onConfirm={() => {
-          dispatch(userActivated({ id: user.id, by: currentUser?.fullName ?? 'Administrator' }))
-          setToast('Foydalanuvchi faollashtirildi')
+          setToast('Bu funksiya hozircha backendda mavjud emas')
         }}
       />
       <Toast message={toast} />

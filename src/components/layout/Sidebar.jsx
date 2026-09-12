@@ -36,7 +36,10 @@ const NAV_ITEMS = [
     label: "Ma'lumotnomalar",
     icon: MalumotnomalarIcon,
     children: [
-      { to: '/malumotnomalar/viloyat-va-tuman', label: 'Viloyat va tuman' },
+      { to: '/malumotnomalar/davlat', label: 'Davlat' },
+      { to: '/malumotnomalar/viloyat', label: 'Viloyat' },
+      { to: '/malumotnomalar/tuman', label: 'Tuman' },
+      { to: '/malumotnomalar/xodimlar', label: 'Xodimlar' },
       { to: '/malumotnomalar/rollar', label: 'Rollar' },
       { to: '/malumotnomalar/sifatlar', label: 'Sifatlar' },
       { to: '/malumotnomalar/ranglar', label: 'Ranglar' },
