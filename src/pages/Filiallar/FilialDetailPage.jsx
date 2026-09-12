@@ -63,7 +63,7 @@ export default function FilialDetailPage() {
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           {/* Xodimlar jadvali */}
-          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden', surface)}>
+          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
