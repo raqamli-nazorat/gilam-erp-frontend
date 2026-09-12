@@ -60,7 +60,7 @@ export default function LoginPage() {
   function handleSubmit(e) {
     e.preventDefault()
     if (isDisabled) return
-    dispatch(login({ login: form.login, password: form.password }))
+    dispatch(login({ phone_number: form.login, login: form.login, password: form.password }))
   }
 
   const alertConfig = ALERT_STYLES[auth.status]
@@ -84,7 +84,7 @@ export default function LoginPage() {
             className="mt-1.5 text-center text-[#5B5B5B] dark:text-[#FFFFFF7A]"
             style={{ fontSize: 14, fontWeight: 400, lineHeight: '20px' }}
           >
-            Login va parolingizni kiriting
+            Telefon raqami va parolingizni kiriting
           </p>
 
           {alertConfig && (
@@ -96,7 +96,7 @@ export default function LoginPage() {
                 )}
               >
                 <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', alertConfig.dot)} />
-                {auth.status === 'error' && "Login yoki parol noto'g'ri"}
+                {auth.status === 'error' && (auth.errorMessage || "Login yoki parol noto'g'ri")}
                 {auth.status === 'warning' && 'Oxirgi urinish qoldi'}
                 {isBlocked && 'Hisob vaqtincha bloklandi'}
               </div>
