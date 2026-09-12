@@ -16,6 +16,12 @@ export async function createRecruitmentDismissal(payload) {
   return unwrapData(response)
 }
 
+// Mavjud "ishga olish" hujjatini tahrirlash (filial/lavozim/oylik/karta/sana/qo'shimcha).
+export async function updateRecruitmentDismissal(id, payload) {
+  const response = await axiosAPI.patch(`hr/recruitment-dismissals/${id}/`, payload)
+  return unwrapData(response)
+}
+
 // Xodim daftari (EmployeeLedger) — har bir xodim bo'yicha voqealar jurnali, faqat o'qish uchun.
 export async function getEmployeeLedger(employeeId) {
   return fetchAllPages('hr/employee-ledgers/', { employee: employeeId })

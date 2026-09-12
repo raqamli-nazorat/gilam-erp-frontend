@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Check, FileBarChart2, X } from 'lucide-react'
+import { Check, FileBarChart2, UserPlus, X } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
 import { rehireXodim, terminateXodim, updateXodim } from '@/features/xodimlar/xodimlarSlice'
@@ -35,13 +35,22 @@ export default function XodimFooter({ employee }) {
           <FileBarChart2 className="h-4 w-4" /> Xisobot
         </Button>
         <div className="flex items-center gap-2.5">
-          <Button
-            variant="outline"
-            onClick={() => setEditOpen(true)}
-            className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
-          >
-            <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
-          </Button>
+          {holat === 'yangi' ? (
+            <Button
+              onClick={() => setEditOpen(true)}
+              className="h-9 gap-2 rounded-lg bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+            >
+              <UserPlus className="h-4 w-4" /> Ishga olish
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setEditOpen(true)}
+              className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
+            >
+              <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
+            </Button>
+          )}
 
           {holat === 'faol' && (
             <Button
@@ -66,10 +75,10 @@ export default function XodimFooter({ employee }) {
         open={editOpen}
         onOpenChange={setEditOpen}
         employee={employee}
-        onSave={(values) => {
-          dispatch(updateXodim({ id: employee.id, draft: values }))
+        onSave={({ recruitmentId, ...draft }) => {
+          dispatch(updateXodim({ id: employee.id, recruitmentId, draft }))
             .unwrap()
-            .then(() => setToast('O‘zgarishlar saqlandi'))
+            .then(() => setToast(holat === 'yangi' ? 'Xodim ishga olindi' : 'O‘zgarishlar saqlandi'))
             .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />

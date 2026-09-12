@@ -8,11 +8,13 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { holatBadgeCls, holatLabel } from '@/features/xodimlar/xodimlarData'
-import { createXodim, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
+import { fetchXodimlar, updateXodim } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
-import HireEmployeeModal from './components/HireEmployeeModal'
+import BulkHireModal from './components/BulkHireModal'
+import EmployeePickerModal from './components/EmployeePickerModal'
+import HireChoiceModal from './components/HireChoiceModal'
 import XodimFilterModal, { EMPTY_XODIM_FILTERS } from './components/XodimFilterModal'
 
 const TH =
@@ -29,7 +31,11 @@ export default function XodimlarListPage() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_XODIM_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [choiceOpen, setChoiceOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerMultiple, setPickerMultiple] = useState(false)
+  const [hireIds, setHireIds] = useState([])
+  const [hireOpen, setHireOpen] = useState(false)
   const [toast, setToast] = useState('')
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Xodimlar' }])
@@ -135,7 +141,7 @@ export default function XodimlarListPage() {
             <Filter className="h-4 w-4" /> Filtr
           </Button>
           <Button
-            onClick={() => setModalOpen(true)}
+            onClick={() => setChoiceOpen(true)}
             className="h-9 gap-2 rounded-xl bg-[#0052D2] px-3.5 text-sm font-medium text-white hover:bg-[#0047B8]"
           >
             <UserPlus className="h-4 w-4" /> Ishga olish
@@ -153,14 +159,13 @@ export default function XodimlarListPage() {
               <th className={cn(TH, 'text-left')}>FILIAL</th>
               <th className={cn(TH, 'text-left')}>LAVOZIM</th>
               <th className={cn(TH, 'text-left')}>ISHGA OLINGAN</th>
-              <th className={cn(TH, 'text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
             {listStatus === 'loading' ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -169,7 +174,7 @@ export default function XodimlarListPage() {
               </tr>
             ) : listStatus === 'failed' ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
                     <Button
@@ -184,7 +189,7 @@ export default function XodimlarListPage() {
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
                       <UserPlus className="h-6 w-6 text-[#737373]" />
@@ -218,7 +223,6 @@ export default function XodimlarListPage() {
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.filial || '—'}</td>
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim || '—'}</td>
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{x.ishgaOlinganSana || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{x.yaratilgan}</td>
                   <td className="px-4">
                     <span
                       className={cn(
@@ -236,17 +240,51 @@ export default function XodimlarListPage() {
         </table>
       </div>
 
-      <HireEmployeeModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        employee={null}
-        onSave={(values) => {
-          dispatch(createXodim(values))
-            .unwrap()
-            .then((created) => navigate(`/malumotnomalar/xodimlar/${created.id}`))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      <HireChoiceModal
+        open={choiceOpen}
+        onOpenChange={setChoiceOpen}
+        onChooseSingle={() => {
+          setPickerMultiple(false)
+          setPickerOpen(true)
+        }}
+        onChooseBulk={() => {
+          setPickerMultiple(true)
+          setPickerOpen(true)
         }}
       />
+
+      <EmployeePickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        employees={xodimlar}
+        multiple={pickerMultiple}
+        onBack={() => {
+          setPickerOpen(false)
+          setChoiceOpen(true)
+        }}
+        onConfirm={(ids) => {
+          setHireIds(ids)
+          setHireOpen(true)
+        }}
+      />
+      <BulkHireModal
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        employees={xodimlar.filter((x) => hireIds.includes(x.id))}
+        onSaveOne={({ employeeId, ...draft }) =>
+          dispatch(updateXodim({ id: employeeId, recruitmentId: null, draft }))
+            .unwrap()
+            .catch((err) => {
+              setToast(err || 'Saqlashda xatolik yuz berdi')
+              throw err
+            })
+        }
+        onDone={() => {
+          setToast(hireIds.length > 1 ? `${hireIds.length} ta xodim ishga olindi` : 'Xodim ishga olindi')
+          if (hireIds.length === 1) navigate(`/malumotnomalar/xodimlar/${hireIds[0]}`)
+        }}
+      />
+
       <XodimFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
       <Toast message={toast} />
     </div>

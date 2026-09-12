@@ -19,6 +19,9 @@ function mapUser(u) {
     filialId: u.branch_info?.id ?? '',
     rol: u.role_info?.name ?? '',
     rolId: u.role_info?.id ?? '',
+    // Ushbu foydalanuvchiga bog'langan Xodim (Employee) profili — bo'lsa, "Tahrirlash"/
+    // "Ishdan chiqarish"/"Qayta ishga olish" Xodimlar modulidagi hujjat orqali ishlaydi.
+    employeeId: u.employee_info?.id ?? '',
     allBranches: !!u.all_branches,
     isStaff: !!u.is_staff,
     holat: 'active',

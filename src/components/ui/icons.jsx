@@ -15,6 +15,7 @@ import {
   FilterIcon as FilterRaw,
   FilterResetIcon as FilterResetRaw,
   Invoice01Icon as Invoice01Raw,
+  Logout01Icon as Logout01Raw,
   PackageReceive01Icon as PackageReceive01Raw,
   Search01Icon as Search01Raw,
   Settings01Icon as Settings01Raw,
@@ -180,4 +181,8 @@ export function Settings01Icon({ className, size = 18, ...props }) {
 
 export function SidebarLeft01Icon({ className, size = 16, ...props }) {
   return <HugeiconsIcon icon={SidebarLeft01Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
+export function Logout01Icon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={Logout01Raw} size={size} className={className} strokeWidth={2} {...props} />
 }

@@ -77,6 +77,9 @@ function combineXodim(employee, records) {
     qoshimchaFoizi: latestHire?.extraFoiz ?? 0,
     ishgaOlinganSana: latestHire?.sana ? formatDate(latestHire.sana) : '',
     holat,
+    // Eng oxirgi "recruitment" turidagi hujjat id'si — "Tahrirlash" shuni PATCH qiladi;
+    // yo'q bo'lsa (hali umuman ishga olinmagan yoki hozir ishdan chiqarilgan) Tahrirlash yangi hujjat yaratadi.
+    latestHireId: latestHire?.id ?? null,
     termination: latest?.type === 'dismissal' ? { reason: latest.dismissalReason, at: formatDate(latest.sana) } : null,
   }
 }
@@ -197,12 +200,21 @@ export const createXodim = createAsyncThunk(
   }
 )
 
+// "Xodimni tahrirlash" / "Xodimni ishga olish" (mavjud profil uchun) — eng oxirgi "recruitment"
+// hujjati bo'lsa uni PATCH qiladi, bo'lmasa (hali ishga olinmagan yoki hozir bo'shagan) yangisini yaratadi.
 export const updateXodim = createAsyncThunk(
   'xodimlar/updateXodim',
-  async ({ id, draft }, { rejectWithValue }) => {
+  async ({ id, recruitmentId, draft }, { rejectWithValue }) => {
     try {
-      const employeeRaw = await employeeService.updateEmployee(id, buildEmployeePayload(draft))
-      const recordsRaw = await recruitmentService.getRecruitmentDismissalsByEmployee(id)
+      if (recruitmentId) {
+        await recruitmentService.updateRecruitmentDismissal(recruitmentId, buildRecruitmentPayload('recruitment', id, draft))
+      } else {
+        await recruitmentService.createRecruitmentDismissal(buildRecruitmentPayload('recruitment', id, draft))
+      }
+      const [employeeRaw, recordsRaw] = await Promise.all([
+        employeeService.getEmployee(id),
+        recruitmentService.getRecruitmentDismissalsByEmployee(id),
+      ])
       return combineXodim(mapEmployee(employeeRaw), recordsRaw.map(mapRecruitment))
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
