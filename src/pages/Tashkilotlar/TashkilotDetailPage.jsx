@@ -200,7 +200,7 @@ export default function TashkilotDetailPage() {
 
             <Panel title="Foydalanuvchilar:">
               {org.users.length === 0 ? (
-                <div className="px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
+                <div className="px-4 py-3 text-center min-h-[calc(100vh-730px)] text-[13px] text-[#737373] dark:text-muted-foreground">
                   Bu ma’lumot hali mavjud emas
                 </div>
               ) : (

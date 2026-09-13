@@ -137,15 +137,26 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              <th className={cn(TH, 'h-10 w-12 text-left')}>#</th>
-              {config.columns.map((c) => (
-                <th key={c.key} className={cn(TH, 'h-10', c.align === 'right' ? 'text-right' : 'text-left')}>
+              <th className={cn(TH, 'h-10 w-12 text-left whitespace-nowrap')}>#</th>
+              {config.columns.map((c, ci) => (
+                <th
+                  key={c.key}
+                  className={cn(
+                    TH,
+                    'h-10 whitespace-nowrap',
+                    c.align === 'right' ? 'text-right' : 'text-left',
+                    c.key === 'tavsif'
+                      ? 'max-w-[300px] 2xl:max-w-[300px]'
+                      : ci === 0
+                        ? 'max-w-[200px]'
+                        : 'max-w-[220px]'
+                  )}
+                >
                   {c.label}
                 </th>
               ))}
-              <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>YARATILGAN</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>O‘ZGARTIRILGAN</th>
             </tr>
           </thead>
           <tbody>
@@ -186,44 +197,42 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
                   onClick={() => setModalRec(r)}
                   className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                 >
-                  <td className={TD_MUTED}>{i + 1}</td>
+                  <td className={cn(TD_MUTED, 'w-12 whitespace-nowrap')}>{i + 1}</td>
                   {config.columns.map((c, ci) => (
                     <td
                       key={c.key}
                       className={cn(
-                        'px-4 text-[13px]',
+                        'px-4 text-[13px] whitespace-nowrap',
                         c.align === 'right' ? 'text-right' : 'text-left',
                         ci === 0
                           ? 'text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]'
-                          : 'text-[#0A0A0A] dark:text-muted-foreground'
+                          : 'text-[#0A0A0A] dark:text-muted-foreground',
+                        c.key === 'tavsif'
+                          ? 'max-w-[300px] 2xl:max-w-[350px]'
+                          : ci === 0
+                            ? 'max-w-[200px]'
+                            : 'max-w-[220px]'
                       )}
                     >
-                      <span className="inline-flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-2 min-w-0"
+                        title={r[c.key] ? String(r[c.key]) : undefined}
+                      >
                         {c.swatchKey && (
                           <span
                             className="h-6 w-6 shrink-0 rounded-md border border-black/10 dark:border-white/15"
                             style={{ backgroundColor: r[c.swatchKey] }}
                           />
                         )}
-                        <span>{c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || '—'}</span>
+                        <span className="truncate min-w-0">
+                          {c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || '—'}
+                        </span>
                         {c.copyable && r[c.key] && <CopyButton value={r[c.key]} />}
-                      </span>
+                      </div>
                     </td>
                   ))}
-                  <td className={TD_MUTED}>{r.yaratilgan}</td>
-                  <td className={TD_MUTED}>{r.ozgartirilgan}</td>
-                  <td className="px-4">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.active
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
-                      )}
-                    >
-                      {r.active ? 'Faol' : 'Arxiv'}
-                    </span>
-                  </td>
+                  <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
+                  <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>
                 </tr>
               ))
             )}
@@ -339,15 +348,27 @@ function ListDetail({ slug, name, config }) {
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              <th className={cn(TH, 'h-10 w-12 text-left')}>#</th>
-              {config.columns.map((c) => (
-                <th key={c.key} className={cn(TH, 'h-10', c.align === 'right' ? 'text-right' : 'text-left')}>
+              <th className={cn(TH, 'h-10 w-12 text-left whitespace-nowrap')}>#</th>
+              {config.columns.map((c, ci) => (
+                <th
+                  key={c.key}
+                  className={cn(
+                    TH,
+                    'h-10 whitespace-nowrap',
+                    c.align === 'right' ? 'text-right' : 'text-left',
+                    c.key === 'tavsif'
+                      ? 'max-w-[320px] 2xl:max-w-[480px]'
+                      : ci === 0
+                        ? 'max-w-[200px]'
+                        : 'max-w-[220px]'
+                  )}
+                >
                   {c.label}
                 </th>
               ))}
-              <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>YARATILGAN</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>O‘ZGARTIRILGAN</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -364,33 +385,43 @@ function ListDetail({ slug, name, config }) {
                   onClick={() => setModalRec(r)}
                   className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                 >
-                  <td className={TD_MUTED}>{i + 1}</td>
+                  <td className={cn(TD_MUTED, 'w-12 whitespace-nowrap')}>{i + 1}</td>
                   {config.columns.map((c, ci) => (
                     <td
                       key={c.key}
                       className={cn(
-                        'px-4 text-[13px]',
+                        'px-4 text-[13px] whitespace-nowrap',
                         c.align === 'right' ? 'text-right' : 'text-left',
                         ci === 0
                           ? 'text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]'
-                          : 'text-[#0A0A0A] dark:text-muted-foreground'
+                          : 'text-[#0A0A0A] dark:text-muted-foreground',
+                        c.key === 'tavsif'
+                          ? 'max-w-[320px] 2xl:max-w-[480px]'
+                          : ci === 0
+                            ? 'max-w-[200px]'
+                            : 'max-w-[220px]'
                       )}
                     >
-                      <span className="inline-flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-2 min-w-0"
+                        title={r[c.key] ? String(r[c.key]) : undefined}
+                      >
                         {c.swatchKey && (
                           <span
                             className="h-6 w-6 shrink-0 rounded-md border border-black/10 dark:border-white/15"
                             style={{ backgroundColor: r[c.swatchKey] }}
                           />
                         )}
-                        <span>{c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || '—'}</span>
+                        <span className="truncate min-w-0">
+                          {c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || '—'}
+                        </span>
                         {c.copyable && r[c.key] && <CopyButton value={r[c.key]} />}
-                      </span>
+                      </div>
                     </td>
                   ))}
-                  <td className={TD_MUTED}>{r.yaratilgan}</td>
-                  <td className={TD_MUTED}>{r.ozgartirilgan}</td>
-                  <td className="px-4">
+                  <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
+                  <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>
+                  <td className="px-4 whitespace-nowrap">
                     <span
                       className={cn(
                         'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
