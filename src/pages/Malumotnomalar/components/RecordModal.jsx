@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import ColorPicker from '@/components/ui/color-picker'
 
 const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
@@ -82,12 +84,29 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
                     value={draft[f.key] ?? ''}
                     onChange={(e) => set(f.key, e.target.value)}
                     placeholder={f.placeholder || 'Kiriting'}
-                    className={cn(fieldCls, 'pr-9')}
+                    className={cn(fieldCls, 'pr-10')}
                   />
-                  <span
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-black/5"
-                    style={{ backgroundColor: draft[f.swatchKey] || '#E5E5E5' }}
-                  />
+                  <Popover>
+                    <PopoverTrigger
+                      type="button"
+                      className="absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-black/15 shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#0052D2]/40 dark:border-white/20"
+                      style={{ backgroundColor: draft[f.swatchKey] || '#737373' }}
+                      title="Rang tanlash"
+                    />
+                    <PopoverContent
+                      align="end"
+                      side="bottom"
+                      sideOffset={6}
+                      className="w-auto border-0 bg-transparent p-0 shadow-none ring-0"
+                    >
+                      <ColorPicker
+                        value={draft[f.swatchKey] || '#737373'}
+                        onChange={(hex) => {
+                          set(f.swatchKey, hex)
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <Input

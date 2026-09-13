@@ -5,7 +5,7 @@ export function groupThousands(intStr) {
 
 // 12 230,00 uslubidagi son formatlash (bo'shliq — minglik, vergul — kasr ajratkichi)
 export function formatNumber(value, fractionDigits = 2) {
-  if (value == null || Number.isNaN(value)) return '—'
+  if (value == null || Number.isNaN(value)) return 0
   const fixed = Number(value).toFixed(fractionDigits)
   const [intPart, fracPart] = fixed.split('.')
   const withSpaces = groupThousands(intPart)
