@@ -1,9 +1,16 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
 
-// Barcha tashkilotlarni (barcha sahifalarni yig'ib) qaytaradi.
+// Barcha tashkilotlarni (barcha sahifalarni yig'ib) qaytaradi — Boshqaruv paneli va turli
+// tanlov (org picker) oynalari uchun to'liq ro'yxat kerak, shuning uchun saqlanadi.
 export async function getAllOrganizations() {
   return fetchAllPages('organization/organizations/')
+}
+
+// "Tashkilotlar" ro'yxat jadvali uchun — bitta sahifani so'raydi (scroll pagination).
+// `params`: { page, search, is_suspended }.
+export async function getOrganizationsPage(params) {
+  return fetchPage('organization/organizations/', params)
 }
 
 export async function getOrganization(id) {

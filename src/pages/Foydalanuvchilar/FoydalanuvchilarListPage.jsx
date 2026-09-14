@@ -7,8 +7,10 @@ import { Copy01Icon, UserGroupIcon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
-import { createUser, fetchUsers } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { createUser, fetchUsers, mapUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import * as userService from '@/services/userService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -18,15 +20,26 @@ import UserFilterModal, { EMPTY_USER_FILTERS } from './components/UserFilterModa
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
+// Jadval endi "scroll pagination" bilan yuklanadi — qidiruv serverga so'rov parametri
+// sifatida yuboriladi. Tab/"Holat" (blok) hozircha backendda yo'q (mapUser doim
+// holat:'active' qaytaradi — bloklangan foydalanuvchi tushunchasi hali real emas), shuning
+// uchun serverga status parametri yuborilmaydi; "Tashkilot"/"Filial"/"Rol"/sana filtrlari
+// esa faqat YUKLANGAN qatorlar ustida ishlaydi (mos backend parametri tasdiqlanmagan).
+function fetchUsersPage(params) {
+  return userService.getUsersPage(params).then((res) => ({ ...res, results: res.results.map(mapUser) }))
+}
+
 export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  // To'liq ro'yxat — tab hisoblagichlari va boshqa sahifalardagi foydalanuvchi tanlagichlari
+  // shunga tayanadi, shuning uchun bunga tegilmaydi.
   const users = useSelector((s) => s.foydalanuvchilar.list)
   const listStatus = useSelector((s) => s.foydalanuvchilar.listStatus)
-  const listError = useSelector((s) => s.foydalanuvchilar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_USER_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -37,6 +50,12 @@ export default function FoydalanuvchilarListPage() {
   useEffect(() => {
     if (listStatus === 'idle') dispatch(fetchUsers())
   }, [listStatus, dispatch])
+
+  // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -60,14 +79,22 @@ export default function FoydalanuvchilarListPage() {
   )
   const hasFilter = Object.values(filters).some(Boolean)
 
+  const {
+    items: pagedUsers,
+    isLoading: usersLoading,
+    isLoadingMore: usersLoadingMore,
+    error: usersError,
+    hasMore: usersHasMore,
+    containerRef: usersScrollRef,
+    sentinelRef: usersSentinelRef,
+    handleScroll: handleUsersScroll,
+    reload: reloadUsers,
+  } = useServerPagedList(fetchUsersPage, { search: debouncedSearch.trim() })
+
   const shown = useMemo(() => {
-    let out = users
+    let out = pagedUsers
     if (tab === 'active') out = out.filter((u) => u.holat === 'active')
     if (tab === 'blocked') out = out.filter((u) => u.holat === 'blocked')
-    if (search) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((u) => u.name.toLowerCase().includes(q) || u.phone.replace(/\D/g, '').includes(q.replace(/\D/g, '')))
-    }
     if (filters.tashkilot) out = out.filter((u) => u.tashkilot === filters.tashkilot)
     if (filters.filial) out = out.filter((u) => u.filial === filters.filial)
     if (filters.rol) out = out.filter((u) => u.rol === filters.rol)
@@ -75,7 +102,7 @@ export default function FoydalanuvchilarListPage() {
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((u) => matchesDateRange(u.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [users, tab, search, filters])
+  }, [pagedUsers, tab, filters])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -151,7 +178,11 @@ export default function FoydalanuvchilarListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={usersScrollRef}
+        onScroll={handleUsersScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -165,7 +196,7 @@ export default function FoydalanuvchilarListPage() {
             </tr>
           </thead>
           <tbody>
-              {listStatus === 'loading' ? (
+              {usersLoading && shown.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -174,14 +205,14 @@ export default function FoydalanuvchilarListPage() {
                     </div>
                   </td>
                 </tr>
-              ) : listStatus === 'failed' ? (
+              ) : usersError && shown.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                      <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                       <Button
                         variant="outline"
-                        onClick={() => dispatch(fetchUsers())}
+                        onClick={reloadUsers}
                         className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
                       >
                         Qayta urinish
@@ -243,6 +274,21 @@ export default function FoydalanuvchilarListPage() {
                     </td>
                   </tr>
                 ))
+              )}
+              {shown.length > 0 && usersHasMore && !usersLoading && (
+                <tr ref={usersSentinelRef} className="h-1 border-0 p-0">
+                  <td colSpan={7} className="h-1 border-0 p-0" />
+                </tr>
+              )}
+              {usersLoadingMore && (
+                <tr>
+                  <td colSpan={7} className="py-4 text-center">
+                    <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                      Ko‘proq ma’lumotlar yuklanmoqda…
+                    </div>
+                  </td>
+                </tr>
               )}
           </tbody>
         </table>

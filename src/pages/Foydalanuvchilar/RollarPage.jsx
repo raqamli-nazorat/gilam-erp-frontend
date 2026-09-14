@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { createRole, deleteRole, fetchRoles, updateRole } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { createRole, deleteRole, mapRole, updateRole } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import * as roleService from '@/services/roleService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -14,13 +16,20 @@ const TH =
   'sticky top-0 z-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#525252] dark:bg-white/5 dark:text-muted-foreground'
 const TD_MUTED = 'px-4 text-[13px] text-[#737373] dark:text-muted-foreground'
 
+// Jadval endi "scroll pagination" bilan yuklanadi — qidiruv serverga so'rov parametri
+// sifatida yuboriladi. Redux'dagi to'liq ro'yxatga (`state.foydalanuvchilar.roles`) tegilmadi
+// — Foydalanuvchi shakli/filtridagi rol tanlagichlari shunga tayanadi. "Tashkilot"/"Turi"/
+// foydalanuvchilar soni filtrlari uchun mos backend parametri tasdiqlanmagan — shular
+// hozircha faqat YUKLANGAN qatorlar ustida ishlaydi.
+function fetchRolesPage(params) {
+  return roleService.getRolesPage(params).then((res) => ({ ...res, results: res.results.map(mapRole) }))
+}
+
 export default function RollarPage() {
   const dispatch = useDispatch()
-  const roles = useSelector((s) => s.foydalanuvchilar.roles)
-  const rolesStatus = useSelector((s) => s.foydalanuvchilar.rolesStatus)
-  const rolesError = useSelector((s) => s.foydalanuvchilar.rolesError)
 
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_ROLE_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -29,9 +38,11 @@ export default function RollarPage() {
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Rollar' }])
 
+  // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
   useEffect(() => {
-    if (rolesStatus === 'idle') dispatch(fetchRoles())
-  }, [rolesStatus, dispatch])
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -39,14 +50,22 @@ export default function RollarPage() {
     return () => clearTimeout(t)
   }, [toast])
 
+  const {
+    items: roles,
+    isLoading: rolesLoading,
+    isLoadingMore: rolesLoadingMore,
+    error: rolesError,
+    hasMore: rolesHasMore,
+    containerRef: rolesScrollRef,
+    sentinelRef: rolesSentinelRef,
+    handleScroll: handleRolesScroll,
+    reload: reloadRoles,
+  } = useServerPagedList(fetchRolesPage, { search: debouncedSearch.trim() })
+
   const hasFilter = Object.values(filters).some(Boolean)
 
   const shownRoles = useMemo(() => {
     let out = roles
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((r) => r.name.toLowerCase().includes(q))
-    }
     if (filters.tashkilot) {
       out = out.filter((r) => (filters.tashkilot === 'Barcha tashkilotlar' ? !r.tashkilotId : r.tashkilot === filters.tashkilot))
     }
@@ -56,20 +75,26 @@ export default function RollarPage() {
     if (dan) out = out.filter((r) => r.usersCount >= dan)
     if (gacha) out = out.filter((r) => r.usersCount <= gacha)
     return out
-  }, [roles, search, filters])
+  }, [roles, filters])
 
   function saveRole(values) {
     const action = editRole ? updateRole({ id: editRole.id, draft: values }) : createRole(values)
     dispatch(action)
       .unwrap()
-      .then(() => setToast('Saqlandi'))
+      .then(() => {
+        setToast('Saqlandi')
+        reloadRoles()
+      })
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
   }
 
   function removeRole() {
     dispatch(deleteRole(editRole.id))
       .unwrap()
-      .then(() => setToast('O‘chirildi'))
+      .then(() => {
+        setToast('O‘chirildi')
+        reloadRoles()
+      })
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
   }
 
@@ -106,7 +131,11 @@ export default function RollarPage() {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={rolesScrollRef}
+        onScroll={handleRolesScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -120,7 +149,7 @@ export default function RollarPage() {
             </tr>
           </thead>
           <tbody>
-            {rolesStatus === 'loading' && shownRoles.length === 0 ? (
+            {rolesLoading && shownRoles.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -129,10 +158,19 @@ export default function RollarPage() {
                   </div>
                 </td>
               </tr>
-            ) : rolesStatus === 'failed' && shownRoles.length === 0 ? (
+            ) : rolesError && shownRoles.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-16 text-center">
-                  <p className="text-sm text-[#DC2626]">{rolesError || 'Xatolik yuz berdi'}</p>
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
+                    <Button
+                      variant="outline"
+                      onClick={reloadRoles}
+                      className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+                    >
+                      Qayta urinish
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ) : shownRoles.length === 0 ? (
@@ -168,6 +206,21 @@ export default function RollarPage() {
                   </td>
                 </tr>
               ))
+            )}
+            {shownRoles.length > 0 && rolesHasMore && !rolesLoading && (
+              <tr ref={rolesSentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={7} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {rolesLoadingMore && (
+              <tr>
+                <td colSpan={7} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

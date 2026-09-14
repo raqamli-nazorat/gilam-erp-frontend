@@ -8,7 +8,9 @@ import * as organizationService from '@/services/organizationService'
 // region_info{id,name}, district_info{id,name}. Foydalanuvchilar/mijozlar/savdo statistikasi
 // va rollar bo'yicha taqsimot uchun hali backendda alohida endpoint yo'q — shu maydonlar
 // `null` (formatNumber ularni "—" qilib ko'rsatadi).
-function mapOrg(o) {
+// Eksport qilingan — TashkilotlarListPage.jsx jadval qatorlarini "scroll pagination" bilan
+// servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
+export function mapOrg(o) {
   const suspended = !!o.is_suspended
   return {
     id: o.id,

@@ -5,7 +5,9 @@ import { createReferenceApi } from '@/services/referenceService'
 
 // Backend'dagi "nomi (+ tavsif, + rang kodi)" shaklidagi oddiy modellarni
 // (Quality/Unit/ProductColor/Position/CounterpartyType) jadval qatoriga o'giradi.
-function mapRecord(raw) {
+// Eksport qilingan — ApiListDetail jadval qatorlarini "scroll pagination" bilan servisdan
+// to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
+export function mapRecord(raw) {
   return {
     id: raw.id,
     name: raw.name ?? '',
@@ -117,5 +119,7 @@ export function createReferenceSlice(name, basePath) {
     },
   })
 
-  return { reducer: slice.reducer, fetchItems, createItem, updateItem, deleteItem }
+  // `api` — ApiListDetail jadvalini Redux'dan mustaqil "scroll pagination" bilan
+  // to'g'ridan-to'g'ri servisdan yuklashi uchun eksport qilinadi (`api.page(params)`).
+  return { reducer: slice.reducer, fetchItems, createItem, updateItem, deleteItem, api }
 }

@@ -7,8 +7,10 @@ import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { holatLabel } from '@/features/filiallar/filiallarData'
-import { createBranch, fetchBranches } from '@/features/filiallar/filiallarSlice'
+import { createBranch, fetchBranches, mapBranch } from '@/features/filiallar/filiallarSlice'
+import * as branchService from '@/services/branchService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -18,15 +20,25 @@ import BranchFilterModal, { EMPTY_BRANCH_FILTERS } from './components/BranchFilt
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
+// Jadval endi "scroll pagination" bilan yuklanadi — qidiruv va holat (tab/"Holat" filtri)
+// serverga so'rov parametri sifatida yuboriladi. "Tashkilot"/"Viloyat" va sana oralig'i
+// filtrlari uchun mos backend parametri tasdiqlanmagan — shular hozircha faqat YUKLANGAN
+// qatorlar ustida ishlaydi.
+function fetchBranchesPage(params) {
+  return branchService.getBranchesPage(params).then((res) => ({ ...res, results: res.results.map(mapBranch) }))
+}
+
 export default function FiliallarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  // To'liq ro'yxat — tab hisoblagichlari va boshqa sahifalardagi filial tanlagichlari shunga
+  // tayanadi, shuning uchun bunga tegilmaydi.
   const branches = useSelector((s) => s.filiallar.list)
   const listStatus = useSelector((s) => s.filiallar.listStatus)
-  const listError = useSelector((s) => s.filiallar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_BRANCH_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -37,6 +49,12 @@ export default function FiliallarListPage() {
   useEffect(() => {
     if (listStatus === 'idle') dispatch(fetchBranches())
   }, [listStatus, dispatch])
+
+  // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -60,21 +78,39 @@ export default function FiliallarListPage() {
   )
   const hasFilter = Object.values(filters).some(Boolean)
 
+  // Tab ("Faol"/"Yopilgan") va "Holat" filtri bitta xil narsani bildiradi — ikkalasi ham
+  // serverga bitta `is_closed` parametri sifatida yuboriladi.
+  const isClosedParam = useMemo(() => {
+    if (tab === 'active') return false
+    if (tab === 'closed') return true
+    if (filters.holat === 'Faol') return false
+    if (filters.holat === 'Yopilgan') return true
+    return undefined
+  }, [tab, filters.holat])
+
+  const {
+    items: pagedBranches,
+    isLoading: branchesLoading,
+    isLoadingMore: branchesLoadingMore,
+    error: branchesError,
+    hasMore: branchesHasMore,
+    containerRef: branchesScrollRef,
+    sentinelRef: branchesSentinelRef,
+    handleScroll: handleBranchesScroll,
+    reload: reloadBranches,
+  } = useServerPagedList(fetchBranchesPage, {
+    search: debouncedSearch.trim(),
+    is_closed: isClosedParam,
+  })
+
   const shown = useMemo(() => {
-    let out = branches
-    if (tab === 'active') out = out.filter((b) => b.status === 'active')
-    if (tab === 'closed') out = out.filter((b) => b.status === 'closed')
-    if (search) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((b) => b.name.toLowerCase().includes(q) || b.manzil.toLowerCase().includes(q))
-    }
+    let out = pagedBranches
     if (filters.tashkilot) out = out.filter((b) => b.tashkilot === filters.tashkilot)
     if (filters.viloyat) out = out.filter((b) => b.viloyat === filters.viloyat)
-    if (filters.holat) out = out.filter((b) => (filters.holat === 'Faol' ? b.status === 'active' : b.status === 'closed'))
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((b) => matchesDateRange(b.openedAt, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [branches, tab, search, filters])
+  }, [pagedBranches, filters])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -143,7 +179,11 @@ export default function FiliallarListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={branchesScrollRef}
+        onScroll={handleBranchesScroll}
+        className="min-h-0 flex-1 overflow-y-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead className='sticky top-0 z-10'>
             <tr>
@@ -159,7 +199,7 @@ export default function FiliallarListPage() {
             </tr>
           </thead>
           <tbody>
-            {listStatus === 'loading' ? (
+            {branchesLoading && shown.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -168,14 +208,14 @@ export default function FiliallarListPage() {
                   </div>
                 </td>
               </tr>
-            ) : listStatus === 'failed' ? (
+            ) : branchesError && shown.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                    <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
                       variant="outline"
-                      onClick={() => dispatch(fetchBranches())}
+                      onClick={reloadBranches}
                       className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
                     >
                       Qayta urinish
@@ -239,6 +279,21 @@ export default function FiliallarListPage() {
                   </td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && branchesHasMore && !branchesLoading && (
+              <tr ref={branchesSentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={9} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {branchesLoadingMore && (
+              <tr>
+                <td colSpan={9} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

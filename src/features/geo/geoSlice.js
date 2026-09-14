@@ -15,7 +15,9 @@ function mapRegion(r) {
     ozgartirilgan: r.updated_at ? formatDateTime(new Date(r.updated_at)) : '',
   }
 }
-function mapDistrict(d) {
+// Eksport qilingan — TumanPage.jsx "scroll pagination" bilan servisdan to'g'ridan-to'g'ri
+// (Redux thunk'siz) olib kelgan xom District obyektlarini shu bilan xaritalaydi.
+export function mapDistrict(d) {
   return {
     id: d.id,
     name: d.name ?? '',

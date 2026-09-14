@@ -8,7 +8,9 @@ import * as roleService from '@/services/roleService'
 // created_at, updated_at, role_info{id,name}, organization_info{id,name}, branch_info{id,name},
 // employee_info{id,full_name}. Bloklash/faollashtirish uchun hali maydon yo'q — shuning uchun
 // har doim "active" ko'rsatiladi, savdo statistikasi va audit uchun alohida yuklanadi (fetchUserDetail).
-function mapUser(u) {
+// Eksport qilingan — FoydalanuvchilarListPage.jsx jadval qatorlarini "scroll pagination"
+// bilan servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
+export function mapUser(u) {
   return {
     id: u.id,
     name: u.full_name ?? '',
@@ -40,7 +42,9 @@ function mapUser(u) {
 // Backend "Role" serializeri: id, name, is_system(readonly), permissions_count, users_count,
 // created_at, updated_at, organization_info{id,name}. "Qanday ruxsatlar tanlangan" backendda
 // qaytarilmaydi (faqat soni) — shuning uchun tahrirlashda ruxsatlar ro'yxati ko'rsatilmaydi.
-function mapRole(r) {
+// Eksport qilingan — RollarPage.jsx jadval qatorlarini "scroll pagination" bilan servisdan
+// to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
+export function mapRole(r) {
   return {
     id: r.id,
     name: r.name ?? '',
