@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { QrCode } from 'lucide-react'
+import { ChevronDown, QrCode } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { maskDate } from '@/components/ui/filter-modal'
 import { formatDate, dmyToNum } from '@/lib/format'
@@ -17,19 +17,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import TashkilotPickerModal from './TashkilotPickerModal'
 
 // "Ishga olish"/"Tahrirlash" oynalarida takror ishlatiladigan maydonlar to'plami
 // (RecruitmentDismissal hujjatining maydonlari) — Xodimlar ro'yxati, xodim detali va
 // Foydalanuvchilar detali barchasi shu bir xil qatorlarni ko'rsatadi.
 
+// Figma dev-mode spec (Xodim/Tashkilot/Filial va h.k.): maydon 36px ("control" o'lcham),
+// radius 8, border 1px #E5E5E5, shadow 0px 1px 2px #0000001A, padding 4/12/4/12. Avval bu
+// h-11/rounded-lg/faqat border-rangi (border KENGLIGI'siz) edi — border-kenglik utilitasi
+// yo'qligi sababli brauzerning o'z ("native") tugma/select ko'rinishi ko'rinib qolardi
+// (qalin qora chegara + tўliq dumaloq burchak) — shuning uchun `border` (1px) va
+// `appearance-none` endi majburiy qo'shildi.
 export const fieldCls =
-  'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 export const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-// Figma dev-mode spec ("Xodimni ishga olish" pager oynasi): maydon 36px ("control" o'lcham),
-// radius 8, border 1px #E5E5E5, shadow 0px 1px 2px #0000001A, padding 4/12/4/12.
+// Bir xil "control" o'lcham — BulkHireModal'ning pager oynasida ham ishlatiladi.
 export const compactFieldCls =
-  'h-9 w-full rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 export const compactLabelCls = 'mb-1.5 block text-[12px] font-medium leading-4 text-[#525252] dark:text-muted-foreground'
 
 // "DD.MM.YYYY" -> "YYYY-MM-DD" (backend rec_dism_date shakli)
@@ -85,8 +91,10 @@ export function buildHireValues(draft) {
   }
 }
 
+// Karta raqami saqlangandan keyin backend tomonidan avtomatik beriladi (foydalanuvchi
+// qo'lda kiritmaydi) — shuning uchun majburiy maydonlar ro'yxatida emas.
 export function isHireDraftValid(draft) {
-  return !!draft.tashkilot && !!draft.filial && !!draft.lavozim && !!draft.kartaRaqami.trim() && !!draft.ishgaOlinganSana
+  return !!draft.tashkilot && !!draft.filial && !!draft.lavozim && !!draft.ishgaOlinganSana
 }
 
 export function Picker({ value, onChange, placeholder, options, disabled, compact }) {
@@ -137,6 +145,7 @@ export function useHireCatalogs(open) {
 // compact: true — "Xodimni ishga olish" pager oynasining Figma dev-spec o'lchamlari (36px maydon,
 // 12px label). false/undefined — odatiy Tahrirlash oynasi (44px maydon).
 export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, positions, compact }) {
+  const [tashkilotPickerOpen, setTashkilotPickerOpen] = useState(false)
   const filialOptions = useMemo(
     () => branches.filter((b) => b.tashkilotId === draft.tashkilot),
     [branches, draft.tashkilot]
@@ -144,12 +153,27 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
   const isFoiz = draft.ishHaqiTuri === 'sales_percent'
   const fCls = compact ? compactFieldCls : fieldCls
   const lCls = compact ? compactLabelCls : labelCls
+  const tashkilotName = orgs.find((o) => o.id === draft.tashkilot)?.name
 
   return (
     <div className={cn('grid grid-cols-2', compact ? 'gap-x-4 gap-y-4' : 'gap-x-6 gap-y-5')}>
       <div>
         <Label className={lCls}>Tashkilot</Label>
-        <Picker value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} placeholder="Tashkilotni tanlang" options={orgs} compact={compact} />
+        {/* Figma: "Tashkilot" bosilganda oddiy dropdown emas, izlab-tanlash oynasi (TashkilotPickerModal) ochiladi. */}
+        <button
+          type="button"
+          onClick={() => setTashkilotPickerOpen(true)}
+          className={cn(fCls, 'flex items-center justify-between text-left')}
+        >
+          <span className={cn('truncate', !tashkilotName && 'text-[#737373]')}>{tashkilotName || 'Tashkilotni tanlang'}</span>
+          <ChevronDown className={cn('shrink-0 text-[#737373]', compact ? 'size-3.5' : 'size-4')} />
+        </button>
+        <TashkilotPickerModal
+          open={tashkilotPickerOpen}
+          onOpenChange={setTashkilotPickerOpen}
+          organizations={orgs}
+          onConfirm={(id) => set('tashkilot', id)}
+        />
       </div>
       <div>
         <Label className={lCls}>Filial</Label>
@@ -169,16 +193,18 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
       </div>
       <div>
         <Label className={lCls}>Karta raqami (Tabeliy nomer)</Label>
+        {/* Saqlangandan keyin backend tomonidan avtomatik beriladi — shuning uchun har doim disabled. */}
         <div className="relative">
           <Input
             value={draft.kartaRaqami}
-            onChange={(e) => set('kartaRaqami', e.target.value)}
-            placeholder="AC-000000"
-            className={cn(fCls, 'pr-10')}
+            readOnly
+            disabled
+            placeholder="Saqlangandan so‘ng avtomatik beriladi"
+            className={cn(fCls, 'pr-10 disabled:cursor-not-allowed disabled:bg-[#F5F5F5] disabled:opacity-100 dark:disabled:bg-white/5')}
           />
           <QrCode
             className={cn(
-              'pointer-events-none absolute top-1/2 -translate-y-1/2 text-[#737373]',
+              'pointer-events-none absolute top-1/2 -translate-y-1/2 text-[#A3A3A3]',
               compact ? 'right-3 h-3.5 w-3.5' : 'right-3.5 h-4 w-4'
             )}
           />

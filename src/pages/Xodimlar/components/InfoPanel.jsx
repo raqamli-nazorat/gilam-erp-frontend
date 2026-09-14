@@ -5,18 +5,22 @@ import { cn } from '@/lib/utils'
 export const headBg = 'bg-[#9AC2FF] dark:bg-[#0052D2]/40'
 export const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
-export function Panel({ title, children }) {
+// `className`ga `flex-1 min-h-0` berilsa (masalan yonidagi jadval bilan pastki chetini bir
+// xil qilish uchun), panel qolgan bo'sh joyni to'ldirib o'sadi.
+export function Panel({ title, children, className }) {
   return (
-    <div className={cn('rounded-xl', surface)}>
+    <div className={cn('flex flex-col rounded-xl', surface, className)}>
       <div
         className={cn(
-          'sticky top-0 z-10 rounded-t-xl px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white',
+          'sticky top-0 z-10 flex h-10 shrink-0 items-center rounded-t-xl px-4 text-[13px] font-semibold text-[#0A0A0A] dark:text-white',
           headBg
         )}
       >
         {title}
       </div>
-      <div className="divide-y divide-[#DFE4EF] [&>*:last-child]:rounded-b-xl dark:divide-white/5">{children}</div>
+      <div className="flex-1 divide-y divide-[#DFE4EF] overflow-auto [&>*:last-child]:rounded-b-xl dark:divide-white/5">
+        {children}
+      </div>
     </div>
   )
 }

@@ -50,6 +50,47 @@ export function formatUzPhone(input) {
   return out
 }
 
+// Pasport seriya+raqamini "AA 123 45 67" ko'rinishiga keltiradi (2 ta harf + 7 ta raqam,
+// 3-2-2 guruhlangan). Harflar avtomatik katta harfga, boshqa belgilar e'tiborsiz qoldiriladi
+// — foydalanuvchi harf va raqamlarni istalgan tartibda kiritsa ham to'g'ri ajratib oladi.
+export function formatUzPassport(input) {
+  const raw = String(input ?? '').toUpperCase()
+  const letters = raw.replace(/[^A-Z]/g, '').slice(0, 2)
+  const digits = raw.replace(/[^0-9]/g, '').slice(0, 7)
+  if (!letters && !digits) return ''
+  let out = letters
+  if (digits) {
+    out += (out ? ' ' : '') + digits.slice(0, 3)
+    if (digits.length > 3) out += ' ' + digits.slice(3, 5)
+    if (digits.length > 5) out += ' ' + digits.slice(5, 7)
+  }
+  return out
+}
+
+// Pasport seriya+raqamini backend kutgan juftlikka ajratadi: { seria: "AA", number: "1234567" }.
+export function splitUzPassport(input) {
+  const raw = String(input ?? '').toUpperCase()
+  return {
+    seria: raw.replace(/[^A-Z]/g, '').slice(0, 2),
+    number: raw.replace(/[^0-9]/g, '').slice(0, 7),
+  }
+}
+
+// JSHSHIR (PINFL) — 14 ta raqam, guruhlanmaydi. Faqat raqam qabul qilinadi.
+export function formatJshshir(input) {
+  return String(input ?? '').replace(/\D/g, '').slice(0, 14)
+}
+
+// STIR (INN) — 9 ta raqam, "302 145 678" ko'rinishida 3-3-3 guruhlangan.
+export function formatStir(input) {
+  const digits = String(input ?? '').replace(/\D/g, '').slice(0, 9)
+  if (!digits) return ''
+  let out = digits.slice(0, 3)
+  if (digits.length > 3) out += ' ' + digits.slice(3, 6)
+  if (digits.length > 6) out += ' ' + digits.slice(6, 9)
+  return out
+}
+
 // To'liq (9 ta raqamli) O'zbekiston raqami kiritilganmi
 export function isValidUzPhone(input) {
   let digits = String(input ?? '').replace(/\D/g, '')

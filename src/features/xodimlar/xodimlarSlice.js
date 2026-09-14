@@ -5,8 +5,9 @@ import * as employeeService from '@/services/employeeService'
 import * as recruitmentService from '@/services/recruitmentService'
 import { ledgerAmalLabel } from './xodimlarData'
 
-// Backend "Employee" — xodimning shaxs profili.
-function mapEmployee(e) {
+// Backend "Employee" — xodimning shaxs profili. Eksport qilingan — Xodimlar ro'yxati/formasi
+// (XodimlarListPage.jsx, XodimModal.jsx) shundan foydalanadi.
+export function mapEmployee(e) {
   return {
     id: e.id,
     name: e.full_name ?? '',
@@ -25,17 +26,35 @@ function mapEmployee(e) {
     stir: e.stir ?? '',
     phone: e.phone_number ?? '',
     tavsif: e.description ?? '',
+    // "Kadr" profilining o'z holati (Xodim sifatida ishga olinganidan mustaqil — bu "Faol/
+    // Nofaol" shaxsiy profil holati). Backendda maydon nomi hujjatlashtirilmagan — eng
+    // ehtimoliy ikkitasini (`status`, `is_active`) birga o'qiymiz; ikkalasi ham yo'q bo'lsa
+    // (hali backend qo'llamasa) — standart bo'yicha Faol hisoblanadi.
+    active: e.status == null && e.is_active == null ? true : !!(e.status ?? e.is_active),
     yaratilgan: e.created_at ? formatDateTime(new Date(e.created_at)) : '',
     ozgartirilgan: e.updated_at ? formatDateTime(new Date(e.updated_at)) : '',
   }
 }
 
+// "Ishga qabul qilish" ro'yxati uchun uch holatli ish jarayoni (Qoralama/Tasdiqlangan/Bekor
+// qilingan) — backendda bu maydon hujjatlashtirilmagan, shuning uchun bor-yo'qligini
+// tekshirmasdan o'qiymiz: mavjud bo'lmasa (eski yozuvlar, yoki backend hali qo'llamasa),
+// "confirmed" deb hisoblaymiz — bu hozirgi "hujjat = faol ishga olingan" ma'nosiga mos keladi.
+const RECRUITMENT_STATUSES = ['draft', 'confirmed', 'cancelled']
+function mapRecruitmentStatus(raw) {
+  return RECRUITMENT_STATUSES.includes(raw) ? raw : 'confirmed'
+}
+
 // Backend "RecruitmentDismissal" — bitta "ishga olish"/"ishdan chiqarish" hujjati.
-function mapRecruitment(r) {
+// Eksport qilingan — XodimlarDetailPage.jsx ish tarixi jadvali va Ishga qabul qilish ro'yxati
+// shundan foydalanadi.
+export function mapRecruitment(r) {
   return {
     id: r.id,
     type: r.type, // 'recruitment' | 'dismissal'
+    status: mapRecruitmentStatus(r.status),
     employeeId: r.employee_info?.id ?? '',
+    employeeName: r.employee_info?.full_name ?? '',
     branchId: r.branch_info?.id ?? '',
     branch: r.branch_info?.name ?? '',
     lavozim: r.position_info?.name ?? '',
@@ -48,13 +67,18 @@ function mapRecruitment(r) {
     extraFoiz: Number(r.extra_percent) || 0,
     sana: r.rec_dism_date ?? '',
     dismissalReason: r.dismissal_reason ?? '',
+    // Xom ISO qiymat — combineXodim shu bo'yicha saralaydi (lug'aviy taqqoslash to'g'ri ishlashi uchun).
     yaratilganAt: r.created_at ?? '',
+    yaratilgan: r.created_at ? formatDateTime(new Date(r.created_at)) : '',
+    ozgartirilgan: r.updated_at ? formatDateTime(new Date(r.updated_at)) : '',
   }
 }
 
 // Xodim profili + shu xodimga tegishli barcha ishga olish/chiqarish hujjatlarini birlashtiradi —
 // eng oxirgi hujjat (sana bo'yicha) xodimning joriy lavozimi/oyligi/holatini belgilaydi.
-function combineXodim(employee, records) {
+// Eksport qilingan — createKadr/updateKadr natijasini state.list bilan bir xil (holat/lavozim
+// maydonlari bor) shaklga keltirish uchun.
+export function combineXodim(employee, records) {
   const sorted = [...records].sort((a, b) => {
     if (a.sana !== b.sana) return a.sana < b.sana ? 1 : -1
     return a.yaratilganAt < b.yaratilganAt ? 1 : -1
@@ -84,7 +108,9 @@ function combineXodim(employee, records) {
   }
 }
 
-function buildEmployeePayload(draft) {
+// Eksport qilingan — KadrModal.jsx (shaxsiy profilni to'g'ridan-to'g'ri yaratish/tahrirlash,
+// "Ishga olish"siz) shundan foydalanadi.
+export function buildEmployeePayload(draft) {
   return {
     full_name: (draft.name ?? '').trim(),
     organization: draft.tashkilot || undefined,
@@ -95,9 +121,13 @@ function buildEmployeePayload(draft) {
     passport_seria: draft.passportSeria ?? '',
     passport_number: draft.passportNumber ?? '',
     jsshr: draft.jshshir ?? '',
-    stir: draft.stir ?? '',
+    stir: draft.stir ? draft.stir.replace(/\s/g, '') : '',
     phone_number: draft.phone ? draft.phone.replace(/[\s-]/g, '') : '',
     description: draft.tavsif ?? '',
+    // Maydon nomi hujjatlashtirilmagan — ehtimoliy ikkitasini birga yuboramiz, backend
+    // qaysi birini qo'llasa o'shani o'qiydi, qolganini e'tiborsiz qoldiradi.
+    status: draft.active,
+    is_active: draft.active,
   }
 }
 
@@ -115,6 +145,10 @@ function buildRecruitmentPayload(type, employeeId, draft) {
     extra_percent: draft.qoshimchaFoizi ?? 0,
     rec_dism_date: draft.ishgaOlinganSana || undefined,
     dismissal_reason: draft.dismissalReason ?? '',
+    // "Ishga qabul qilish" ro'yxatining Qoralama/Tasdiqlangan/Bekor qilingan holati — maydon
+    // nomi hujjatlashtirilmagan, shuning uchun faqat aniq berilganda qo'shiladi (masalan
+    // Tahrirlashda status o'zgartirilmaydi).
+    ...(draft.status ? { status: draft.status } : {}),
   }
 }
 
@@ -129,6 +163,12 @@ const initialState = {
 
   ledger: [],
   ledgerStatus: 'idle',
+
+  // "Ishga qabul qilish" ro'yxati — RecruitmentDismissal hujjatlari (type='recruitment'),
+  // Xodimlar bilan bog'liq lekin alohida ro'yxat sifatida ko'rsatiladi.
+  recruitments: [],
+  recruitmentsStatus: 'idle',
+  recruitmentsError: '',
 
   saveStatus: 'idle',
   saveError: '',
@@ -271,6 +311,91 @@ export const rehireXodim = createAsyncThunk(
   }
 )
 
+// Xodimlar ro'yxati — shaxsiy profilni to'g'ridan-to'g'ri yaratish/tahrirlash/o'chirish,
+// "Ishga olish" (Recruitment) hujjatisiz. "Ishga qabul qilish" bo'limining lavozim/oylik
+// biriktirish oqimidan alohida — ikkalasi ham xuddi shu Employee resursi ustida ishlaydi.
+export const createKadr = createAsyncThunk('xodimlar/createKadr', async (draft, { rejectWithValue }) => {
+  try {
+    const raw = await employeeService.createEmployee(buildEmployeePayload(draft))
+    return combineXodim(mapEmployee(raw), [])
+  } catch (error) {
+    return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
+  }
+})
+
+export const updateKadr = createAsyncThunk('xodimlar/updateKadr', async ({ id, draft }, { rejectWithValue }) => {
+  try {
+    const raw = await employeeService.updateEmployee(id, buildEmployeePayload(draft))
+    return mapEmployee(raw)
+  } catch (error) {
+    return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
+  }
+})
+
+export const deleteKadr = createAsyncThunk('xodimlar/deleteKadr', async (id, { rejectWithValue }) => {
+  try {
+    await employeeService.deleteEmployee(id)
+    return id
+  } catch (error) {
+    return rejectWithValue(extractErrorMessage(error, 'O‘chirishda xatolik yuz berdi'))
+  }
+})
+
+// "Ishga qabul qilish" ro'yxati — barcha RecruitmentDismissal hujjatlari (type'idan qat'i
+// nazar, sahifa o'zi 'recruitment' turini filtrlaydi).
+export const fetchRecruitments = createAsyncThunk('xodimlar/fetchRecruitments', async (_, { rejectWithValue }) => {
+  try {
+    const results = await recruitmentService.getAllRecruitmentDismissals()
+    return results.map(mapRecruitment)
+  } catch (error) {
+    return rejectWithValue(extractErrorMessage(error, 'Ro‘yxatni yuklab bo‘lmadi'))
+  }
+})
+
+// Yangi "Ishga qabul qilish" hujjati — status 'draft' (Saqlash) yoki 'confirmed' (Tasdiqlash)
+// bo'lib yaratiladi.
+export const createRecruitment = createAsyncThunk(
+  'xodimlar/createRecruitment',
+  async ({ employeeId, status, draft }, { rejectWithValue }) => {
+    try {
+      const raw = await recruitmentService.createRecruitmentDismissal(
+        buildRecruitmentPayload('recruitment', employeeId, { ...draft, status })
+      )
+      return mapRecruitment(raw)
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
+    }
+  }
+)
+
+export const updateRecruitment = createAsyncThunk(
+  'xodimlar/updateRecruitment',
+  async ({ id, employeeId, status, draft }, { rejectWithValue }) => {
+    try {
+      const raw = await recruitmentService.updateRecruitmentDismissal(
+        id,
+        buildRecruitmentPayload('recruitment', employeeId, { ...draft, status })
+      )
+      return mapRecruitment(raw)
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
+    }
+  }
+)
+
+// Faqat holatni o'zgartiradi (Tasdiqlash/Bekor qilish) — qolgan maydonlarga tegmaydi.
+export const setRecruitmentStatus = createAsyncThunk(
+  'xodimlar/setRecruitmentStatus',
+  async ({ id, status }, { rejectWithValue }) => {
+    try {
+      const raw = await recruitmentService.updateRecruitmentDismissal(id, { status })
+      return mapRecruitment(raw)
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Holatni o‘zgartirishda xatolik yuz berdi'))
+    }
+  }
+)
+
 const xodimlarSlice = createSlice({
   name: 'xodimlar',
   initialState,
@@ -369,6 +494,103 @@ const xodimlarSlice = createSlice({
         if (state.current?.id === action.payload.id) state.current = action.payload
       })
       .addCase(rehireXodim.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(createKadr.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(createKadr.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        state.list.unshift(action.payload)
+      })
+      .addCase(createKadr.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(updateKadr.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(updateKadr.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        // Faqat shaxsiy maydonlar yangilanadi — holat/lavozim/ish tarixi (recruitment'dan
+        // kelgan qismi) tegilmaydi.
+        const idx = state.list.findIndex((x) => x.id === action.payload.id)
+        if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
+        if (state.current?.id === action.payload.id) state.current = { ...state.current, ...action.payload }
+      })
+      .addCase(updateKadr.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(deleteKadr.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(deleteKadr.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        state.list = state.list.filter((x) => x.id !== action.payload)
+      })
+      .addCase(deleteKadr.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(fetchRecruitments.pending, (state) => {
+        state.recruitmentsStatus = 'loading'
+        state.recruitmentsError = ''
+      })
+      .addCase(fetchRecruitments.fulfilled, (state, action) => {
+        state.recruitmentsStatus = 'succeeded'
+        state.recruitments = action.payload
+      })
+      .addCase(fetchRecruitments.rejected, (state, action) => {
+        state.recruitmentsStatus = 'failed'
+        state.recruitmentsError = action.payload || 'Xatolik'
+      })
+
+      .addCase(createRecruitment.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(createRecruitment.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        state.recruitments.unshift(action.payload)
+      })
+      .addCase(createRecruitment.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(updateRecruitment.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(updateRecruitment.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        const idx = state.recruitments.findIndex((r) => r.id === action.payload.id)
+        if (idx !== -1) state.recruitments[idx] = action.payload
+      })
+      .addCase(updateRecruitment.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(setRecruitmentStatus.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(setRecruitmentStatus.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        const idx = state.recruitments.findIndex((r) => r.id === action.payload.id)
+        if (idx !== -1) state.recruitments[idx] = { ...state.recruitments[idx], ...action.payload }
+      })
+      .addCase(setRecruitmentStatus.rejected, (state, action) => {
         state.saveStatus = 'failed'
         state.saveError = action.payload || 'Xatolik'
       })

@@ -15,6 +15,7 @@ import {
   Chart01Icon,
   DashboardSquare01Icon,
   Invoice01Icon,
+  IshgaQabulQilishIcon,
   Logout01Icon,
   MalumotnomalarIcon,
   PackageReceive01Icon,
@@ -33,6 +34,10 @@ const NAV_ITEMS = [
   { to: '/tashkilotlar', label: 'Tashkilotlar', icon: Building03Icon },
   { to: '/filiallar', label: 'Filiallar', icon: Briefcase01Icon },
   { to: '/foydalanuvchilar', label: 'Foydalanuvchilar', icon: UserMultipleIcon },
+  // Figma: "Ishga qabul qilish" endi Ma'lumotnomalar ichida emas, o'z ikonkasi bilan
+  // mustaqil (bosh) menyu bandi — sahifaning o'zi va yo'nalishi ("Ma'lumotnomalar >
+  // Ishga qabul qilish" breadcrumb) o'zgarmagan, faqat sidebar joylashuvi ko'chirildi.
+  { to: '/malumotnomalar/ishga-qabul-qilish', label: 'Ishga qabul qilish', icon: IshgaQabulQilishIcon },
   {
     to: '/malumotnomalar',
     label: "Ma'lumotnomalar",
@@ -112,8 +117,14 @@ export default function Sidebar() {
     setOpenGroups((g) => ({ ...g, [to]: !(g[to] ?? pathname.startsWith(to)) }))
   const isExpanded = (to) => openGroups[to] ?? pathname.startsWith(to)
 
-  const isActive = (to, hasChildren) =>
-    hasChildren ? pathname.startsWith(to) : pathname === to || pathname.startsWith(`${to}/`)
+  // Guruh (children bilan) bo'lsa — faqat o'sha guruhning haqiqiy bola marshrutlaridan
+  // birida bo'lsak faol hisoblanadi (oddiy `pathname.startsWith(parent)` emas) — aks holda
+  // Ma'lumotnomalar ichidan chiqarilgan "Ishga qabul qilish" (bir xil "/malumotnomalar/..."
+  // prefiksda qolgan) ham Ma'lumotnomalar'ni soxta faol qilib ko'rsatib qo'yardi.
+  const isActive = (to, children) =>
+    children
+      ? children.some((c) => pathname === c.to || pathname.startsWith(`${c.to}/`))
+      : pathname === to || pathname.startsWith(`${to}/`)
 
   const avatar = (
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-[#1B3E75]">
@@ -168,7 +179,7 @@ export default function Sidebar() {
           }
 
           const { to, label, icon: Icon, children } = item
-          const active = isActive(to, Boolean(children))
+          const active = isActive(to, children)
           const expanded = Boolean(children) && isExpanded(to)
 
           if (collapsed) {
