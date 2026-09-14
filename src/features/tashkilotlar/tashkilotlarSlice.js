@@ -23,6 +23,10 @@ function mapOrg(o) {
     tumanId: o.district_info?.id ?? '',
     manzil: o.address ?? '',
     registeredAt: o.created_at ? formatDateTime(new Date(o.created_at)) : '',
+    // Backend Organization modelida kim/qachon to'xtatgani-faollashtirgani uchun alohida maydon yo'q
+    // (faqat is_suspended/suspension_reason bor) — shuning uchun "kim" ko'rsatilmaydi, "qachon" uchun
+    // updated_at'dan foydalanamiz (to'xtatish/faollashtirish updated_at'ni yangilaydi).
+    updatedAt: o.updated_at ? formatDateTime(new Date(o.updated_at)) : '',
     status: suspended ? 'suspended' : 'active',
     branchCount: Number(o.branches_count) || 0,
     stats: {
@@ -33,8 +37,7 @@ function mapOrg(o) {
     },
     branches: [],
     users: [],
-    suspend: suspended ? { reason: o.suspension_reason ?? '' } : null,
-    activation: null,
+    suspend: suspended ? { reason: o.suspension_reason ?? '', at: o.updated_at ? formatDateTime(new Date(o.updated_at)) : '' } : null,
   }
 }
 
@@ -140,11 +143,17 @@ export const updateOrganization = createAsyncThunk(
   }
 )
 
+// Suspend/activate endpointlari ba'zan to'liq Organization obyektini emas, faqat
+// o'zgargan maydonlarni (is_suspended/suspension_reason) qaytaradi — shu javobga ishonib
+// state.current'ni almashtirsak, INN/Direktor/Telefon kabi maydonlar bo'sh bo'lib qoladi
+// (sahifani yangilagandan keyingina to'g'rilanadi). Shu sababli harakatdan so'ng har doim
+// to'liq tashkilotni qayta so'raymiz.
 export const suspendOrganization = createAsyncThunk(
   'tashkilotlar/suspendOrganization',
   async ({ id, reason }, { rejectWithValue }) => {
     try {
-      const raw = await organizationService.suspendOrganization(id, reason)
+      await organizationService.suspendOrganization(id, reason)
+      const raw = await organizationService.getOrganization(id)
       return mapOrg(raw)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'To‘xtatishda xatolik yuz berdi'))
@@ -156,7 +165,8 @@ export const activateOrganization = createAsyncThunk(
   'tashkilotlar/activateOrganization',
   async (id, { rejectWithValue }) => {
     try {
-      const raw = await organizationService.activateOrganization(id)
+      await organizationService.activateOrganization(id)
+      const raw = await organizationService.getOrganization(id)
       return mapOrg(raw)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Faollashtirishda xatolik yuz berdi'))
@@ -246,8 +256,10 @@ const tashkilotlarSlice = createSlice({
       .addCase(suspendOrganization.fulfilled, (state, action) => {
         state.saveStatus = 'succeeded'
         const idx = state.list.findIndex((o) => o.id === action.payload.id)
-        if (idx !== -1) state.list[idx] = action.payload
-        if (state.current?.id === action.payload.id) state.current = { ...state.current, ...action.payload }
+        if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
+        if (state.current?.id === action.payload.id) {
+          state.current = { ...state.current, ...action.payload, branches: state.current.branches }
+        }
       })
       .addCase(suspendOrganization.rejected, (state, action) => {
         state.saveStatus = 'failed'
@@ -261,8 +273,10 @@ const tashkilotlarSlice = createSlice({
       .addCase(activateOrganization.fulfilled, (state, action) => {
         state.saveStatus = 'succeeded'
         const idx = state.list.findIndex((o) => o.id === action.payload.id)
-        if (idx !== -1) state.list[idx] = action.payload
-        if (state.current?.id === action.payload.id) state.current = { ...state.current, ...action.payload }
+        if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
+        if (state.current?.id === action.payload.id) {
+          state.current = { ...state.current, ...action.payload, branches: state.current.branches }
+        }
       })
       .addCase(activateOrganization.rejected, (state, action) => {
         state.saveStatus = 'failed'
