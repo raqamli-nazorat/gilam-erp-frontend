@@ -186,3 +186,34 @@ export function SidebarLeft01Icon({ className, size = 16, ...props }) {
 export function Logout01Icon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Logout01Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
+
+// Figma'dan berilgan aniq "Ishga qabul qilish" ikonkasi (ID karta)
+export function IshgaQabulQilishIcon({ className, size = 18, ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" className={className} {...props}>
+      <path
+        d="M1.5 9C1.5 6.17157 1.5 4.75736 2.37868 3.87868C3.25736 3 4.67157 3 7.5 3H10.5C13.3284 3 14.7426 3 15.6213 3.87868C16.5 4.75736 16.5 6.17157 16.5 9C16.5 11.8284 16.5 13.2426 15.6213 14.1213C14.7426 15 13.3284 15 10.5 15H7.5C4.67157 15 3.25736 15 2.37868 14.1213C1.5 13.2426 1.5 11.8284 1.5 9Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.25 7.5C8.25 6.67157 7.57843 6 6.75 6C5.92157 6 5.25 6.67157 5.25 7.5C5.25 8.32843 5.92157 9 6.75 9C7.57843 9 8.25 8.32843 8.25 7.5Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.75 12C9.75 10.3431 8.40685 9 6.75 9C5.09315 9 3.75 10.3431 3.75 12"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M11.25 6.75H14.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M11.25 9H14.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}

@@ -83,7 +83,9 @@ export default function EmployeePickerModal({ open, onOpenChange, employees, mul
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="gap-0 overflow-hidden rounded-[16px] p-0 shadow-[0px_1px_2px_0px_#0000001A] sm:max-w-[560px]">
+      {/* Standart balandlik — 560×592, radius 12px (shu bo'limdagi barcha modallar bilan bir xil,
+          ular bir-birining ustiga "ichma-ich" ochilgani uchun). */}
+      <DialogContent showCloseButton={false} className="flex h-[592px] flex-col gap-0 overflow-hidden rounded-[12px] p-0 shadow-[0px_1px_2px_0px_#0000001A] sm:max-w-[560px]">
         <div className="flex h-[60px] shrink-0 items-center justify-between gap-2 pb-4 pl-5 pr-5 pt-5">
           <div className="flex items-center gap-2">
             <button
@@ -104,8 +106,8 @@ export default function EmployeePickerModal({ open, onOpenChange, employees, mul
           </span>
         </div>
 
-        <div className="px-5 pb-3">
-          <div className="relative">
+        <div className="flex h-12 shrink-0 items-center px-5">
+          <div className="relative w-full">
             <HugeiconsIcon
               icon={Search01Icon}
               size={18}
@@ -121,7 +123,9 @@ export default function EmployeePickerModal({ open, onOpenChange, employees, mul
           </div>
         </div>
 
-        <div className="flex max-h-[380px] min-h-[160px] flex-col gap-2 overflow-auto px-5 pb-2">
+        {/* Ro'yxat qolgan bo'sh joyni to'ldiradi (flex-1) — dialog balandligi qat'iy 592px bo'lgani
+            uchun bu qism ham elementlar soni kam bo'lsa ham torayib qolmaydi. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pb-3">
           {shown.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-14 text-center">
               <p className="text-sm text-[#737373]">Xodim topilmadi</p>
