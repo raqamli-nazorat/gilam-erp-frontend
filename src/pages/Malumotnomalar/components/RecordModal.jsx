@@ -3,6 +3,7 @@ import { Check, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -50,14 +51,14 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[560px]">
-        <DialogHeader className="flex flex-row items-center justify-between px-5 pt-5">
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
+        <DialogHeader className="shrink-0 flex flex-row items-center justify-between px-5 pt-5">
           <DialogTitle className="text-[17px] font-semibold leading-[24px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             {isEdit ? `${cap(entity)}ni tahrirlash` : `Yangi ${entity}`}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-x-3 gap-y-4 px-5 py-4">
+        <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-4 overflow-y-auto px-5 py-4">
           {fields.map((f) => (
             <div key={f.key} className={cn(f.full && 'col-span-2')}>
               <Label className={labelCls}>
@@ -78,6 +79,14 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
                     ))}
                   </SelectContent>
                 </Select>
+              ) : f.kind === 'textarea' ? (
+                <Textarea
+                  value={draft[f.key] ?? ''}
+                  onChange={(e) => set(f.key, e.target.value)}
+                  placeholder={f.placeholder || 'Kiriting'}
+                  rows={3}
+                  className={cn(fieldCls, 'h-auto max-h-[400px] resize-y py-2')}
+                />
               ) : f.swatchKey ? (
                 <div className="relative">
                   <Input
@@ -141,7 +150,7 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
           )}
         </div>
 
-        <DialogFooter className="mx-0 mb-0 mt-0 flex items-center gap-2 border-0 bg-[#F5F5F5] px-5 py-4 dark:bg-white/5 sm:flex-row sm:justify-between">
+        <DialogFooter className="mx-0 mb-0 mt-0 flex shrink-0 items-center gap-2 border-0 bg-[#F5F5F5] px-5 py-4 dark:bg-white/5 sm:flex-row sm:justify-between">
           {isEdit ? (
             <Button
               type="button"

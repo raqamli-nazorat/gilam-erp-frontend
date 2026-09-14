@@ -262,7 +262,7 @@ export const MALUMOTNOMA_CONFIG = {
     ],
     modalFields: [
       { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: Menejer', full: true },
-      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'textarea', placeholder: 'Qayerda ishlatilishi', full: true },
     ],
     deleteNote: 'Bu lavozimdagi xodimlar tarixda saqlanadi.',
     // rows: backend (hr/positions/) orqali ApiListDetail yuklaydi — pastga qarang REFERENCE_API_REGISTRY.
@@ -279,7 +279,7 @@ export const MALUMOTNOMA_CONFIG = {
     modalFields: [
       { key: 'name', label: 'Rang nomi', kind: 'text', required: true, placeholder: 'Masalan: Pushti', swatchKey: 'hex' },
       { key: 'hex', label: 'HEX kodi', kind: 'text', placeholder: '#E8A0B0', copyable: true },
-      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'textarea', placeholder: 'Qayerda ishlatilishi', full: true },
     ],
     deleteNote: 'Bu rang bilan belgilangan tovarlar tarixda saqlanadi.',
     // rows: backend (catalog/colors/) orqali ApiListDetail yuklaydi — pastga qarang REFERENCE_API_REGISTRY.
@@ -365,7 +365,7 @@ export const MALUMOTNOMA_CONFIG = {
     ],
     modalFields: [
       { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: Lyuks', full: true },
-      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'textarea', placeholder: 'Qayerda ishlatilishi', full: true },
     ],
     deleteNote: 'Bu sifat bilan belgilangan tovarlar tarixda saqlanadi.',
     // rows: backend (catalog/qualities/) orqali ApiListDetail yuklaydi — pastga qarang REFERENCE_API_REGISTRY.
@@ -380,7 +380,7 @@ export const MALUMOTNOMA_CONFIG = {
     ],
     modalFields: [
       { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: dona', full: true },
-      { key: 'tavsif', label: 'Tavsif', kind: 'text', placeholder: 'Qayerda ishlatilishi', full: true },
+      { key: 'tavsif', label: 'Tavsif', kind: 'textarea', placeholder: 'Qayerda ishlatilishi', full: true },
     ],
     deleteNote: 'Bu birlik ishlatilgan hujjatlar tarixda saqlanadi.',
     // rows: backend (catalog/units/) orqali ApiListDetail yuklaydi — pastga qarang REFERENCE_API_REGISTRY.

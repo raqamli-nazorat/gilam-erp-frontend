@@ -16,7 +16,7 @@ import FilialFooter from './components/FilialFooter'
 import { Panel, InfoRow, headBg, surface } from './components/InfoPanel'
 
 const THb =
-  'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
+  'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-4 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
 
 export default function FilialDetailPage() {
   const navigate = useNavigate()
@@ -105,7 +105,7 @@ export default function FilialDetailPage() {
                     <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Bu ma’lumot hali mavjud emas</td></tr>
                   ) : (
                     d.xodimlar.map((x, i) => (
-                      <tr key={x.id} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr key={x.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
                         <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim}</td>
@@ -132,8 +132,8 @@ export default function FilialDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
-            <Panel title="Filial ma’lumotlari:">
+          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
+            <Panel title="Filial ma’lumotlari:" className="shrink-0">
               <InfoRow label="Tashkilot" value={branch.tashkilot} />
               <InfoRow label="Telefon" value={branch.phone} onCopy={() => copy(branch.phone, 'Telefon')} />
               <InfoRow label="Viloyat" value={branch.viloyat} />
@@ -157,9 +157,9 @@ export default function FilialDetailPage() {
               />
             </Panel>
 
-            <Panel title="Oxirgi savdolar:">
+            <Panel title="Oxirgi savdolar:" className="min-h-0 flex-1">
               {d.lastSales.length === 0 ? (
-                <div className="px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
+                <div className="flex h-full items-center justify-center px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
                   Bu ma’lumot hali mavjud emas
                 </div>
               ) : (
