@@ -21,7 +21,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowUpRight01Icon, Copy01Icon, Edit02Icon } from '@hugeicons/core-free-icons/index'
 
 const THb =
-  'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
+  'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-4 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
 const headBg = 'bg-[#9AC2FF] dark:bg-[#0052D2]/40'
 const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
@@ -185,7 +185,7 @@ export default function TashkilotDetailPage() {
                     </tr>
                   ) : (
                     org.branches.map((b, i) => (
-                      <tr key={b.id} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr key={b.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{b.name}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{b.viloyat}</td>
@@ -202,8 +202,8 @@ export default function TashkilotDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
-            <Panel title="Tashkilot ma’lumotlari:">
+          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
+            <Panel title="Tashkilot ma’lumotlari:" className="shrink-0">
               <InfoRow label="INN" value={org.inn} onCopy={() => copy(org.inn, 'INN')} />
               <InfoRow label="Direktor" value={org.director} />
               <InfoRow label="Titul" value={org.titul} onCopy={() => copy(org.titul, 'Titul')} />
@@ -229,9 +229,9 @@ export default function TashkilotDetailPage() {
               />
             </Panel>
 
-            <Panel title="Foydalanuvchilar:">
+            <Panel title="Foydalanuvchilar:" className="min-h-0 flex-1">
               {org.users.length === 0 ? (
-                <div className="px-4 py-3 text-center min-h-[calc(100vh-730px)] text-[13px] text-[#737373] dark:text-muted-foreground">
+                <div className="flex h-full items-center justify-center px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
                   Bu ma’lumot hali mavjud emas
                 </div>
               ) : (
@@ -336,13 +336,17 @@ export default function TashkilotDetailPage() {
   )
 }
 
-function Panel({ title, children }) {
+// `className`ga `flex-1 min-h-0` berilsa (masalan bo'sh holatda pastki chetini yonidagi
+// jadval bilan bir xil qilish uchun), panel qolgan bo'sh joyni to'ldirib o'sadi.
+function Panel({ title, children, className }) {
   return (
-    <div className={cn('rounded-lg', surface)}>
-      <div className={cn('sticky top-0 z-10 rounded-t-lg px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+    <div className={cn('flex flex-col rounded-lg', surface, className)}>
+      <div className={cn('sticky top-0 z-10 flex h-10 shrink-0 items-center rounded-t-lg px-4 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
         {title}
       </div>
-      <div className="divide-y divide-[#DFE4EF] [&>*:last-child]:rounded-b-lg dark:divide-white/5">{children}</div>
+      <div className="flex-1 divide-y divide-[#DFE4EF] overflow-auto [&>*:last-child]:rounded-b-lg dark:divide-white/5">
+        {children}
+      </div>
     </div>
   )
 }
