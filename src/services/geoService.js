@@ -1,5 +1,5 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
 
 // Barcha viloyatlarni (barcha sahifalarni yig'ib) qaytaradi.
 export async function getAllRegions() {
@@ -12,9 +12,16 @@ export async function getDistrictsByRegion(regionId) {
   return fetchAllPages('organization/districts/', { region: regionId })
 }
 
-// Barcha tumanlarni (viloyatidan qat'i nazar) qaytaradi — "Tumanlar" boshqaruv jadvali uchun.
+// Barcha tumanlarni (viloyatidan qat'i nazar) qaytaradi — Davlat/Viloyat sahifalaridagi
+// "N ta tuman" hisoblagichi uchun to'liq ro'yxat kerak, shuning uchun bu funksiya saqlanadi.
 export async function getAllDistricts() {
   return fetchAllPages('organization/districts/')
+}
+
+// "Tumanlar" boshqaruv jadvali uchun — bitta sahifani so'raydi (scroll pagination).
+// `params`: { page, search }.
+export async function getDistrictsPage(params) {
+  return fetchPage('organization/districts/', params)
 }
 
 export async function createRegion(payload) {

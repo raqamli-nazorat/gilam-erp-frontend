@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber, formatDateTime, matchesDateRange } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import {
   genericListConfig,
   MALUMOTNOMA_CONFIG,
@@ -13,6 +14,7 @@ import {
   withRecordMeta,
 } from '@/features/malumotnomalar/malumotnomalarData'
 import { REFERENCE_API_REGISTRY, buildReferencePayload } from '@/features/malumotnomalar/referenceEntities'
+import { mapRecord } from '@/features/malumotnomalar/referenceSlices'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import CopyButton from '@/components/ui/copy-button'
@@ -40,18 +42,23 @@ export default function MalumotnomaDetailPage({ slug: slugProp }) {
 
 // Backend'da to'liq CRUD endpointi bor ma'lumotnomalar (sifat/rang/birlik/lavozim/kontragent
 // turi) uchun — ro'yxat/saqlash/o'chirish real APIga boradi, jadval ko'rinishi ListDetail bilan bir xil.
+// Jadval endi "scroll pagination" bilan (bitta-bitta sahifa) yuklanadi — qidiruv serverga
+// so'rov parametri sifatida yuboriladi. Redux'dagi to'liq ro'yxat (`state[apiEntry.stateKey].list`)
+// ga tegilmadi — masalan Lavozimlar shu ro'yxatga Xodim ishga olish oynasidagi "Lavozim"
+// tanlagichida ham tayanadi. "Holat" (Faol/Arxiv) va sana oralig'i filtrlari uchun mos
+// backend parametri tasdiqlanmagan — shular hozircha faqat YUKLANGAN qatorlar ustida ishlaydi.
 function ApiListDetail({ slug, name, config, apiEntry }) {
   const dispatch = useDispatch()
   const state = useSelector((s) => s[apiEntry.stateKey])
   const [modalRec, setModalRec] = useState(null) // record | 'new' | null
   const [delRec, setDelRec] = useState(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_MALUMOTNOMA_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [toast, setToast] = useState('')
 
   const hasFilter = Object.values(filters).some(Boolean)
-  const searchKeys = config.searchKeys ?? ['name']
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: name }])
 
@@ -59,25 +66,41 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
     if (state.listStatus === 'idle') dispatch(apiEntry.slice.fetchItems())
   }, [state.listStatus, dispatch, apiEntry])
 
+  // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
+
   useEffect(() => {
     if (!toast) return undefined
     const t = setTimeout(() => setToast(''), 3000)
     return () => clearTimeout(t)
   }, [toast])
 
-  const rows = state.list
+  const fetchRecordsPage = useCallback(
+    (params) => apiEntry.slice.api.page(params).then((res) => ({ ...res, results: res.results.map(mapRecord) })),
+    [apiEntry]
+  )
+  const {
+    items: rows,
+    isLoading: rowsLoading,
+    isLoadingMore: rowsLoadingMore,
+    error: rowsError,
+    hasMore: rowsHasMore,
+    containerRef: rowsScrollRef,
+    sentinelRef: rowsSentinelRef,
+    handleScroll: handleRowsScroll,
+    reload: reloadRows,
+  } = useServerPagedList(fetchRecordsPage, { search: debouncedSearch.trim() })
 
   const shown = useMemo(() => {
     let out = rows
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((r) => searchKeys.some((k) => String(r[k] ?? '').toLowerCase().includes(q)))
-    }
     if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.active : !r.active))
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     return out
-  }, [rows, search, searchKeys, filters])
+  }, [rows, filters])
 
   function saveRecord(values) {
     const payload = buildReferencePayload(apiEntry, values)
@@ -87,14 +110,20 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         : apiEntry.slice.updateItem({ id: modalRec.id, payload })
     dispatch(action)
       .unwrap()
-      .then(() => setToast('Saqlandi'))
+      .then(() => {
+        setToast('Saqlandi')
+        reloadRows()
+      })
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
   }
 
   function confirmDelete() {
     dispatch(apiEntry.slice.deleteItem(delRec.id))
       .unwrap()
-      .then(() => setToast('O‘chirildi'))
+      .then(() => {
+        setToast('O‘chirildi')
+        reloadRows()
+      })
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
   }
 
@@ -133,7 +162,11 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={rowsScrollRef}
+        onScroll={handleRowsScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -160,7 +193,7 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
             </tr>
           </thead>
           <tbody>
-            {state.listStatus === 'loading' && rows.length === 0 ? (
+            {rowsLoading && shown.length === 0 ? (
               <tr>
                 <td colSpan={totalCols} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -169,14 +202,14 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
                   </div>
                 </td>
               </tr>
-            ) : state.listStatus === 'failed' && rows.length === 0 ? (
+            ) : rowsError && shown.length === 0 ? (
               <tr>
                 <td colSpan={totalCols} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <p className="text-sm text-[#DC2626]">{state.listError || 'Xatolik yuz berdi'}</p>
+                    <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
                       variant="outline"
-                      onClick={() => dispatch(apiEntry.slice.fetchItems())}
+                      onClick={reloadRows}
                       className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
                     >
                       Qayta urinish
@@ -235,6 +268,21 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && rowsHasMore && !rowsLoading && (
+              <tr ref={rowsSentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={totalCols} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {rowsLoadingMore && (
+              <tr>
+                <td colSpan={totalCols} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
