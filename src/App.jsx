@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
@@ -31,6 +31,8 @@ import ViloyatPage from '@/pages/Malumotnomalar/ViloyatPage'
 import TumanPage from '@/pages/Malumotnomalar/TumanPage'
 import XodimlarListPage from '@/pages/Xodimlar/XodimlarListPage'
 import XodimlarDetailPage from '@/pages/Xodimlar/XodimlarDetailPage'
+import IshgaQabulQilishListPage from '@/pages/Xodimlar/IshgaQabulQilishListPage'
+import IshgaQabulQilishDetailPage from '@/pages/Xodimlar/IshgaQabulQilishDetailPage'
 import TashkilotlarListPage from '@/pages/Tashkilotlar/TashkilotlarListPage'
 import TashkilotDetailPage from '@/pages/Tashkilotlar/TashkilotDetailPage'
 import FiliallarListPage from '@/pages/Filiallar/FiliallarListPage'
@@ -100,6 +102,10 @@ function App() {
           <Route path="/malumotnomalar/tuman" element={<TumanPage />} />
           <Route path="/malumotnomalar/xodimlar" element={<XodimlarListPage />} />
           <Route path="/malumotnomalar/xodimlar/:id" element={<XodimlarDetailPage />} />
+          <Route path="/malumotnomalar/kadrlar" element={<Navigate to="/malumotnomalar/xodimlar" replace />} />
+          <Route path="/malumotnomalar/kadrlar/:id" element={<KadrlarRedirect />} />
+          <Route path="/malumotnomalar/ishga-qabul-qilish" element={<IshgaQabulQilishListPage />} />
+          <Route path="/malumotnomalar/ishga-qabul-qilish/:id" element={<IshgaQabulQilishDetailPage />} />
           <Route path="/malumotnomalar/rollar" element={<RollarPage />} />
           <Route path="/malumotnomalar/sifatlar" element={<MalumotnomaDetailPage slug="sifatlar" />} />
           <Route path="/malumotnomalar/ranglar" element={<MalumotnomaDetailPage slug="ranglar" />} />
@@ -128,6 +134,13 @@ function App() {
       </Routes>
     </TooltipProvider>
   )
+}
+
+// "Kadrlar" tushunchasi bekor qilindi — shu funksionallik Xodimlar bo'limiga birlashtirildi.
+// Eski /malumotnomalar/kadrlar/:id havolalari mos Xodim tafsilot sahifasiga yo'naltiriladi.
+function KadrlarRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/malumotnomalar/xodimlar/${id}`} replace />
 }
 
 export default App

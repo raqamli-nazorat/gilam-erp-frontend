@@ -53,19 +53,22 @@ function GroupPeopleIcon() {
   )
 }
 
+// Figma'dan berilgan tayyor fon rasmlar — dekorativ doira/gul naqshlari shular ichida.
+const CARD_BG = { single: '/Holati1.png', bulk: '/Holati2.png' }
+
 function ChoiceCard({ tone, icon, title, onClick }) {
-  const bg = tone === 'single' ? '#FFE9E5' : '#E5E9FF'
   return (
     <button
       type="button"
       onClick={onClick}
-      style={{ background: bg }}
-      className="relative flex h-[99px] w-full items-center gap-4 overflow-hidden rounded-[10.6px] px-5 text-left shadow-[0px_1px_2px_0px_#0000001A] transition-transform hover:scale-[1.01]"
+      style={{
+        backgroundColor: tone === 'single' ? '#FFE9E5' : '#E5E9FF',
+        backgroundImage: `url('${CARD_BG[tone]}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+      className="relative flex h-[99px] w-full items-center gap-4 rounded-[10.6px] px-5 text-left shadow-[0px_1px_2px_0px_#0000001A] transition-transform hover:scale-[1.01]"
     >
-      {/* Figma'dagi dekorativ doiralar/chiziqlar (kartaning yuqori o'ng burchagida) */}
-      <div className="pointer-events-none absolute -right-4 -top-6 size-24 rounded-full bg-white/25" />
-      <div className="pointer-events-none absolute right-6 top-2 size-10 rounded-full bg-white/20" />
-
       <span className="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-[0px_1px_2px_0px_#0000001A]">
         {icon}
       </span>

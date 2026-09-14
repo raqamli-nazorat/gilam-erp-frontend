@@ -49,15 +49,18 @@ export default function BulkHireModal({ open, onOpenChange, employees, onSaveOne
 
   if (!current) return null
 
-  async function saveEmployee(emp) {
-    await onSaveOne({ employeeId: emp.id, ...buildHireValues(drafts[emp.id] ?? EMPTY_HIRE_DRAFT) })
+  // status: "Ishga qabul qilish" ro'yxatidagi Qoralama/Tasdiqlangan holatini bildiradi
+  // (Xodimlar bo'limining eski "Ishga olish" oqimida bu tushuncha yo'q edi — o'sha chaqiruvchi
+  // uchun onSaveOne status'ni e'tiborsiz qoldirishi mumkin).
+  async function saveEmployee(emp, status) {
+    await onSaveOne({ employeeId: emp.id, status, ...buildHireValues(drafts[emp.id] ?? EMPTY_HIRE_DRAFT) })
   }
 
   async function handleSaqlash() {
     if (!valid || pending) return
     setPending(true)
     try {
-      await saveEmployee(current)
+      await saveEmployee(current, 'draft')
       const next = queue.filter((e) => e.id !== current.id)
       if (next.length === 0) {
         onDone()
@@ -81,7 +84,7 @@ export default function BulkHireModal({ open, onOpenChange, employees, onSaveOne
     try {
       for (const e of queue) {
         // eslint-disable-next-line no-await-in-loop
-        await saveEmployee(e)
+        await saveEmployee(e, 'confirmed')
         setQueue((q) => q.filter((x) => x.id !== e.id))
       }
       onDone()
@@ -95,7 +98,8 @@ export default function BulkHireModal({ open, onOpenChange, employees, onSaveOne
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="gap-0 rounded-[20px] p-0 sm:max-w-[560px]">
+      {/* Standart balandlik — 560×592, radius 12px (shu bo'limdagi barcha modallar bilan bir xil). */}
+      <DialogContent showCloseButton={false} className="flex h-[592px] flex-col gap-0 rounded-[12px] p-0 sm:max-w-[560px]">
         <div className="flex h-[60px] shrink-0 items-center justify-between gap-2 px-6">
           <h2 className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">Xodimni ishga olish</h2>
           <div className="flex items-center gap-3">
@@ -136,7 +140,7 @@ export default function BulkHireModal({ open, onOpenChange, employees, onSaveOne
           </div>
         </div>
 
-        <div className="max-h-[65vh] overflow-auto px-6 pb-5 pt-2">
+        <div className="min-h-0 flex-1 overflow-auto px-6 pb-5 pt-2">
           <div className="mb-4">
             <label className={compactLabelCls}>Xodim</label>
             <div className={cn(compactFieldCls, 'flex items-center bg-[#F5F5F5] dark:bg-white/5')}>{current.name}</div>
@@ -145,7 +149,7 @@ export default function BulkHireModal({ open, onOpenChange, employees, onSaveOne
           <RecruitmentFieldsGrid draft={draft} set={set} orgs={orgs} branches={branches} positions={positions} compact />
         </div>
 
-        <div className="flex h-[72px] shrink-0 items-center justify-end gap-2.5 rounded-b-[20px] bg-[#F5F5F5] px-6 dark:bg-white/5">
+        <div className="flex h-[72px] shrink-0 items-center justify-end gap-2.5 rounded-b-[12px] bg-[#F5F5F5] px-6 dark:bg-white/5">
           <Button
             type="button"
             variant="outline"
