@@ -18,7 +18,7 @@ import UserFooter from './components/UserFooter'
 import { Panel, InfoRow, surface } from './components/InfoPanel'
 
 const THb =
-  'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
+  'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-4 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
 
 export default function FoydalanuvchilarDetailPage() {
   const { id } = useParams()
@@ -159,7 +159,7 @@ export default function FoydalanuvchilarDetailPage() {
                       const info = getActionInfo(row.action)
                       const obyekt = row.object_repr || row.content_type_name || '–'
                       return (
-                        <tr key={row.id ?? i} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                        <tr key={row.id ?? i} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                           <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                           <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">
                             {formatAuditDateTime(row.timestamp).full}
@@ -179,8 +179,8 @@ export default function FoydalanuvchilarDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="w-full shrink-0 space-y-4 overflow-auto lg:w-[400px]">
-            <Panel title="FOYDALANUVCHI MA’LUMOTLARI">
+          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
+            <Panel title="FOYDALANUVCHI MA’LUMOTLARI" className="shrink-0">
               <InfoRow label="Tashkiloti" value={user.tashkilot} />
               <InfoRow label="Filiali" value={user.filial} />
               <InfoRow label="Roli" value={user.rol} />
@@ -206,9 +206,9 @@ export default function FoydalanuvchilarDetailPage() {
               />
             </Panel>
 
-            <Panel title="Oxirgi savdolari:">
+            <Panel title="Oxirgi savdolari:" className="min-h-0 flex-1">
               {d.lastSales.length === 0 ? (
-                <div className="px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
+                <div className="flex h-full items-center justify-center px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
                   Bu ma’lumot hali mavjud emas
                 </div>
               ) : (
