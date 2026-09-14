@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CheckCircle2, FileBarChart2, Loader2, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
-import { formatNumber } from '@/lib/format'
+import { formatDateTime, formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   activateOrganization,
@@ -32,6 +32,30 @@ const STAT_META = [
   { key: 'savdo', title: 'SAVDO', bg: '#B3F8C5', suffix: ' UZS', digits: 2, to: '/hisobotlar/savdo-boyicha' },
 ]
 
+// Backend Organization modelida to'xtatish/faollashtirishni KIM va AYNAN QACHON bajargani
+// saqlanmaydi (faqat is_suspended/suspension_reason bor — API sxemasi bilan tekshirildi).
+// Shu maydonlarni shu brauzerda harakatni bajargan payt localStorage'ga yozib, keyinchalik
+// sahifa yangilanganda ham (audit jurnali kabi to'liq qonuniy manba emas, lekin "kim/qachon"
+// haqida hech narsa ko'rsatmagandan ko'ra yaxshiroq) ko'rsatib turamiz.
+function statusMetaKey(orgId) {
+  return `gilam:orgStatusMeta:${orgId}`
+}
+function loadStatusMeta(orgId) {
+  try {
+    const raw = localStorage.getItem(statusMetaKey(orgId))
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+function saveStatusMeta(orgId, meta) {
+  try {
+    localStorage.setItem(statusMetaKey(orgId), JSON.stringify(meta))
+  } catch {
+    // localStorage yo'q/bloklangan bo'lsa — banner shunchaki "kim/qachon"siz ko'rinadi
+  }
+}
+
 export default function TashkilotDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -40,11 +64,16 @@ export default function TashkilotDetailPage() {
   const detailStatus = useSelector((s) => s.tashkilotlar.detailStatus)
   const detailError = useSelector((s) => s.tashkilotlar.detailError)
   const branchesStatus = useSelector((s) => s.tashkilotlar.branchesStatus)
+  const currentUser = useSelector((s) => s.auth.user)
 
   const [editOpen, setEditOpen] = useState(false)
   const [suspendOpen, setSuspendOpen] = useState(false)
   const [activateOpen, setActivateOpen] = useState(false)
   const [toast, setToast] = useState('')
+  // Shu renderda hozir bajarilgan harakat natijasi ({ orgId, type, at, by }) — orgId joriy
+  // `id`ga mos kelmasa (boshqa tashkilotga o'tilgan), localStorage'dagi qiymat ishlatiladi.
+  const [actionMeta, setActionMeta] = useState(null)
+  const statusMeta = actionMeta?.orgId === id ? actionMeta : loadStatusMeta(id)
 
   usePageHeader(org ? `Tashkilotlar › ${org.name}` : 'Tashkilotlar')
 
@@ -117,13 +146,15 @@ export default function TashkilotDetailPage() {
 
         {suspended && org.suspend && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Tashkilot to‘xtatilgan, {org.suspend.at}. Sabab: {org.suspend.reason}. To‘xtatdi: {org.suspend.by}.
+            Tashkilot to‘xtatilgan, {(statusMeta?.type === 'suspend' && statusMeta.at) || org.suspend.at || '—'}. Sabab:{' '}
+            {org.suspend.reason || '—'}
+            {statusMeta?.type === 'suspend' && statusMeta.by ? `. To‘xtatdi: ${statusMeta.by}` : ''}.
           </div>
         )}
-        {!suspended && org.activation && (
+        {!suspended && statusMeta?.type === 'activate' && (
           <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-            Tashkilot faollashtirildi, {org.activation.at}. To‘xtatish sababi audit jurnalida saqlanib qoldi. Faollashtirdi:{' '}
-            {org.activation.by}.
+            Tashkilot faollashtirildi, {statusMeta.at}. To‘xtatish sababi audit jurnalida saqlanib qoldi
+            {statusMeta.by ? `. Faollashtirdi: ${statusMeta.by}` : ''}.
           </div>
         )}
 
@@ -275,7 +306,12 @@ export default function TashkilotDetailPage() {
         onConfirm={(reason) => {
           dispatch(suspendOrganization({ id: org.id, reason }))
             .unwrap()
-            .then(() => setToast('Tashkilot to‘xtatildi'))
+            .then(() => {
+              const meta = { orgId: org.id, type: 'suspend', at: formatDateTime(), by: currentUser?.fullName || '' }
+              saveStatusMeta(org.id, meta)
+              setActionMeta(meta)
+              setToast('Tashkilot to‘xtatildi')
+            })
             .catch((err) => setToast(err || 'To‘xtatishda xatolik yuz berdi'))
         }}
       />
@@ -286,7 +322,12 @@ export default function TashkilotDetailPage() {
         onConfirm={() => {
           dispatch(activateOrganization(org.id))
             .unwrap()
-            .then(() => setToast('Tashkilot faollashtirildi'))
+            .then(() => {
+              const meta = { orgId: org.id, type: 'activate', at: formatDateTime(), by: currentUser?.fullName || '' }
+              saveStatusMeta(org.id, meta)
+              setActionMeta(meta)
+              setToast('Tashkilot faollashtirildi')
+            })
             .catch((err) => setToast(err || 'Faollashtirishda xatolik yuz berdi'))
         }}
       />
