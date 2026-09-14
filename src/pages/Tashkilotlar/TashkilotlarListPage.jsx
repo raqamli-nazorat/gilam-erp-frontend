@@ -7,7 +7,9 @@ import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
-import { createOrganization, fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { createOrganization, fetchOrganizations, mapOrg } from '@/features/tashkilotlar/tashkilotlarSlice'
+import * as organizationService from '@/services/organizationService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -24,15 +26,26 @@ function matchesCountBucket(n, bucket) {
   return hi == null ? n === lo : n >= lo && n <= hi
 }
 
+// Jadval endi "scroll pagination" bilan (bitta-bitta sahifa) yuklanadi — qidiruv va
+// holat (tab/"Holat" filtri) serverga so'rov parametri sifatida yuboriladi. Filiallar soni/
+// foydalanuvchilar soni "bucket"lari va sana oralig'i uchun mos backend parametri
+// tasdiqlanmagan — shular hozircha faqat YUKLANGAN qatorlar ustida ishlaydi.
+function fetchOrgsPage(params) {
+  return organizationService.getOrganizationsPage(params).then((res) => ({ ...res, results: res.results.map(mapOrg) }))
+}
+
 export default function TashkilotlarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  // To'liq ro'yxat — tab hisoblagichlari (Barchasi/Faol/To'xtatilgan sonlari) va boshqa
+  // sahifalardagi tashkilot tanlagichlari (Boshqaruv paneli, Filial/Foydalanuvchi/Xodim
+  // formalari) shunga tayanadi, shuning uchun bunga tegilmaydi.
   const orgs = useSelector((s) => s.tashkilotlar.list)
   const listStatus = useSelector((s) => s.tashkilotlar.listStatus)
-  const listError = useSelector((s) => s.tashkilotlar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_ORG_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -43,6 +56,12 @@ export default function TashkilotlarListPage() {
   useEffect(() => {
     if (listStatus === 'idle') dispatch(fetchOrganizations())
   }, [listStatus, dispatch])
+
+  // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -66,22 +85,40 @@ export default function TashkilotlarListPage() {
   )
   const hasFilter = Object.values(filters).some(Boolean)
 
+  // Tab ("Faol"/"To'xtatilgan") va "Holat" filtri bitta xil narsani bildiradi — ikkalasi
+  // ham serverga bitta `is_suspended` parametri sifatida yuboriladi.
+  const isSuspendedParam = useMemo(() => {
+    if (tab === 'active') return false
+    if (tab === 'suspended') return true
+    if (filters.holat === 'Faol') return false
+    if (filters.holat === 'To‘xtatilgan') return true
+    return undefined
+  }, [tab, filters.holat])
+
+  const {
+    items: pagedOrgs,
+    isLoading: orgsLoading,
+    isLoadingMore: orgsLoadingMore,
+    error: orgsError,
+    hasMore: orgsHasMore,
+    containerRef: orgsScrollRef,
+    sentinelRef: orgsSentinelRef,
+    handleScroll: handleOrgsScroll,
+    reload: reloadOrgs,
+  } = useServerPagedList(fetchOrgsPage, {
+    search: debouncedSearch.trim(),
+    is_suspended: isSuspendedParam,
+  })
+
   const shown = useMemo(() => {
-    let out = orgs
-    if (tab === 'active') out = out.filter((o) => o.status === 'active')
-    if (tab === 'suspended') out = out.filter((o) => o.status === 'suspended')
-    if (search) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((o) => o.name.toLowerCase().includes(q) || o.inn.includes(q))
-    }
+    let out = pagedOrgs
     if (filters.hudud) out = out.filter((o) => o.viloyat === filters.hudud)
-    if (filters.holat) out = out.filter((o) => (filters.holat === 'Faol' ? o.status === 'active' : o.status === 'suspended'))
     if (filters.filiallarSoni) out = out.filter((o) => matchesCountBucket(o.branchCount, filters.filiallarSoni))
     if (filters.foydalanuvchilar) out = out.filter((o) => matchesCountBucket(o.stats?.foydalanuvchilar ?? 0, filters.foydalanuvchilar))
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((o) => matchesDateRange(o.registeredAt, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [orgs, tab, search, filters])
+  }, [pagedOrgs, filters])
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -150,7 +187,11 @@ export default function TashkilotlarListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={orgsScrollRef}
+        onScroll={handleOrgsScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
@@ -166,7 +207,7 @@ export default function TashkilotlarListPage() {
               </tr>
             </thead>
             <tbody>
-              {listStatus === 'loading' ? (
+              {orgsLoading && shown.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
@@ -175,14 +216,14 @@ export default function TashkilotlarListPage() {
                     </div>
                   </td>
                 </tr>
-              ) : listStatus === 'failed' ? (
+              ) : orgsError && shown.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                      <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                       <Button
                         variant="outline"
-                        onClick={() => dispatch(fetchOrganizations())}
+                        onClick={reloadOrgs}
                         className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
                       >
                         Qayta urinish
@@ -260,6 +301,21 @@ export default function TashkilotlarListPage() {
                     </td>
                   </tr>
                 ))
+              )}
+              {shown.length > 0 && orgsHasMore && !orgsLoading && (
+                <tr ref={orgsSentinelRef} className="h-1 border-0 p-0">
+                  <td colSpan={9} className="h-1 border-0 p-0" />
+                </tr>
+              )}
+              {orgsLoadingMore && (
+                <tr>
+                  <td colSpan={9} className="py-4 text-center">
+                    <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                      Ko‘proq ma’lumotlar yuklanmoqda…
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
         </table>

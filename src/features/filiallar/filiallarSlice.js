@@ -28,7 +28,9 @@ const emptyDetail = {
   },
 }
 
-function mapBranch(b) {
+// Eksport qilingan — FiliallarListPage.jsx jadval qatorlarini "scroll pagination" bilan
+// servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
+export function mapBranch(b) {
   const ombor = Number(b.warehouses_count) || 0
   const xodim = Number(b.employees_count) || 0
   const closed = !!b.is_closed

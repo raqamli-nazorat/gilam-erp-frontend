@@ -4,8 +4,10 @@ import { Check, Filter, Loader2, Plus, Search, Trash2, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { countrySlice } from '@/features/malumotnomalar/referenceEntities'
-import { createDistrict, deleteDistrict, fetchAllDistricts, fetchRegions, updateDistrict } from '@/features/geo/geoSlice'
+import { createDistrict, deleteDistrict, fetchRegions, mapDistrict, updateDistrict } from '@/features/geo/geoSlice'
+import * as geoService from '@/services/geoService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,16 +29,25 @@ const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
+// "Tumanlar" jadvali endi butun ro'yxatni bir vaqtda (fetchAllPages) emas, scroll pagination
+// bilan sahifalab yuklaydi — shu bilan bog'liq holat Redux'da emas, sahifa ichida (useServerPagedList)
+// saqlanadi. Backend `search`ni qo'llab-quvvatlaydi (server tomonda), lekin sana oralig'i
+// filtrlari uchun alohida query parametr yo'qligi tasdiqlanmagan — shu ikkisi hozircha
+// faqat YUKLANGAN (loaded-so-far) qatorlar ustida ishlaydi.
+// Eslatma: Davlat/Viloyat sahifalaridagi "N ta tuman" hisoblagichi hamon to'liq ro'yxatga
+// muhtoj — ular alohida `fetchAllDistricts()`ni chaqirishda davom etadi, bu yerga tegilmadi.
+function fetchDistrictsPage(params) {
+  return geoService.getDistrictsPage(params).then((res) => ({ ...res, results: res.results.map(mapDistrict) }))
+}
+
 export default function TumanPage() {
   const dispatch = useDispatch()
-  const allDistricts = useSelector((s) => s.geo.allDistricts)
-  const allDistrictsStatus = useSelector((s) => s.geo.allDistrictsStatus)
-  const allDistrictsError = useSelector((s) => s.geo.allDistrictsError)
   const regions = useSelector((s) => s.geo.regions)
   const regionsStatus = useSelector((s) => s.geo.regionsStatus)
   const countries = useSelector((s) => s.davlatlar.list)
 
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_GEO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalRec, setModalRec] = useState(null)
@@ -45,11 +56,28 @@ export default function TumanPage() {
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Tuman' }])
 
+  const {
+    items: allDistricts,
+    isLoading: districtsLoading,
+    isLoadingMore: districtsLoadingMore,
+    error: districtsError,
+    hasMore: districtsHasMore,
+    containerRef: districtsScrollRef,
+    sentinelRef: districtsSentinelRef,
+    handleScroll: handleDistrictsScroll,
+    reload: reloadDistricts,
+  } = useServerPagedList(fetchDistrictsPage, { search: debouncedSearch.trim() })
+
   useEffect(() => {
-    dispatch(fetchAllDistricts())
     dispatch(fetchRegions())
     if (countries.length === 0) dispatch(countrySlice.fetchItems())
   }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -67,16 +95,12 @@ export default function TumanPage() {
 
   const shown = useMemo(() => {
     let out = allDistricts
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((d) => d.name.toLowerCase().includes(q))
-    }
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((d) => matchesDateRange(d.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     if (filters.ozgartirilganDan || filters.ozgartirilganGacha)
       out = out.filter((d) => matchesDateRange(d.ozgartirilgan, filters.ozgartirilganDan, filters.ozgartirilganGacha))
     return out
-  }, [allDistricts, search, filters])
+  }, [allDistricts, filters])
 
   function saveDistrict(values) {
     const action =
@@ -85,14 +109,20 @@ export default function TumanPage() {
         : updateDistrict({ id: modalRec.id, ...values })
     dispatch(action)
       .unwrap()
-      .then(() => setToast('Saqlandi'))
+      .then(() => {
+        setToast('Saqlandi')
+        reloadDistricts()
+      })
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
   }
 
   function confirmDelete() {
     dispatch(deleteDistrict(delRec.id))
       .unwrap()
-      .then(() => setToast('O‘chirildi'))
+      .then(() => {
+        setToast('O‘chirildi')
+        reloadDistricts()
+      })
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
   }
 
@@ -131,7 +161,11 @@ export default function TumanPage() {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={districtsScrollRef}
+        onScroll={handleDistrictsScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -145,7 +179,7 @@ export default function TumanPage() {
             </tr>
           </thead>
           <tbody>
-            {allDistrictsStatus === 'loading' && shown.length === 0 ? (
+            {districtsLoading && shown.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -154,10 +188,19 @@ export default function TumanPage() {
                   </div>
                 </td>
               </tr>
-            ) : allDistrictsStatus === 'failed' && shown.length === 0 ? (
+            ) : districtsError && shown.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-16 text-center">
-                  <p className="text-sm text-[#DC2626]">{allDistrictsError || 'Xatolik yuz berdi'}</p>
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
+                    <Button
+                      variant="outline"
+                      onClick={reloadDistricts}
+                      className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+                    >
+                      Qayta urinish
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ) : shown.length === 0 ? (
@@ -182,6 +225,21 @@ export default function TumanPage() {
                   </td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && districtsHasMore && !districtsLoading && (
+              <tr ref={districtsSentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={7} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {districtsLoadingMore && (
+              <tr>
+                <td colSpan={7} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

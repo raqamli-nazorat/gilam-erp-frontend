@@ -1,8 +1,15 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
 
+// To'liq ro'yxat — Boshqaruv paneli va boshqa joylardagi foydalanuvchi tanlagichlari uchun.
 export async function getAllUsers() {
   return fetchAllPages('accounts/users/')
+}
+
+// "Foydalanuvchilar" ro'yxat jadvali uchun — bitta sahifani so'raydi (scroll pagination).
+// `params`: { page, search }.
+export async function getUsersPage(params) {
+  return fetchPage('accounts/users/', params)
 }
 
 export async function getUser(id) {

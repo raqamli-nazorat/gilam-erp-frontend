@@ -1,8 +1,15 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
 
+// To'liq ro'yxat — Foydalanuvchi shakli/filtridagi rol tanlagichlari uchun.
 export async function getAllRoles() {
   return fetchAllPages('accounts/roles/')
+}
+
+// "Rollar" ro'yxat jadvali uchun — bitta sahifani so'raydi (scroll pagination).
+// `params`: { page, search }.
+export async function getRolesPage(params) {
+  return fetchPage('accounts/roles/', params)
 }
 
 export async function createRole(payload) {

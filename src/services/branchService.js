@@ -1,9 +1,16 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
 
-// Barcha filiallarni (barcha sahifalarni yig'ib) qaytaradi.
+// Barcha filiallarni (barcha sahifalarni yig'ib) qaytaradi — Boshqaruv paneli va tashkilot
+// tanlagichlarga bog'liq boshqa joylar uchun to'liq ro'yxat kerak, shuning uchun saqlanadi.
 export async function getAllBranches() {
   return fetchAllPages('organization/branches/')
+}
+
+// "Filiallar" ro'yxat jadvali uchun — bitta sahifani so'raydi (scroll pagination).
+// `params`: { page, search, is_closed }.
+export async function getBranchesPage(params) {
+  return fetchPage('organization/branches/', params)
 }
 
 export async function getBranch(id) {
