@@ -1,51 +1,65 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { maskMoney } from '@/lib/format'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import RecruitmentFieldsGrid, {
   EMPTY_HIRE_DRAFT,
+  HireModalHeader,
   buildHireValues,
-  fieldCls,
+  compactFieldCls,
+  compactLabelCls,
+  hireFooterBtnCls,
+  isDraftDirty,
   isHireDraftValid,
-  labelCls,
   useHireCatalogs,
 } from './hireFields'
 import EmployeePickerModal from './EmployeePickerModal'
 
-// "Ishga qabul qilish" ro'yxati uchun — Figma: bitta oynada "Xodim" (Kadr) tanlagich +
-// ishga olish maydonlari, "Saqlash" (Qoralama) va "Tasdiqlash" (Tasdiqlangan) alohida
-// tugmalar bilan. HireEmployeeModal'dan farqli — bu yerda xodim TANLASH ham shu oynaning ichida.
-export default function RecruitmentModal({ open, onOpenChange, record, onSave }) {
+// Ishga olish/tahrirlash oynasi — BITTA umumiy forma: "Bitta xodim ishga olish" va "Bir nechta
+// xodim ishga olish" ikkalasi ham xuddi shu oynani ochadi (Figma dev-mode: pager yo'q, oddiy
+// sarlavha). Farq faqat "Xodim" maydoni bosilganda ochiladigan EmployeePickerModal'ning rejimida:
+// `multiple=false` — bitta tanlash ("Xodim tanlash"), `multiple=true` — ko'p tanlash ("Xodimlar
+// tanlash"). Tanlangan xodim(lar)ga BIR XIL forma qiymatlari (Tashkilot/Filial/Lavozim/Ish
+// haqi/sana/qo'shimcha) qo'llaniladi — har bir xodim uchun alohida forma/navbat YO'Q.
+export default function RecruitmentModal({ open, onOpenChange, record, multiple = false, onSave, onSaveOne, onDone }) {
   const isEdit = !!record
   const { orgs, branches, positions } = useHireCatalogs(open)
   const kadrlar = useSelector((s) => s.xodimlar.list)
-  const [employeeId, setEmployeeId] = useState('')
+
   const [draft, setDraft] = useState(EMPTY_HIRE_DRAFT)
+  const [initialDraft, setInitialDraft] = useState(EMPTY_HIRE_DRAFT)
+  // Tahrirlashda — hujjatning o'zi tegishli bitta xodim. Yaratishda — Xodim maydoni orqali
+  // tanlangan id(lar) ro'yxati (bitta rejimda ko'pi bilan 1 ta).
+  const [editEmployeeId, setEditEmployeeId] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
   const [pickerOpen, setPickerOpen] = useState(false)
-  const employeeName = kadrlar.find((k) => k.id === employeeId)?.name
+  const [pending, setPending] = useState(false)
 
   useEffect(() => {
     if (!open) return
+    setPending(false)
     if (record) {
-      setEmployeeId(record.employeeId ?? '')
-      setDraft({
+      const nextDraft = {
         tashkilot: '', // recruitment hujjati o'zi tashkilotni saqlamaydi, faqat filialni
         filial: record.filialId ?? '',
         lavozim: record.lavozimId ?? '',
         kartaRaqami: record.kartaRaqami ?? '',
         ishHaqiTuri: record.ishHaqiTuri ?? 'fixed_amount',
-        ishHaqiSummasi: record.fixSumma ? String(record.fixSumma) : '',
+        ishHaqiSummasi: record.fixSumma ? maskMoney(String(record.fixSumma)) : '',
         ishHaqiFoizi: record.fixFoiz ? String(record.fixFoiz) : '',
         ishgaOlinganSana: record.sana ?? '',
-        qoshimchaSumma: record.extraSumma ? String(record.extraSumma) : '',
+        qoshimchaSumma: record.extraSumma ? maskMoney(String(record.extraSumma)) : '',
         qoshimchaFoizi: record.extraFoiz ? String(record.extraFoiz) : '',
-      })
+      }
+      setEditEmployeeId(record.employeeId ?? '')
+      setDraft(nextDraft)
+      setInitialDraft(nextDraft)
     } else {
-      setEmployeeId('')
       setDraft(EMPTY_HIRE_DRAFT)
+      setSelectedIds([])
     }
   }, [open, record])
 
@@ -56,13 +70,36 @@ export default function RecruitmentModal({ open, onOpenChange, record, onSave })
       return next
     })
 
-  const canSave = !!employeeId && isHireDraftValid(draft)
+  const editEmployeeName = kadrlar.find((k) => k.id === editEmployeeId)?.name
+  const singleName = kadrlar.find((k) => k.id === selectedIds[0])?.name
 
-  function submit(status) {
-    // Tahrirlashda holat o'zgartirilmaydi — faqat maydonlar yangilanadi (holatni Tasdiqlash/
-    // Bekor qilish tugmalari sahifaning o'zida alohida boshqaradi).
-    onSave({ employeeId, status: isEdit ? record.status : status, draft: buildHireValues(draft) })
+  const fieldsValid = isHireDraftValid(draft)
+  // Tahrirlashda hech narsa o'zgarmagan bo'lsa Saqlash o'chiq turadi (Figma); yaratishda kamida
+  // bitta xodim tanlangan bo'lishi kerak.
+  const canSave = isEdit ? fieldsValid && isDraftDirty(draft, initialDraft) : selectedIds.length > 0 && fieldsValid
+
+  function submitEdit() {
+    onSave({ employeeId: editEmployeeId, status: record.status, draft: buildHireValues(draft) })
     onOpenChange(false)
+  }
+
+  // Tanlangan har bir xodim uchun BIR XIL forma qiymatlari bilan alohida hujjat yaratiladi.
+  async function submitCreate(status) {
+    if (!canSave || pending) return
+    setPending(true)
+    try {
+      const values = buildHireValues(draft)
+      for (const id of selectedIds) {
+        // eslint-disable-next-line no-await-in-loop
+        await onSaveOne({ employeeId: id, status, ...values })
+      }
+      onDone(selectedIds.length)
+      onOpenChange(false)
+    } catch {
+      // xatolik haqida toast chaqiruvchi tomonda (onSaveOne) ko'rsatiladi; oyna ochiq qoladi
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -70,65 +107,86 @@ export default function RecruitmentModal({ open, onOpenChange, record, onSave })
       {/* Standart balandlik — 560×592, radius 12px: bu bo'limdagi modallar bir-birining ustiga
           "ichma-ich" ochiladi (Xodim/Tashkilot tanlang shu dialog ustida), shuning uchun barchasi
           bitta standart o'lchamda — ma'lumot kam bo'lsa ham hajm o'zgarmaydi. */}
-      <DialogContent className="flex h-[592px] flex-col gap-0 rounded-[12px] p-0 shadow-[0px_12px_24px_-6px_#01091C24] sm:max-w-[560px]">
-        <DialogHeader className="flex shrink-0 flex-row items-center justify-between px-6 pb-2 pt-6">
-          <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
-            {isEdit ? 'Ishga qabul qilishni tahrirlash' : 'Xodimni ishga olish'}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent showCloseButton={false} className="flex h-[592px] flex-col gap-0 rounded-[12px] p-0 shadow-[0px_12px_24px_-6px_#01091C24] sm:max-w-[560px]">
+        <HireModalHeader
+          title={isEdit ? 'Ishga qabul qilishni tahrirlash' : 'Xodimni ishga olish'}
+          onClose={() => onOpenChange(false)}
+        />
 
-        <div className="min-h-0 flex-1 overflow-auto px-6 pb-4 pt-2">
-          <div className="mb-5">
-            <Label className={labelCls}>Xodim</Label>
-            {/* Figma: "Xodim" bosilganda oddiy dropdown emas, izlab-tanlash oynasi (EmployeePickerModal, bitta tanlash rejimi) ochiladi. */}
-            <button
-              type="button"
-              disabled={isEdit}
-              onClick={() => setPickerOpen(true)}
-              className={cn(fieldCls, 'flex items-center justify-between text-left disabled:cursor-not-allowed disabled:opacity-60')}
-            >
-              <span className={cn('truncate', !employeeName && 'text-[#737373]')}>{employeeName || 'Xodim ro‘yxatidan tanlang'}</span>
-              <ChevronDown className="size-4 shrink-0 text-[#737373]" />
-            </button>
-            <EmployeePickerModal
-              open={pickerOpen}
-              onOpenChange={setPickerOpen}
-              employees={kadrlar}
-              onConfirm={(ids) => setEmployeeId(ids[0])}
-            />
+        <div className="min-h-0 flex-1 overflow-auto px-6 pb-5 pt-2">
+          <div className="mb-4">
+            <label className={compactLabelCls}>Xodim</label>
+            {isEdit ? (
+              <div className={cn(compactFieldCls, 'flex items-center bg-[#F5F5F5] text-[#0A0A0A] dark:bg-white/5 dark:text-white')}>
+                {editEmployeeName}
+              </div>
+            ) : (
+              <>
+                {/* Figma: "Xodim" bosilganda oddiy dropdown emas, izlab-tanlash oynasi
+                    (EmployeePickerModal) ochiladi — `multiple` prop'ga qarab bitta yoki ko'p
+                    tanlash rejimida. */}
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className={cn(compactFieldCls, 'flex items-center justify-between text-left')}
+                >
+                  <span className={cn('truncate', selectedIds.length === 0 && 'text-[#737373]')}>
+                    {selectedIds.length === 0
+                      ? 'Xodim ro‘yxatidan tanlang'
+                      : multiple
+                        ? `${selectedIds.length} ta xodim tanlandi`
+                        : singleName}
+                  </span>
+                  <ChevronDown className="size-3.5 shrink-0 text-[#737373]" />
+                </button>
+                <EmployeePickerModal
+                  open={pickerOpen}
+                  onOpenChange={setPickerOpen}
+                  employees={kadrlar}
+                  multiple={multiple}
+                  onConfirm={(ids) => setSelectedIds(ids)}
+                />
+              </>
+            )}
           </div>
 
-          <RecruitmentFieldsGrid draft={draft} set={set} orgs={orgs} branches={branches} positions={positions} />
+          <RecruitmentFieldsGrid draft={draft} set={set} orgs={orgs} branches={branches} positions={positions} compact />
         </div>
 
-        <DialogFooter className="mx-0 mb-0 mt-2 shrink-0 gap-2.5 rounded-b-[12px] border-t-0 bg-[#F5F5F5] px-6 py-4 dark:bg-white/5 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="h-11 gap-2 rounded-lg border border-[#E5E5E5] bg-white px-5 text-[15px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
-          >
-            Bekor qilish
+        <div className="flex h-[72px] shrink-0 items-center justify-end gap-2.5 rounded-b-[12px] bg-[#F5F5F5] px-6 dark:bg-white/5">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className={hireFooterBtnCls}>
+            <X className="size-4" /> Bekor qilish
           </Button>
-          <Button
-            type="button"
-            disabled={!canSave}
-            onClick={() => submit('draft')}
-            className="h-11 gap-2 rounded-lg bg-[#0052D2] px-5 text-[15px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
-          >
-            <Check className="h-4 w-4" /> Saqlash
-          </Button>
-          {!isEdit && (
+          {isEdit ? (
             <Button
               type="button"
               disabled={!canSave}
-              onClick={() => submit('confirmed')}
-              className="h-11 gap-2 rounded-lg bg-[#047A47] px-5 text-[15px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#036139] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
+              onClick={submitEdit}
+              className="h-9 w-[109px] gap-1.5 rounded-[8px] bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100"
             >
-              <Check className="h-4 w-4" /> Tasdiqlash
+              <Check className="size-4" /> Saqlash
             </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                disabled={!canSave || pending}
+                onClick={() => submitCreate('draft')}
+                className="h-9 w-[109px] gap-1.5 rounded-[8px] bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100"
+              >
+                <Check className="size-4" /> Saqlash
+              </Button>
+              <Button
+                type="button"
+                disabled={!canSave || pending}
+                onClick={() => submitCreate('confirmed')}
+                className="h-9 w-[109px] gap-1.5 rounded-[8px] bg-[#00A25C] px-4 text-[14px] font-medium text-white shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#008C4F] disabled:opacity-60"
+              >
+                <Check className="size-4" /> Tasdiqlash
+              </Button>
+            </>
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

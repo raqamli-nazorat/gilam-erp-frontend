@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { ChevronDown, QrCode } from 'lucide-react'
+import { ChevronDown, QrCode, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { maskDate } from '@/components/ui/filter-modal'
-import { formatDate, dmyToNum } from '@/lib/format'
+import { dmyToNum, maskMoney, unmaskMoney } from '@/lib/format'
 import { ISH_HAQI_TURLARI } from '@/features/xodimlar/xodimlarData'
 import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { fetchBranches } from '@/features/filiallar/filiallarSlice'
@@ -33,10 +33,41 @@ export const fieldCls =
   'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 export const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-// Bir xil "control" o'lcham — BulkHireModal'ning pager oynasida ham ishlatiladi.
+// Bir xil "control" o'lcham — RecruitmentModal'ning ham bitta, ham bir nechta xodim (navbat)
+// rejimlarida ishlatiladi.
 export const compactFieldCls =
   'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 export const compactLabelCls = 'mb-1.5 block text-[12px] font-medium leading-4 text-[#525252] dark:text-muted-foreground'
+
+// "Xodimni ishga olish" oynasining sarlavha qatori — Figma: chap tarafda sarlavha, o'ng
+// tarafda oddiy yopish (X) tugmasi. Pager YO'Q — bitta va bir nechta xodim ishga olish bir xil
+// oddiy sarlavhaga ega (dev-mode screenshotlar bilan tasdiqlangan: "Xodim" maydoni bosilganda
+// ochiladigan tanlash oynasigina bitta/ko'p tanlash rejimi bilan farqlanadi, oynaning o'zi emas).
+export function HireModalHeader({ title, onClose }) {
+  return (
+    <div className="flex h-[60px] shrink-0 items-center justify-between gap-2 px-6">
+      <h2 className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">{title}</h2>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Yopish"
+        className="flex size-8 items-center justify-center rounded-md text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] dark:text-white/70 dark:hover:bg-white/10"
+      >
+        <X className="size-5" />
+      </button>
+    </div>
+  )
+}
+
+// Footer tugmalari — RecruitmentModal'ning barcha rejimlarida bir xil (109px, 36px).
+export const hireFooterBtnCls =
+  'h-9 w-[109px] gap-1.5 rounded-[8px] border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white'
+
+// Tahrirlash oynalarida "Saqlash" faqat draft dastlabki holatdan farq qilganda yoqiladi
+// (Figma: bo'sh joyda Saqlash o'chiq turadi, o'zgartirilgach yoqiladi).
+export function isDraftDirty(draft, initialDraft) {
+  return JSON.stringify(draft) !== JSON.stringify(initialDraft)
+}
 
 // "DD.MM.YYYY" -> "YYYY-MM-DD" (backend rec_dism_date shakli)
 export function toIsoDate(dmy) {
@@ -68,12 +99,23 @@ export function hireDraftFromXodim(employee) {
     lavozim: employee.lavozimId ?? '',
     kartaRaqami: employee.kartaRaqami ?? '',
     ishHaqiTuri: employee.ishHaqiTuri ?? 'fixed_amount',
-    ishHaqiSummasi: employee.ishHaqiSummasi ? String(employee.ishHaqiSummasi) : '',
+    ishHaqiSummasi: employee.ishHaqiSummasi ? maskMoney(String(employee.ishHaqiSummasi)) : '',
     ishHaqiFoizi: employee.ishHaqiFoizi ? String(employee.ishHaqiFoizi) : '',
     ishgaOlinganSana: employee.ishgaOlinganSana ?? '',
-    qoshimchaSumma: employee.qoshimchaSumma ? String(employee.qoshimchaSumma) : '',
+    qoshimchaSumma: employee.qoshimchaSumma ? maskMoney(String(employee.qoshimchaSumma)) : '',
     qoshimchaFoizi: employee.qoshimchaFoizi ? String(employee.qoshimchaFoizi) : '',
   }
+}
+
+// Backend `card_number`ni MAJBURIY va bo'sh bo'lmagan (minLength 1) qilib talab qiladi —
+// avtomatik generatsiya qilmaydi (avvalgi taxmin noto'g'ri chiqdi, bo'sh yuborilsa 400 qaytaradi).
+// Maydon UI'da hali ham o'zgarmas/disabled turadi (Figma: "Saqlangandan so'ng avtomatik
+// beriladi"), shuning uchun buni foydalanuvchi o'rniga shu yerda, saqlash paytida generatsiya
+// qilamiz — backend hech qanday generatsiya/tekshirish qilmagani uchun global unikallik
+// kafolatlanmaydi, lekin amaliyotda to'qnashuv ehtimoli juda past.
+export function generateCardNumber() {
+  const digits = Math.floor(100000 + Math.random() * 900000)
+  return `AC-${digits}`
 }
 
 export function buildHireValues(draft) {
@@ -81,12 +123,14 @@ export function buildHireValues(draft) {
     tashkilot: draft.tashkilot,
     filial: draft.filial,
     lavozim: draft.lavozim,
-    kartaRaqami: draft.kartaRaqami.trim(),
+    kartaRaqami: draft.kartaRaqami.trim() || generateCardNumber(),
     ishHaqiTuri: draft.ishHaqiTuri,
-    ishHaqiSummasi: Number(draft.ishHaqiSummasi) || 0,
+    ishHaqiSummasi: Number(unmaskMoney(draft.ishHaqiSummasi)) || 0,
     ishHaqiFoizi: Number(draft.ishHaqiFoizi) || 0,
-    ishgaOlinganSana: toIsoDate(draft.ishgaOlinganSana) || formatDate(new Date().toISOString().slice(0, 10)),
-    qoshimchaSumma: Number(draft.qoshimchaSumma) || 0,
+    // toIsoDate allaqachon ISO ("YYYY-MM-DD") qaytaradi — oldin bu yerda formatDate() bilan
+    // yana bir marta (noto'g'ri) DD.MM.YYYY'ga o'girib qo'yilardi, backend esa ISO kutadi.
+    ishgaOlinganSana: toIsoDate(draft.ishgaOlinganSana) || new Date().toISOString().slice(0, 10),
+    qoshimchaSumma: Number(unmaskMoney(draft.qoshimchaSumma)) || 0,
     qoshimchaFoizi: Number(draft.qoshimchaFoizi) || 0,
   }
 }
@@ -242,8 +286,8 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
           <Label className={lCls}>Ish haqi summasi, UZS</Label>
           <Input
             value={draft.ishHaqiSummasi}
-            onChange={(e) => set('ishHaqiSummasi', e.target.value.replace(/[^\d]/g, ''))}
-            inputMode="numeric"
+            onChange={(e) => set('ishHaqiSummasi', maskMoney(e.target.value))}
+            inputMode="decimal"
             placeholder="0"
             className={fCls}
           />
@@ -264,8 +308,8 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
         <Label className={lCls}>Qo‘shimcha summa, UZS</Label>
         <Input
           value={draft.qoshimchaSumma}
-          onChange={(e) => set('qoshimchaSumma', e.target.value.replace(/[^\d]/g, ''))}
-          inputMode="numeric"
+          onChange={(e) => set('qoshimchaSumma', maskMoney(e.target.value))}
+          inputMode="decimal"
           placeholder="0"
           className={fCls}
         />
