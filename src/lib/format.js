@@ -12,6 +12,26 @@ export function formatNumber(value, fractionDigits = 2) {
   return fracPart ? `${withSpaces},${fracPart}` : withSpaces
 }
 
+// Pul summasi maydonlari uchun — yozish paytida jonli formatlaydi: butun qism minglik
+// bo'shliqlari bilan guruhlanadi, kasr qismi ("." dan keyin) ko'pi bilan 2 xonagacha, butun
+// qismga esa istalgancha raqam kiritish mumkin. "32232323" -> "32 232 323", "32232323.5" ->
+// "32 232 323.5". Faqat raqam va bitta nuqtani qoldiradi, qolganini e'tiborsiz qoldiradi.
+export function maskMoney(raw) {
+  let s = String(raw ?? '').replace(/[^\d.]/g, '')
+  const dot = s.indexOf('.')
+  if (dot !== -1) s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, '')
+  const [intRaw, fracPart] = s.split('.')
+  const intPart = intRaw.replace(/^0+(?=\d)/, '')
+  const grouped = groupThousands(intPart)
+  return fracPart === undefined ? grouped : `${grouped}.${fracPart.slice(0, 2)}`
+}
+
+// maskMoney natijasidan (yoki har qanday bo'shliqli sondan) Number()ga beriladigan qiymatga
+// qaytaradi — minglik bo'shliqlarini olib tashlaydi.
+export function unmaskMoney(masked) {
+  return String(masked ?? '').replace(/\s/g, '')
+}
+
 // "14.02.2024" yoki "14.02.2024 10:24" -> 20240214 (raqam) yoki null
 export function dmyToNum(value) {
   const m = String(value ?? '').trim().match(/^(\d{2})\.(\d{2})\.(\d{4})/)

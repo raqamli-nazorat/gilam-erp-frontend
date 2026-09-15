@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Loader2, Plus, Search } from 'lucide-react'
+import { Filter, Loader2, Plus, Search, UserPlus } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
-import { createKadr, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
+import { createKadr, createRecruitment, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import XodimModal from './components/XodimModal'
 import XodimlarFilterModal, { EMPTY_XODIMLAR_FILTERS } from './components/XodimlarFilterModal'
+import HireChoiceModal from './components/HireChoiceModal'
+import RecruitmentModal from './components/RecruitmentModal'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
@@ -34,6 +36,15 @@ export default function XodimlarListPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [toast, setToast] = useState('')
+
+  // "+ Ishga olish" — mavjud xodimni tanlab ishga olish (Ishga qabul qilish hujjati yaratish);
+  // "Ishga qabul qilish" ro'yxatidagi bilan bir xil HireChoiceModal → RecruitmentModal zanjiri,
+  // shu yerda ham qayta ishlatiladi (bitta va bir nechta xodim uchun BIR XIL RecruitmentModal —
+  // `multiple` prop "Xodim" maydoni ochadigan tanlash oynasining rejimini belgilaydi).
+  const [choiceOpen, setChoiceOpen] = useState(false)
+  const [hireOpen, setHireOpen] = useState(false)
+  const [hireMultiple, setHireMultiple] = useState(false)
+  const createdIdsRef = useRef([])
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Xodimlar' }])
 
@@ -143,6 +154,13 @@ export default function XodimlarListPage() {
             )}
           >
             <Filter className="h-4 w-4" /> Filtr
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setChoiceOpen(true)}
+            className="h-9 gap-2 rounded-xl border-[#E5E5E5] bg-white px-3.5 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+          >
+            <UserPlus className="h-4 w-4" /> Ishga olish
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
@@ -263,6 +281,42 @@ export default function XodimlarListPage() {
         }}
       />
       <XodimlarFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+
+      <HireChoiceModal
+        open={choiceOpen}
+        onOpenChange={setChoiceOpen}
+        onChooseSingle={() => {
+          setHireMultiple(false)
+          setHireOpen(true)
+        }}
+        onChooseBulk={() => {
+          setHireMultiple(true)
+          setHireOpen(true)
+        }}
+      />
+      <RecruitmentModal
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        record={null}
+        multiple={hireMultiple}
+        onSaveOne={({ employeeId, status, ...draftValues }) =>
+          dispatch(createRecruitment({ employeeId, status, draft: draftValues }))
+            .unwrap()
+            .then((created) => {
+              createdIdsRef.current.push(created.id)
+            })
+            .catch((err) => {
+              setToast(err || 'Saqlashda xatolik yuz berdi')
+              throw err
+            })
+        }
+        onDone={(count) => {
+          if (count > 1) setToast(`${count} ta xodim ishga olindi`)
+          else if (createdIdsRef.current[0]) navigate(`/malumotnomalar/ishga-qabul-qilish/${createdIdsRef.current[0]}`)
+          createdIdsRef.current = []
+        }}
+      />
+
       <Toast message={toast} />
     </div>
   )

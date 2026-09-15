@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Filter, Loader2, Plus, Search, UserPlus } from 'lucide-react'
@@ -14,8 +14,6 @@ import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import RecruitmentModal from './components/RecruitmentModal'
 import HireChoiceModal from './components/HireChoiceModal'
-import EmployeePickerModal from './components/EmployeePickerModal'
-import BulkHireModal from './components/BulkHireModal'
 import XodimFilterModal, { EMPTY_XODIM_FILTERS } from './components/XodimFilterModal'
 
 const TH =
@@ -39,7 +37,9 @@ export default function IshgaQabulQilishListPage() {
   const listError = useSelector((s) => s.xodimlar.recruitmentsError)
   const branches = useSelector((s) => s.filiallar.list)
   const branchesStatus = useSelector((s) => s.filiallar.listStatus)
-  const kadrlar = useSelector((s) => s.xodimlar.list)
+  // RecruitmentModal xodimlar ro'yxatini o'zi ichida o'qiydi — bu yerda faqat mount'da
+  // yuklanganini kafolatlash uchun status kerak (kadrStatus qo'riqlanadi, pastdagi effektga q.).
+  const kadrStatus = useSelector((s) => s.xodimlar.listStatus)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -47,22 +47,29 @@ export default function IshgaQabulQilishListPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [toast, setToast] = useState('')
 
-  // "+ Ishga olish" — avval "Bitta"/"Bir nechta" tanlanadi: bitta bo'lsa to'g'ridan-to'g'ri
-  // RecruitmentModal (o'zining ichida "Xodim" tanlagichi bilan); bir nechta bo'lsa avval
-  // EmployeePickerModal (checkbox, ko'p tanlash), so'ng BulkHireModal (‹ i-Xodim › pager).
+  // "+ Ishga olish" — avval "Bitta"/"Bir nechta" tanlanadi: ikkalasi ham BIR XIL RecruitmentModal'ni
+  // ochadi, faqat `hireMultiple` orqali "Xodim" maydoni ochadigan tanlash oynasi bitta yoki ko'p
+  // tanlash rejimida ishlaydi (Figma: oynaning o'zi pagersiz, bitta forma — tanlangan barcha
+  // xodimlarga bir xil qiymatlar qo'llaniladi, har biriga alohida forma YO'Q).
   const [choiceOpen, setChoiceOpen] = useState(false)
-  const [singleOpen, setSingleOpen] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [bulkIds, setBulkIds] = useState([])
-  const [bulkOpen, setBulkOpen] = useState(false)
+  const [hireOpen, setHireOpen] = useState(false)
+  const [hireMultiple, setHireMultiple] = useState(false)
+  const createdIdsRef = useRef([])
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Ishga qabul qilish' }])
 
+  // Har uch dispatch ham o'zining "idle" holatiga qarab qo'riqlanadi (fetchXodimlar avvalgi
+  // qo'riqlanmagan chaqiruvi bo'yicha bitta so'rovga bir nechta marta ketayotgan edi — bu effekt
+  // `listStatus` (recruitmentsStatus) o'zgarganda qayta ishga tushadi, `fetchRecruitments` esa
+  // aynan shu maydonni idle→loading→succeeded qilib o'zgartiradi, shuning uchun effekt bir
+  // marta mount'da 3 marta qayta ishga tushadi; qo'riqlanmagan `dispatch(fetchXodimlar())` har
+  // safar qayta yuborilib, u o'zi ichida employees VA recruitment-dismissals'ni birga so'raydi —
+  // natijada bitta sahifa yuklanishida employees 3 marta, recruitment-dismissals 4 marta so'ralardi).
   useEffect(() => {
     if (listStatus === 'idle') dispatch(fetchRecruitments())
-    dispatch(fetchXodimlar())
+    if (kadrStatus === 'idle') dispatch(fetchXodimlar())
     if (branchesStatus === 'idle') dispatch(fetchBranches())
-  }, [listStatus, dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [listStatus, kadrStatus, branchesStatus, dispatch])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -276,50 +283,36 @@ export default function IshgaQabulQilishListPage() {
       <HireChoiceModal
         open={choiceOpen}
         onOpenChange={setChoiceOpen}
-        onChooseSingle={() => setSingleOpen(true)}
-        onChooseBulk={() => setPickerOpen(true)}
+        onChooseSingle={() => {
+          setHireMultiple(false)
+          setHireOpen(true)
+        }}
+        onChooseBulk={() => {
+          setHireMultiple(true)
+          setHireOpen(true)
+        }}
       />
 
       <RecruitmentModal
-        open={singleOpen}
-        onOpenChange={setSingleOpen}
+        open={hireOpen}
+        onOpenChange={setHireOpen}
         record={null}
-        onSave={({ employeeId, status, draft }) => {
-          dispatch(createRecruitment({ employeeId, status, draft }))
-            .unwrap()
-            .then((created) => navigate(`/malumotnomalar/ishga-qabul-qilish/${created.id}`))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
-        }}
-      />
-
-      <EmployeePickerModal
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        employees={kadrlar}
-        multiple
-        onBack={() => {
-          setPickerOpen(false)
-          setChoiceOpen(true)
-        }}
-        onConfirm={(ids) => {
-          setBulkIds(ids)
-          setBulkOpen(true)
-        }}
-      />
-      <BulkHireModal
-        open={bulkOpen}
-        onOpenChange={setBulkOpen}
-        employees={kadrlar.filter((k) => bulkIds.includes(k.id))}
+        multiple={hireMultiple}
         onSaveOne={({ employeeId, status, ...draftValues }) =>
           dispatch(createRecruitment({ employeeId, status, draft: draftValues }))
             .unwrap()
+            .then((created) => {
+              createdIdsRef.current.push(created.id)
+            })
             .catch((err) => {
               setToast(err || 'Saqlashda xatolik yuz berdi')
               throw err
             })
         }
-        onDone={() => {
-          setToast(bulkIds.length > 1 ? `${bulkIds.length} ta xodim ishga olindi` : 'Xodim ishga olindi')
+        onDone={(count) => {
+          if (count > 1) setToast(`${count} ta xodim ishga olindi`)
+          else if (createdIdsRef.current[0]) navigate(`/malumotnomalar/ishga-qabul-qilish/${createdIdsRef.current[0]}`)
+          createdIdsRef.current = []
         }}
       />
 
