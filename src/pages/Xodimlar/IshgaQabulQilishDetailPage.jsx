@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
+import { FileBarChart2 } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
 import { cn } from '@/lib/utils'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatNumber } from '@/lib/format'
 import { setRecruitmentStatus, updateRecruitment } from '@/features/xodimlar/xodimlarSlice'
+import { fetchBranches } from '@/features/filiallar/filiallarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import { Panel, InfoRow, surface } from './components/InfoPanel'
@@ -32,6 +34,8 @@ export default function IshgaQabulQilishDetailPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const record = useSelector((s) => s.xodimlar.recruitments.find((r) => r.id === id))
+  const branches = useSelector((s) => s.filiallar.list)
+  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
   const [editOpen, setEditOpen] = useState(false)
   const [toast, setToast] = useState('')
 
@@ -44,6 +48,13 @@ export default function IshgaQabulQilishDetailPage() {
   useEffect(() => {
     if (!record) navigate('/malumotnomalar/ishga-qabul-qilish', { replace: true })
   }, [record, navigate])
+
+  useEffect(() => {
+    if (branchesStatus === 'idle') dispatch(fetchBranches())
+  }, [branchesStatus, dispatch])
+
+  // Hujjatning o'zi tashkilotni saqlamaydi, faqat filialni — tashkilot nomini filial orqali topamiz.
+  const tashkilot = branches.find((b) => b.id === record?.branchId)?.tashkilot ?? ''
 
   useEffect(() => {
     if (!toast) return undefined
@@ -119,7 +130,7 @@ export default function IshgaQabulQilishDetailPage() {
 
           <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
             <Panel title="XODIM MA’LUMOTLARI" className="min-h-0 flex-1">
-              <InfoRow label="F.I.SH." value={record.employeeName} />
+              <InfoRow label="Tashkiloti" value={tashkilot} />
               <InfoRow label="Filiali" value={record.branch} />
               <InfoRow label="Lavozimi" value={record.lavozim} />
               <InfoRow label="Karta raqami" value={record.kartaRaqami} />
@@ -144,30 +155,38 @@ export default function IshgaQabulQilishDetailPage() {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2.5 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
+        <div className="flex shrink-0 items-center justify-between gap-2.5 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
           <Button
-            variant="outline"
-            onClick={() => setEditOpen(true)}
-            className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
+            onClick={() => setToast('Hisobot tayyorlanmoqda…')}
+            className="h-9 gap-2 rounded-lg bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
-            <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
+            <FileBarChart2 className="h-4 w-4" /> Xisobot
           </Button>
-          {record.status === 'draft' && (
+          <div className="flex items-center gap-2.5">
             <Button
-              onClick={() => setStatus('confirmed')}
-              className="h-9 gap-2 bg-[#047A47] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#036139]"
+              variant="outline"
+              onClick={() => setEditOpen(true)}
+              className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
             >
-              Tasdiqlash
+              <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
             </Button>
-          )}
-          {record.status === 'confirmed' && (
-            <Button
-              onClick={() => setStatus('cancelled')}
-              className="h-9 gap-2 bg-[#DC2626] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
-            >
-              Bekor qilish
-            </Button>
-          )}
+            {record.status === 'draft' && (
+              <Button
+                onClick={() => setStatus('confirmed')}
+                className="h-9 gap-2 bg-[#00A25C] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#008C4F]"
+              >
+                Tasdiqlash
+              </Button>
+            )}
+            {record.status === 'confirmed' && (
+              <Button
+                onClick={() => setStatus('cancelled')}
+                className="h-9 gap-2 bg-[#DC2626] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
+              >
+                Bekor qilish
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

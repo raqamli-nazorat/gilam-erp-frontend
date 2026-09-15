@@ -8,6 +8,7 @@ import RecruitmentFieldsGrid, {
   buildHireValues,
   fieldCls,
   hireDraftFromXodim,
+  isDraftDirty,
   isHireDraftValid,
   labelCls,
   useHireCatalogs,
@@ -15,16 +16,20 @@ import RecruitmentFieldsGrid, {
 
 // Faqat mavjud xodim uchun: "Tahrirlash" (latestHireId bor — hujjat PATCH qilinadi) yoki
 // hali umuman ishga olinmagan ("yangi") xodim uchun birinchi hujjatni yaratish (POST).
-// Xodimni TANLASH (yangi ishga olish) endi HireChoiceModal → EmployeePickerModal → BulkHireModal
-// (pager) zanjiri orqali ishlaydi — bu oyna faqat allaqachon ma'lum bitta xodim uchun.
+// Xodimni TANLASH (yangi ishga olish) endi HireChoiceModal → EmployeePickerModal → RecruitmentModal
+// (bitta va bir nechta xodim uchun bir xil, ‹ i-Xodim › pager bilan) zanjiri orqali ishlaydi —
+// bu oyna faqat allaqachon ma'lum bitta xodim uchun (Xodimlar bo'limining eski, alohida flow'i).
 export default function HireEmployeeModal({ open, onOpenChange, employee, onSave }) {
   const hasRecord = !!employee?.latestHireId
   const { orgs, branches, positions } = useHireCatalogs(open)
   const [draft, setDraft] = useState(EMPTY_HIRE_DRAFT)
+  const [initialDraft, setInitialDraft] = useState(EMPTY_HIRE_DRAFT)
 
   useEffect(() => {
     if (!open) return
-    setDraft(hireDraftFromXodim(employee))
+    const next = hireDraftFromXodim(employee)
+    setDraft(next)
+    setInitialDraft(next)
   }, [open, employee])
 
   const set = (k, v) =>
@@ -34,7 +39,9 @@ export default function HireEmployeeModal({ open, onOpenChange, employee, onSave
       return next
     })
 
-  const canSave = isHireDraftValid(draft)
+  // Tahrirlashda ("Saqlash") hech narsa o'zgarmaguncha tugma o'chiq turadi (Figma); hali
+  // ishga olinmagan xodim uchun birinchi hujjat yaratishda ("Ishga olish") bu cheklov yo'q.
+  const canSave = isHireDraftValid(draft) && (!hasRecord || isDraftDirty(draft, initialDraft))
 
   function handleSave() {
     onSave({ recruitmentId: employee?.latestHireId ?? null, ...buildHireValues(draft) })
