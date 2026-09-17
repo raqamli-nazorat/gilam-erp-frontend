@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Check, UserPlus, X } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
-import { updateUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { formatDateTime } from '@/lib/format'
+import { blockUser, fetchUserDetail, unblockUser, updateUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { rehireXodim, terminateXodim, updateXodim } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
@@ -17,8 +18,9 @@ import ActivateUserModal from './ActivateUserModal'
 // xodim (bog'langan Employee) mavjud bo'lsa — Tahrirlash/Ishdan chiqarish/Qayta ishga olish
 // Xodimlar moduli bilan bir xil hujjat (RecruitmentDismissal) orqali ishlaydi. Bog'lanmagan
 // bo'lsa (employee_info yo'q) — eski, faqat foydalanuvchi profilini tahrirlash oqimi qoladi.
-export default function UserFooter({ user, xodim }) {
+export default function UserFooter({ user, xodim, onStatusChange }) {
   const dispatch = useDispatch()
+  const currentUser = useSelector((s) => s.auth.user)
   const [editOpen, setEditOpen] = useState(false)
   const [terminateOpen, setTerminateOpen] = useState(false)
   const [rehireOpen, setRehireOpen] = useState(false)
@@ -172,9 +174,26 @@ export default function UserFooter({ user, xodim }) {
         open={blockOpen}
         onOpenChange={setBlockOpen}
         user={user}
-        onConfirm={() => {
-          // Backend hali foydalanuvchini bloklash/faollashtirish uchun maydon taqdim etmagan.
-          setToast('Bu funksiya hozircha backendda mavjud emas')
+        onConfirm={(reason) => {
+          dispatch(blockUser({ id: user.id, reason }))
+            .unwrap()
+            .then(() => {
+              // block/unblock javobi to'liq User obyektini qaytarishi hujjatlashtirilgan bo'lsa
+              // ham, buni ishonch bilan aytib bo'lmaydi (boshqa custom action'larda ham xuddi
+              // shunday nom-nomlanish nomuvofiqligi topilgan edi) — shuning uchun natijaga
+              // ishonib qolish o'rniga to'liq yozuvni qayta so'raymiz (aks holda ba'zi maydonlar
+              // vaqtincha bo'shab qolib, faqat sahifa yangilanganda to'g'irlanardi).
+              dispatch(fetchUserDetail(user.id))
+              onStatusChange?.({
+                userId: user.id,
+                type: 'block',
+                at: formatDateTime(),
+                by: currentUser?.fullName || '',
+                reason,
+              })
+              setToast('Foydalanuvchi bloklandi')
+            })
+            .catch((err) => setToast(err || 'Bloklashda xatolik yuz berdi'))
         }}
       />
       <ActivateUserModal
@@ -182,7 +201,19 @@ export default function UserFooter({ user, xodim }) {
         onOpenChange={setActivateOpen}
         user={user}
         onConfirm={() => {
-          setToast('Bu funksiya hozircha backendda mavjud emas')
+          dispatch(unblockUser(user.id))
+            .unwrap()
+            .then(() => {
+              dispatch(fetchUserDetail(user.id))
+              onStatusChange?.({
+                userId: user.id,
+                type: 'activate',
+                at: formatDateTime(),
+                by: currentUser?.fullName || '',
+              })
+              setToast('Foydalanuvchi faollashtirildi')
+            })
+            .catch((err) => setToast(err || 'Faollashtirishda xatolik yuz berdi'))
         }}
       />
       <Toast message={toast} />

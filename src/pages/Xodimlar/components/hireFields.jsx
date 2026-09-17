@@ -342,14 +342,14 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
         </div>
       )}
 
-      <div>
+      <div className="col-span-2">
         <Label className={lCls}>Ishga olingan sana</Label>
         <Input
           value={draft.ishgaOlinganSana}
           onChange={(e) => set('ishgaOlinganSana', maskDate(e.target.value))}
           placeholder="DD.MM.YYYY"
           inputMode="numeric"
-          className={fCls}
+          className={cn(fCls, 'w-full')}
         />
       </div>
       <div>

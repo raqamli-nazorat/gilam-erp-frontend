@@ -4,7 +4,7 @@ import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { createRole, deleteRole, mapRole, updateRole } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { createRole, mapRole, updateRole } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import * as roleService from '@/services/roleService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -88,16 +88,6 @@ export default function RollarPage() {
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
   }
 
-  function removeRole() {
-    dispatch(deleteRole(editRole.id))
-      .unwrap()
-      .then(() => {
-        setToast('O‘chirildi')
-        reloadRoles()
-      })
-      .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
-  }
-
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
@@ -141,17 +131,16 @@ export default function RollarPage() {
             <tr>
               <th className={cn(TH, 'h-10 w-12 text-left')}>#</th>
               <th className={cn(TH, 'h-10 text-left')}>NOMI</th>
-              <th className={cn(TH, 'h-10 text-left')}>TASHKILOT</th>
               <th className={cn(TH, 'h-10 text-right')}>FOYDALANUVCHILAR</th>
               <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>TURI</th>
+              <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
             {rolesLoading && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -160,7 +149,7 @@ export default function RollarPage() {
               </tr>
             ) : rolesError && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -175,7 +164,7 @@ export default function RollarPage() {
               </tr>
             ) : shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Rol topilmadi
                 </td>
               </tr>
@@ -188,7 +177,6 @@ export default function RollarPage() {
                 >
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
-                  <td className={TD_MUTED}>{r.tashkilot}</td>
                   <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.usersCount}</td>
                   <td className={TD_MUTED}>{r.yaratilgan}</td>
                   <td className={TD_MUTED}>{r.ozgartirilgan}</td>
@@ -196,12 +184,12 @@ export default function RollarPage() {
                     <span
                       className={cn(
                         'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.isSystem
-                          ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+                        r.holat === 'active'
+                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
+                          : 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
                       )}
                     >
-                      {r.isSystem ? 'Tizim roli' : 'Odatiy rol'}
+                      {r.holat === 'active' ? 'Faol' : 'Nofaol'}
                     </span>
                   </td>
                 </tr>
@@ -209,12 +197,12 @@ export default function RollarPage() {
             )}
             {shownRoles.length > 0 && rolesHasMore && !rolesLoading && (
               <tr ref={rolesSentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={7} className="h-1 border-0 p-0" />
+                <td colSpan={6} className="h-1 border-0 p-0" />
               </tr>
             )}
             {rolesLoadingMore && (
               <tr>
-                <td colSpan={7} className="py-4 text-center">
+                <td colSpan={6} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…
@@ -227,16 +215,7 @@ export default function RollarPage() {
       </div>
 
       <RoleModal open={addOpen} onOpenChange={setAddOpen} onSave={saveRole} />
-      <RoleModal
-        open={!!editRole}
-        onOpenChange={(o) => !o && setEditRole(null)}
-        role={editRole}
-        onSave={saveRole}
-        onDelete={() => {
-          removeRole()
-          setEditRole(null)
-        }}
-      />
+      <RoleModal open={!!editRole} onOpenChange={(o) => !o && setEditRole(null)} role={editRole} onSave={saveRole} />
       <RoleFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
       <Toast message={toast} />
     </div>

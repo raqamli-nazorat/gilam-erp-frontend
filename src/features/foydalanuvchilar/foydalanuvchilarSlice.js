@@ -4,32 +4,42 @@ import { extractErrorMessage } from '@/services/apiHelpers'
 import * as userService from '@/services/userService'
 import * as roleService from '@/services/roleService'
 
-// Backend "User" serializeri: id, full_name, phone_number, all_branches, is_staff,
-// created_at, updated_at, role_info{id,name}, organization_info{id,name}, branch_info{id,name},
-// employee_info{id,full_name}. Bloklash/faollashtirish uchun hali maydon yo'q — shuning uchun
-// har doim "active" ko'rsatiladi, savdo statistikasi va audit uchun alohida yuklanadi (fetchUserDetail).
+// Backend "User" serializeri (confirmed against the live /api/schema/, 2026-09-17): id, full_name,
+// phone_number, organization (plain read-only display string, NOT nested organization_info — no
+// UUID exposed), branch (same, plain string), is_staff, is_blocked, blocked_reason, blocked_at,
+// blocked_by, created_at, updated_at, role_info{id,name}, employee_info{id,full_name}. There is
+// no all_branches field. Write side (UserRequest/PatchedUserRequest) only accepts full_name,
+// phone_number, password, role, employee, is_staff — organization/branch/all_branches are NOT
+// accepted at all, so they can't be set directly; org/branch appear to be derived server-side from
+// whichever Employee (`employee`) the user is linked to, if any.
 // Eksport qilingan — FoydalanuvchilarListPage.jsx jadval qatorlarini "scroll pagination"
 // bilan servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
 export function mapUser(u) {
+  // Schema is_blocked'ni string deb belgilagan (auto-generated, ehtimol SerializerMethodField
+  // annotatsiyasiz) — shuning uchun bool va "true" string ko'rinishlarini ham hisobga olamiz.
+  const isBlocked = u.is_blocked === true || u.is_blocked === 'true'
   return {
     id: u.id,
     name: u.full_name ?? '',
     phone: u.phone_number ?? '',
-    tashkilot: u.organization_info?.name ?? '',
-    tashkilotId: u.organization_info?.id ?? '',
-    filial: u.branch_info?.name ?? '',
-    filialId: u.branch_info?.id ?? '',
+    tashkilot: u.organization ?? '',
+    filial: u.branch ?? '',
     rol: u.role_info?.name ?? '',
     rolId: u.role_info?.id ?? '',
     // Ushbu foydalanuvchiga bog'langan Xodim (Employee) profili — bo'lsa, "Tahrirlash"/
     // "Ishdan chiqarish"/"Qayta ishga olish" Xodimlar modulidagi hujjat orqali ishlaydi.
     employeeId: u.employee_info?.id ?? '',
-    allBranches: !!u.all_branches,
     isStaff: !!u.is_staff,
-    holat: 'active',
+    holat: isBlocked ? 'blocked' : 'active',
     yaratilgan: u.created_at ? formatDateTime(new Date(u.created_at)) : '',
     oxirgiKirish: '—',
-    block: null,
+    block: isBlocked
+      ? {
+          at: u.blocked_at ? formatDateTime(new Date(u.blocked_at)) : '—',
+          reason: u.blocked_reason ?? '',
+          by: u.blocked_by ?? '',
+        }
+      : null,
     activation: null,
     detail: {
       stats: { savdolar: null, savdoSummasi: null, qaytarishlar: null, oxirgiKirish: '—' },
@@ -63,14 +73,15 @@ function mapPermission(p) {
   return { id: p.id, name: p.name, codename: p.codename, modelName: p.model_name }
 }
 
+// `organization`/`branch`/`all_branches` are deliberately NOT sent — UserRequest/PatchedUserRequest
+// don't accept them at all (backend silently drops unknown fields), so the Foydalanuvchi modal's
+// Tashkilot/Filial pickers currently have no way to actually persist a selection. Flagged to the
+// backend team; not worked around client-side (no Figma evidence for an Employee-link picker here).
 function buildUserPayload(draft, isEdit) {
   const payload = {
     full_name: (draft.name ?? '').trim(),
     phone_number: draft.phone ? draft.phone.replace(/[\s-]/g, '') : '',
-    organization: draft.tashkilot || null,
-    branch: draft.filial || null,
     role: draft.rol || null,
-    all_branches: !!draft.allBranches,
     is_staff: !!draft.isStaff,
   }
   if (!isEdit || draft.password) payload.password = draft.password
@@ -146,6 +157,30 @@ export const updateUser = createAsyncThunk(
       return mapUser(raw)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
+    }
+  }
+)
+
+export const blockUser = createAsyncThunk(
+  'foydalanuvchilar/blockUser',
+  async ({ id, reason }, { rejectWithValue }) => {
+    try {
+      const raw = await userService.blockUser(id, reason)
+      return mapUser(raw)
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Bloklashda xatolik yuz berdi'))
+    }
+  }
+)
+
+export const unblockUser = createAsyncThunk(
+  'foydalanuvchilar/unblockUser',
+  async (id, { rejectWithValue }) => {
+    try {
+      const raw = await userService.unblockUser(id)
+      return mapUser(raw)
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Faollashtirishda xatolik yuz berdi'))
     }
   }
 )
@@ -265,6 +300,36 @@ const foydalanuvchilarSlice = createSlice({
         if (state.current?.id === action.payload.id) state.current = { ...state.current, ...action.payload }
       })
       .addCase(updateUser.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(blockUser.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(blockUser.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        const idx = state.list.findIndex((u) => u.id === action.payload.id)
+        if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
+        if (state.current?.id === action.payload.id) state.current = { ...state.current, ...action.payload }
+      })
+      .addCase(blockUser.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(unblockUser.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(unblockUser.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        const idx = state.list.findIndex((u) => u.id === action.payload.id)
+        if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
+        if (state.current?.id === action.payload.id) state.current = { ...state.current, ...action.payload }
+      })
+      .addCase(unblockUser.rejected, (state, action) => {
         state.saveStatus = 'failed'
         state.saveError = action.payload || 'Xatolik'
       })
