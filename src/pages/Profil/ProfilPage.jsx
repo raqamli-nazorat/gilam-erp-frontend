@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Check, FileText, Upload, X } from 'lucide-react'
+import { Check, ShieldCheck, Upload, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { formatJshshir, formatNumber, formatStir, formatUzPassport, splitUzPassport } from '@/lib/format'
@@ -17,8 +17,65 @@ import Toast from '@/components/Toast'
 import PasswordModal from './components/PasswordModal'
 
 const fieldCls =
-  'h-10 w-full appearance-none rounded-md border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] disabled:cursor-not-allowed disabled:bg-[#F5F5F5] disabled:opacity-100 dark:border-white/10 dark:bg-card dark:text-white dark:disabled:bg-white/5'
+  'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 py-1 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] disabled:cursor-not-allowed disabled:bg-[#F5F5F5] disabled:opacity-100 dark:border-white/10 dark:bg-card dark:text-white dark:disabled:bg-white/5'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
+
+// Figma dev-mode SVG'lar — "Rasmni o'zgartirish" tugmasi va tanlangan passport fayli ikonkasi.
+function ChangePhotoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+      <g clipPath="url(#profil-change-photo-clip)">
+        <path
+          d="M2 10.6673L4.97978 7.68754C5.20616 7.46116 5.51319 7.33398 5.83333 7.33398C6.15348 7.33398 6.46051 7.46116 6.68689 7.68754L9.33333 10.334M10.3333 11.334L9.33333 10.334M14 10.6673L12.3536 9.02087C12.1272 8.79449 11.8201 8.66732 11.5 8.66732C11.1799 8.66732 10.8728 8.79449 10.6464 9.02087L9.33333 10.334"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8.00002 1.66602C5.1802 1.66602 3.77029 1.66602 2.83519 2.46466C2.70241 2.57807 2.57874 2.70174 2.46533 2.83452C1.66669 3.76962 1.66669 5.17953 1.66669 7.99935C1.66669 10.8192 1.66669 12.2291 2.46533 13.1642C2.57874 13.297 2.70241 13.4206 2.83519 13.534C3.77029 14.3327 5.1802 14.3327 8.00002 14.3327C10.8198 14.3327 12.2298 14.3327 13.1648 13.534C13.2976 13.4206 13.4213 13.297 13.5347 13.1642C14.3334 12.2291 14.3334 10.8192 14.3334 7.99935"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10.3333 3.66602C10.7265 3.26146 11.7731 1.66602 12.3333 1.66602C12.8935 1.66602 13.9401 3.26146 14.3333 3.66602M12.3333 1.99935V6.33268"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="profil-change-photo-clip">
+          <rect width="16" height="16" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+  )
+}
+
+function PassportFileIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 text-[#DC2626]">
+      <path
+        d="M12.6667 7.33398C12.6667 6.78898 12.6667 6.28772 12.5652 6.04269C12.4637 5.79766 12.271 5.60498 11.8856 5.2196L8.72792 2.06191C8.39533 1.72932 8.22904 1.56302 8.02301 1.46448C7.98016 1.44399 7.93625 1.4258 7.89146 1.40999C7.67609 1.33398 7.44092 1.33398 6.97056 1.33398C4.80721 1.33398 3.72554 1.33398 2.99289 1.9247C2.84488 2.04404 2.71005 2.17886 2.59072 2.32687C2 3.05952 2 4.1412 2 6.30455V9.33398C2 11.8481 2 13.1052 2.78105 13.8863C3.5621 14.6673 4.81918 14.6673 7.33333 14.6673H12.6667M8 1.66732V2.00065C8 3.88627 8 4.82908 8.58579 5.41486C9.17157 6.00065 10.1144 6.00065 12 6.00065H12.3333"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 9.33398H12.6666C12.2984 9.33398 12 9.63246 12 10.0007V11.0007M12 11.0007V12.6673M12 11.0007H13.6666M4.66663 12.6673V11.334M4.66663 11.334V9.33398H5.66663C6.21891 9.33398 6.66663 9.7817 6.66663 10.334C6.66663 10.8863 6.21891 11.334 5.66663 11.334H4.66663ZM8.33329 9.33398H9.19044C9.82162 9.33398 10.3333 9.83145 10.3333 10.4451V11.5562C10.3333 12.1699 9.82162 12.6673 9.19044 12.6673H8.33329V9.33398Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 function joinPassport(seria, number) {
   return formatUzPassport(`${seria ?? ''}${number ?? ''}`)
@@ -76,8 +133,8 @@ function PassportFileField({ file, onChange }) {
         }}
       />
       {file ? (
-        <div className="flex h-10 items-center gap-2.5 rounded-md border border-[#E5E5E5] bg-white px-3 dark:border-white/10 dark:bg-card">
-          <FileText className="h-4 w-4 shrink-0 text-[#DC2626]" />
+        <div className="flex h-9 items-center gap-2.5 rounded-[8px] border border-[#E5E5E5] bg-white px-3 shadow-[0px_1px_2px_0px_#0000001A] dark:border-white/10 dark:bg-card">
+          <PassportFileIcon />
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#0A0A0A] dark:text-white">{file.name}</span>
           <span className="shrink-0 text-[12px] text-[#737373] dark:text-muted-foreground">{formatFileSize(file.size)}</span>
           <button
@@ -93,7 +150,7 @@ function PassportFileField({ file, onChange }) {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex h-10 w-full items-center gap-2 rounded-md border border-dashed border-[#D4D4D4] bg-[#F7F7F8] px-3 text-left transition-colors hover:border-[#0052D2] dark:border-white/20 dark:bg-card"
+          className="flex h-9 w-full items-center gap-2 rounded-[8px] border border-dashed border-[#D4D4D4] bg-[#FAFAFA] px-3 text-left transition-colors hover:border-[#0052D2] dark:border-white/20 dark:bg-card"
         >
           <Upload className="h-4 w-4 shrink-0 text-[#737373]" />
           <span className="truncate text-[13px] text-[#737373] dark:text-muted-foreground">Faylni tanlang</span>
@@ -237,44 +294,46 @@ export default function ProfilPage() {
       <div className="rounded-xl border border-[#E5E5E5] bg-white p-6 dark:border-white/10 dark:bg-card">
         <h1 className="mb-6 text-[24px] font-bold text-[#0A0A0A] dark:text-white">Shaxsiy kabinet</h1>
 
-        <div className="mb-6 flex flex-wrap items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0052D2]/10 text-[20px] font-semibold text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
+        <div className="mb-6 flex items-start gap-4">
+          <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[#EAF1FE] text-[24px] font-semibold text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
             {user.avatar ? (
               <img src={user.avatar} alt={user.fullName} className="h-full w-full object-cover" />
             ) : (
               (user.initials ?? '?')
             )}
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-[18px] font-semibold text-[#0A0A0A] dark:text-white">{user.fullName}</p>
-            <span className="mt-1 inline-flex h-[22px] items-center rounded-full bg-[#EAF1FE] px-2.5 text-[12px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
-              {user.role}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setPasswordOpen(true)}
-              className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
-            >
-              Parolni o‘zgartirish
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
-              className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
-            >
-              Rasmni o‘zgartirish
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={() => setToast('Backend hali ulanmagan — rasm saqlanmadi')}
-            />
+          <div className="flex min-w-0 flex-col gap-3 pt-1">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <p className="truncate text-[20px] font-semibold leading-[28px] text-[#0A0A0A] dark:text-white">{user.fullName}</p>
+              <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-[#E6EEFB] px-2 py-0.5 text-[12px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
+                {user.role}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordOpen(true)}
+                className="h-9 gap-2 rounded-[8px] border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+              >
+                <ShieldCheck className="h-4 w-4" /> Parolni o‘zgartirish
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileRef.current?.click()}
+                className="h-9 gap-2 rounded-[8px] border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+              >
+                <ChangePhotoIcon /> Rasmni o‘zgartirish
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={() => setToast('Backend hali ulanmagan — rasm saqlanmadi')}
+              />
+            </div>
           </div>
         </div>
 
