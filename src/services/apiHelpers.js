@@ -45,5 +45,16 @@ export async function fetchPage(url, params = {}) {
 
 export function extractErrorMessage(error, fallback) {
   const data = error?.response?.data
-  return data?.error?.errorMsg || data?.detail || data?.message || error?.message || fallback
+  const base = data?.error?.errorMsg || data?.detail || data?.message || error?.message || fallback
+  // 400'da backend har bir maydon nomi bo'yicha aniq sabab qaytaradi (error.details), lekin
+  // faqat umumiy errorMsg ko'rsatilsa bu ma'lumot yo'qolib ketardi — konsolni ochmasdan ham
+  // aniq nima noto'g'ri ekanini ko'rsatish uchun toast xabariga qo'shib qo'yamiz.
+  const details = data?.error?.details
+  if (details && typeof details === 'object') {
+    const parts = Object.entries(details).map(
+      ([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`
+    )
+    if (parts.length) return `${base} (${parts.join('; ')})`
+  }
+  return base
 }

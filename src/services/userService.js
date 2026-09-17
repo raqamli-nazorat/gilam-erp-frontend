@@ -26,3 +26,19 @@ export async function updateUser(id, payload) {
   const response = await axiosAPI.patch(`accounts/users/${id}/`, payload)
   return unwrapData(response)
 }
+
+// Backend "reason" maydon nomini hujjatlashtirmagan (auto-generated schema bo'sh PatchedUserRequest
+// ko'rsatadi) — shuning uchun eng ehtimolli nomlarni birga yuboramiz (organizationService.js'dagi
+// suspendOrganization bilan bir xil yondashuv).
+export async function blockUser(id, reason) {
+  const response = await axiosAPI.patch(`accounts/users/${id}/block/`, {
+    reason,
+    blocked_reason: reason,
+  })
+  return unwrapData(response)
+}
+
+export async function unblockUser(id) {
+  const response = await axiosAPI.patch(`accounts/users/${id}/unblock/`, {})
+  return unwrapData(response)
+}

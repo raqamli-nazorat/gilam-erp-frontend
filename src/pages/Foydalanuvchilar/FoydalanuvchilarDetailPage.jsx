@@ -16,10 +16,35 @@ import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import StatCards from './components/StatCards'
 import UserFooter from './components/UserFooter'
-import { Panel, InfoRow, surface } from './components/InfoPanel'
+import { Panel, InfoRow, surface, headBg } from './components/InfoPanel'
 
 const THb =
   'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-4 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
+
+// Backend User modelida bloklash/faollashtirishni KIM va AYNAN QACHON bajargani (blokdan
+// chiqarishda) saqlanmaydi (faqat is_blocked/blocked_reason/blocked_at/blocked_by bor, ular
+// ham faqat "hozir bloklanganmi" holatiga tegishli — API sxemasi bilan tekshirildi). Xuddi
+// TashkilotDetailPage.jsx'dagi kabi, harakat bajarilgan payt localStorage'ga yozib, sahifa
+// darhol (refresh kutmasdan) va keyingi safar ochilganda ham banner to'g'ri ko'rinishini
+// ta'minlaymiz.
+function statusMetaKey(userId) {
+  return `gilam:userStatusMeta:${userId}`
+}
+function loadStatusMeta(userId) {
+  try {
+    const raw = localStorage.getItem(statusMetaKey(userId))
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+function saveStatusMeta(userId, meta) {
+  try {
+    localStorage.setItem(statusMetaKey(userId), JSON.stringify(meta))
+  } catch {
+    // localStorage yo'q/bloklangan bo'lsa — banner shunchaki "kim"siz ko'rinadi
+  }
+}
 
 export default function FoydalanuvchilarDetailPage() {
   const { id } = useParams()
@@ -33,6 +58,10 @@ export default function FoydalanuvchilarDetailPage() {
   const xodim = useSelector((s) => (s.xodimlar.current?.id === user?.employeeId ? s.xodimlar.current : null))
   const currentUser = useSelector((s) => s.auth.user)
   const [toast, setToast] = useState('')
+  // Shu renderda hozir bajarilgan harakat natijasi ({ userId, type, at, by, reason }) — userId
+  // joriy `id`ga mos kelmasa (boshqa foydalanuvchiga o'tilgan), localStorage'dagi qiymat ishlatiladi.
+  const [actionMeta, setActionMeta] = useState(null)
+  const statusMeta = actionMeta?.userId === id ? actionMeta : loadStatusMeta(id)
 
   // Bog'langan xodimning to'liq ish tarixi — faqat "hozir bloklanganmi" emas, "hozirgina
   // faollashtirildimi" (justRehired) degan savolga javob berish uchun kerak (XodimlarDetailPage
@@ -129,6 +158,7 @@ export default function FoydalanuvchilarDetailPage() {
     history.length > 1 &&
     history[history.length - 2]?.type === 'dismissal'
   const d = user.detail
+  const salesTotal = d.lastSales.reduce((s, r) => s + r.amount, 0)
 
   function copy(text, label) {
     navigator.clipboard?.writeText(String(text))
@@ -162,14 +192,16 @@ export default function FoydalanuvchilarDetailPage() {
             bloklash sababi audit jurnalida saqlangan.
           </div>
         )}
-        {blocked && user.block && (
+        {blocked && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Foydalanuvchi bloklangan, {user.block.at}. Sabab: {user.block.reason}. Blokladi: {user.block.by}.
+            Foydalanuvchi bloklangan, {(statusMeta?.type === 'block' && statusMeta.at) || user.block?.at || '—'}. Sabab:{' '}
+            {(statusMeta?.type === 'block' && statusMeta.reason) || user.block?.reason || '—'}. Blokladi:{' '}
+            {(statusMeta?.type === 'block' && statusMeta.by) || user.block?.by || '—'}.
           </div>
         )}
-        {!blocked && !xodim && user.activation && (
+        {!blocked && !xodim && statusMeta?.type === 'activate' && (
           <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-            Foydalanuvchi faollashtirilgan, {user.activation.at}. Faollashtirdi: {user.activation.by}. Avvalgi bloklash sababi audit
+            Foydalanuvchi faollashtirilgan, {statusMeta.at}. Faollashtirdi: {statusMeta.by || '—'}. Avvalgi bloklash sababi audit
             jurnalida saqlangan.
           </div>
         )}
@@ -253,18 +285,31 @@ export default function FoydalanuvchilarDetailPage() {
                   Bu ma’lumot hali mavjud emas
                 </div>
               ) : (
-                d.lastSales.map((r) => (
-                  <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
-                    <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
-                    <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.amount, 2)} UZS</span>
+                <>
+                  {d.lastSales.map((r) => (
+                    <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
+                      <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
+                      <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.amount, 2)} UZS</span>
+                    </div>
+                  ))}
+                  <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
+                    <span>JAMI, {d.lastSales.length} kun</span>
+                    <span>{formatNumber(salesTotal, 2)} UZS</span>
                   </div>
-                ))
+                </>
               )}
             </Panel>
           </div>
         </div>
 
-        <UserFooter user={user} xodim={xodim} />
+        <UserFooter
+          user={user}
+          xodim={xodim}
+          onStatusChange={(meta) => {
+            saveStatusMeta(id, meta)
+            setActionMeta(meta)
+          }}
+        />
       </div>
       <Toast message={toast} />
     </>

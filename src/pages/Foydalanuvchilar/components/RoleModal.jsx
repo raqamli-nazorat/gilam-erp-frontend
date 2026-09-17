@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Check, Loader2, Trash2, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Check, Loader2, X } from 'lucide-react'
 import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
-import { fetchPermissions } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,44 +19,33 @@ const fieldCls =
 const labelCls = 'mb-1.5 block text-[12px] font-medium leading-4 text-[#525252] dark:text-muted-foreground'
 
 // tashkilot bu yerda backend UUID'i (bo'sh = "Barcha tashkilotlar" / tizim darajasidagi rol)
-const EMPTY = { name: '', tashkilot: '', permissions: [] }
+// "holat" — Figma'da bor, lekin backend Role modelida status/is_active maydoni umuman yo'q
+// (confirmed via /api/schema/) — shuning uchun bu maydon faqat vizual, payload'ga qo'shilmaydi.
+const EMPTY = { name: '', tashkilot: '', holat: 'Faol' }
 
-export default function RoleModal({ open, onOpenChange, role, onSave, onDelete }) {
+export default function RoleModal({ open, onOpenChange, role, onSave }) {
   const isEdit = !!role
   const [draft, setDraft] = useState(EMPTY)
   const dispatch = useDispatch()
 
   const orgs = useSelector((s) => s.tashkilotlar.list)
   const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
-  const permissions = useSelector((s) => s.foydalanuvchilar.permissions)
-  const permissionsStatus = useSelector((s) => s.foydalanuvchilar.permissionsStatus)
 
   useEffect(() => {
     if (!open) return
     if (orgsStatus === 'idle') dispatch(fetchOrganizations())
-    if (!isEdit) dispatch(fetchPermissions())
     setDraft(
       role
-        ? { name: role.name ?? '', tashkilot: role.tashkilotId ?? '', permissions: [] }
+        ? { name: role.name ?? '', tashkilot: role.tashkilotId ?? '', holat: role.holat === 'blocked' ? 'Nofaol' : 'Faol' }
         : EMPTY
     )
-  }, [open, role, dispatch, orgsStatus, isEdit])
+  }, [open, role, dispatch, orgsStatus])
 
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
-  const togglePermission = (id) =>
-    setDraft((d) => ({
-      ...d,
-      permissions: d.permissions.includes(id) ? d.permissions.filter((p) => p !== id) : [...d.permissions, id],
-    }))
   const canSave = draft.name.trim().length > 1
 
   function handleSave() {
-    // Tahrirlashda "permissions" umuman yuborilmaydi — backend joriy ruxsatlarni qaytarmagani
-    // uchun uni tasodifan bo'shatib qo'ymaslik uchun faqat yaratishda yuboriladi.
-    const payload = isEdit
-      ? { name: draft.name.trim(), tashkilot: draft.tashkilot }
-      : { name: draft.name.trim(), tashkilot: draft.tashkilot, permissions: draft.permissions }
-    onSave(payload)
+    onSave({ name: draft.name.trim(), tashkilot: draft.tashkilot })
     onOpenChange(false)
   }
 
@@ -97,7 +84,7 @@ export default function RoleModal({ open, onOpenChange, role, onSave, onDelete }
               />
             </div>
 
-            <div className="col-span-2">
+            <div>
               <Label className={labelCls}>Tashkilot</Label>
               <Select value={draft.tashkilot || '__none'} onValueChange={(v) => set('tashkilot', v === '__none' ? '' : v)}>
                 <SelectTrigger className={fieldCls}>
@@ -120,48 +107,22 @@ export default function RoleModal({ open, onOpenChange, role, onSave, onDelete }
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {!isEdit ? (
-            <div className="mt-4">
-              <Label className={labelCls}>Ruxsatlar</Label>
-              <div className="grid max-h-[240px] grid-cols-2 gap-x-3 gap-y-1.5 overflow-auto rounded-[8px] border border-[#E5E5E5] p-3 dark:border-white/10">
-                {permissionsStatus === 'loading' ? (
-                  <div className="col-span-2 flex items-center justify-center gap-2 py-4 text-sm text-[#737373]">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
-                  </div>
-                ) : (
-                  permissions.map((p) => (
-                    <label key={p.id} className="flex cursor-pointer items-center gap-2 py-0.5 text-[13px] text-[#0A0A0A] dark:text-white">
-                      <input
-                        type="checkbox"
-                        checked={draft.permissions.includes(p.id)}
-                        onChange={() => togglePermission(p.id)}
-                        className="size-4 accent-[#0052D2]"
-                      />
-                      {p.name}
-                    </label>
-                  ))
-                )}
-              </div>
+            <div>
+              <Label className={labelCls}>Holat</Label>
+              <Select value={draft.holat} onValueChange={(v) => set('holat', v)}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Faol">Faol</SelectItem>
+                  <SelectItem value="Nofaol">Nofaol</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          ) : (
-            <p className="mt-4 text-[12px] text-[#737373] dark:text-muted-foreground">
-              Ruxsatlarni tahrirlash hozircha qo‘llab-quvvatlanmaydi (backend joriy ruxsatlarni qaytarmaydi).
-            </p>
-          )}
+          </div>
         </div>
 
-        <div className={cn('flex h-[72px] shrink-0 items-center gap-2 bg-[#F5F5F5] px-6 dark:bg-white/5', isEdit && !role?.isSystem ? 'justify-between' : 'justify-end')}>
-          {isEdit && !role?.isSystem && (
-            <Button
-              type="button"
-              onClick={() => onDelete?.()}
-              className="h-9 gap-2 rounded-[8px] bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#B91C1C]"
-            >
-              <Trash2 className="size-4" /> O‘chirish
-            </Button>
-          )}
+        <div className="flex h-[72px] shrink-0 items-center justify-end gap-2 bg-[#F5F5F5] px-6 dark:bg-white/5">
           <div className="flex items-center gap-2">
             <Button
               type="button"

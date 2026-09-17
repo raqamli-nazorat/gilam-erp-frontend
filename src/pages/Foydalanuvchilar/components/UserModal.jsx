@@ -124,8 +124,7 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
       draft.filial !== baseline.filial ||
       draft.rol !== baseline.rol ||
       draft.holat !== baseline.holat ||
-      draft.phone !== baseline.phone ||
-      !!draft.password
+      draft.phone !== baseline.phone
     )
   }, [draft, baseline])
 
@@ -214,16 +213,18 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
             <PhoneInput value={draft.phone} onChange={(v) => set('phone', v)} className={fieldCls} />
           </div>
 
-          <div className="col-span-2">
-            <Label className={labelCls}>Parol{isEdit ? ' (ixtiyoriy)' : ''}</Label>
-            <Input
-              type="password"
-              value={draft.password}
-              onChange={(e) => set('password', e.target.value)}
-              placeholder={isEdit ? "O'zgartirmaslik uchun bo'sh qoldiring" : 'Kamida 8 belgi'}
-              className={fieldCls}
-            />
-          </div>
+          {!isEdit && (
+            <div className="col-span-2">
+              <Label className={labelCls}>Parol</Label>
+              <Input
+                type="password"
+                value={draft.password}
+                onChange={(e) => set('password', e.target.value)}
+                placeholder="Kamida 8 belgi"
+                className={fieldCls}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mx-0 mb-0 mt-2 gap-2.5 rounded-b-[20px] border-t-0 bg-[#F5F5F5] px-6 py-4 dark:bg-white/5 sm:flex-row sm:justify-end">
