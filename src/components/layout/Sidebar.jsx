@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { ChevronDown } from 'lucide-react'
-import { toggleSidebar, setSidebarCollapsed } from '@/features/ui/uiSlice'
+import { ChevronDown, ChevronRight, CircleUser, Moon } from 'lucide-react'
+import { toggleSidebar, setSidebarCollapsed, toggleTheme } from '@/features/ui/uiSlice'
 import { logout } from '@/features/auth/authSlice'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
 import {
   Audit01Icon,
   BalanceScaleIcon,
@@ -47,6 +49,7 @@ const NAV_ITEMS = [
       { to: '/malumotnomalar/viloyat', label: 'Viloyat' },
       { to: '/malumotnomalar/tuman', label: 'Tuman' },
       { to: '/malumotnomalar/xodimlar', label: 'Xodimlar' },
+      { to: '/malumotnomalar/ish-grafigi', label: 'Ish grafigi' },
       { to: '/malumotnomalar/rollar', label: 'Rollar' },
       { to: '/malumotnomalar/sifatlar', label: 'Sifatlar' },
       { to: '/malumotnomalar/ranglar', label: 'Ranglar' },
@@ -100,7 +103,9 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const user = useSelector((state) => state.auth.user)
   const collapsed = useSelector((state) => state.ui.sidebarCollapsed)
+  const theme = useSelector((state) => state.ui.theme)
   const { pathname } = useLocation()
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 
   // Hozircha faqat frontend tomonda chiqish (token/user tozalanadi) — backendda alohida
   // logout endpoint yo'q, shuning uchun serverga so'rov yubormaymiz.
@@ -318,26 +323,57 @@ export default function Sidebar() {
           </Tooltip>
         </div>
       ) : (
-        <div className="flex items-center gap-2 border-t border-white/10 px-5 py-4">
-          <NavLink
-            to="/profil"
-            onClick={(e) => e.stopPropagation()}
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors hover:bg-white/10"
-          >
-            {avatar}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user?.fullName ?? 'Foydalanuvchi'}</p>
-              <p className="truncate text-xs text-white/60">{user?.role?.name || user?.role || ''}</p>
-            </div>
-          </NavLink>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Chiqish"
-          >
-            <Logout01Icon className="shrink-0" />
-          </button>
+        <div className="border-t border-white/10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
+          <Popover open={accountMenuOpen} onOpenChange={setAccountMenuOpen}>
+            <PopoverTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex w-full min-w-0 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/10"
+                >
+                  {avatar}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{user?.fullName ?? 'Foydalanuvchi'}</p>
+                    <p className="truncate text-xs text-white/60">{user?.role || ''}</p>
+                  </div>
+                </button>
+              }
+            />
+            <PopoverContent
+              side="right"
+              align="end"
+              sideOffset={12}
+              className="w-[260px] flex-col gap-0.5 rounded-lg border border-[#E2E6F2] bg-white p-3 text-[#0A0A0A] shadow-[0px_4px_24px_0px_#0000001F] ring-0 dark:border-white/10 dark:bg-card dark:text-white"
+            >
+              <div className="flex items-center justify-between rounded-md px-2 py-2 text-[14px] font-medium">
+                <span className="flex items-center gap-2.5 text-[#3F3F46] dark:text-muted-foreground">
+                  <Moon className="h-4 w-4" /> Qorong‘i mavzu
+                </span>
+                <Switch checked={theme === 'dark'} onCheckedChange={() => dispatch(toggleTheme())} />
+              </div>
+
+              <NavLink
+                to="/profil"
+                onClick={() => setAccountMenuOpen(false)}
+                className="flex items-center justify-between rounded-md px-2 py-2 text-[14px] font-medium transition-colors hover:bg-[#F5F5F5] dark:hover:bg-white/5"
+              >
+                <span className="flex items-center gap-2.5 text-[#3F3F46] dark:text-muted-foreground">
+                  <CircleUser className="h-4 w-4" /> Shaxsiy kabinet
+                </span>
+                <ChevronRight className="h-4 w-4 text-[#A3A3A3]" />
+              </NavLink>
+
+              <div className="my-1 border-t border-[#E5E5E5] dark:border-white/10" />
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 rounded-md py-2 text-[14px] font-medium text-[#DC2626] transition-colors hover:bg-[#FEECEC] dark:hover:bg-[#DC2626]/10"
+              >
+                Chiqish <Logout01Icon className="h-4 w-4" />
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
     </aside>

@@ -64,11 +64,14 @@ export default function UserFooter({ user, xodim }) {
             </Button>
           )}
           {holat === 'boshagan' && (
+            // Figma: shu yerda (Foydalanuvchilar) tugma matni "Faollashtirish" — bu sahifa
+            // uchun asosiy ma'no foydalanuvchi hisobiga kirish qaytarilishi, garchi oyna
+            // (RehireEmployeeModal) Xodimlar bilan bir xil "Xodimni qayta ishga olish?" bo'lsa ham.
             <Button
               onClick={() => setRehireOpen(true)}
               className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
             >
-              <Check className="h-4 w-4" /> Qayta ishga olish
+              <Check className="h-4 w-4" /> Faollashtirish
             </Button>
           )}
         </div>

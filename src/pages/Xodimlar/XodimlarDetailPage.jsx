@@ -6,6 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
 import { cn } from '@/lib/utils'
 import { usePageHeader } from '@/hooks/usePageHeader'
+import { formatDate } from '@/lib/format'
 import * as recruitmentService from '@/services/recruitmentService'
 import { deleteKadr, mapRecruitment, updateKadr } from '@/features/xodimlar/xodimlarSlice'
 import { fetchBranches } from '@/features/filiallar/filiallarSlice'
@@ -18,6 +19,12 @@ import XodimModal from './components/XodimModal'
 const THb =
   'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
 
+// Xodim (Employee) shaxsiy profili — to'g'ridan-to'g'ri ko'rish/tahrirlash/o'chirish, Figma
+// bo'yicha ("boshqa bo'limlarga tegma, manashu bo'lim o'zi alohida bo'ladi" — Ishga qabul
+// qilish/Foydalanuvchilar'dagi ishga olish/ishdan chiqarish oqimi bilan bog'lanmaydi, bu
+// sahifa mustaqil). "Faol/Nofaol" Employee'ning o'z maydoni emas (Swagger tasdiqlagan —
+// bunday maydon yo'q) — shu bo'lim doirasida eng oxirgi RecruitmentDismissal yozuvidan kelib
+// chiqib (`holat`) hisoblanadi: 'boshagan' bo'lmasa — Faol.
 export default function XodimlarDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -85,6 +92,8 @@ export default function XodimlarDetailPage() {
     setToast(`${label} nusxalandi`)
   }
 
+  const isActive = xodim.holat !== 'boshagan'
+
   return (
     <>
       <div className="flex h-full flex-col gap-3">
@@ -94,7 +103,7 @@ export default function XodimlarDetailPage() {
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl bg-[#9E9DAE] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">HOLATI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{xodim.active ? 'Faol' : 'Nofaol'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight">{isActive ? 'Faol' : 'Nofaol'}</p>
           </div>
           <div className="rounded-xl bg-[#CDE7FE] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">VILOYATI</div>
@@ -141,7 +150,7 @@ export default function XodimlarDetailPage() {
                         <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">{r.tashkilot}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.branch || '—'}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.lavozim || '—'}</td>
-                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.sana || '—'}</td>
+                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{formatDate(r.sana)}</td>
                         <td className="px-3 pr-4">
                           <span
                             className={cn(
@@ -186,12 +195,12 @@ export default function XodimlarDetailPage() {
                   <span
                     className={cn(
                       'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                      xodim.active
+                      isActive
                         ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
                         : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
                     )}
                   >
-                    {xodim.active ? 'Faol' : 'Nofaol'}
+                    {isActive ? 'Faol' : 'Nofaol'}
                   </span>
                 }
               />
@@ -240,7 +249,7 @@ export default function XodimlarDetailPage() {
             {[
               ['F.I.SH.', xodim.name],
               ['Telefoni', xodim.phone || '—'],
-              ['Holati', xodim.active ? 'Faol' : 'Nofaol'],
+              ['Holati', isActive ? 'Faol' : 'Nofaol'],
             ].map(([k, v]) => (
               <div key={k} className="flex items-center justify-between py-1">
                 <span className="text-[#737373] dark:text-muted-foreground">{k}</span>
