@@ -1,28 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Loader2, Plus, Search, UserPlus } from 'lucide-react'
+import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
-import { createKadr, createRecruitment, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
+import { createKadr, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import XodimModal from './components/XodimModal'
 import XodimlarFilterModal, { EMPTY_XODIMLAR_FILTERS } from './components/XodimlarFilterModal'
-import HireChoiceModal from './components/HireChoiceModal'
-import RecruitmentModal from './components/RecruitmentModal'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
 // Xodim (Employee) shaxsiy profillari ro'yxati — to'g'ridan-to'g'ri yaratish/tahrirlash/
 // o'chirish, "Ishga olish" (Recruitment) siz. Lavozim biriktirish/ishga olish "Ishga qabul
-// qilish" bo'limida alohida boshqariladi. "Holat" bu yerda Xodimning shaxsiy profil holati
-// (Employee.active, "Faol"/"Nofaol") — Ishga qabul qilishdagi Qoralama/Tasdiqlangan emas.
+// qilish" bo'limida alohida boshqariladi. "Holat" (Faol/Nofaol, Figma) — Employee modelida
+// "active"/"status" maydoni umuman yo'q (Swagger tasdiqlagan), shuning uchun eng oxirgi
+// RecruitmentDismissal yozuvidan kelib chiqib hisoblanadi: 'boshagan' bo'lsa — Nofaol,
+// aks holda ('yangi'/'faol') — Faol (XodimlarDetailPage bilan bir xil qoida).
 export default function XodimlarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
@@ -36,15 +36,6 @@ export default function XodimlarListPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [toast, setToast] = useState('')
-
-  // "+ Ishga olish" — mavjud xodimni tanlab ishga olish (Ishga qabul qilish hujjati yaratish);
-  // "Ishga qabul qilish" ro'yxatidagi bilan bir xil HireChoiceModal → RecruitmentModal zanjiri,
-  // shu yerda ham qayta ishlatiladi (bitta va bir nechta xodim uchun BIR XIL RecruitmentModal —
-  // `multiple` prop "Xodim" maydoni ochadigan tanlash oynasining rejimini belgilaydi).
-  const [choiceOpen, setChoiceOpen] = useState(false)
-  const [hireOpen, setHireOpen] = useState(false)
-  const [hireMultiple, setHireMultiple] = useState(false)
-  const createdIdsRef = useRef([])
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Xodimlar' }])
 
@@ -67,8 +58,8 @@ export default function XodimlarListPage() {
   const counts = useMemo(
     () => ({
       all: xodimlar.length,
-      faol: xodimlar.filter((x) => x.active).length,
-      nofaol: xodimlar.filter((x) => !x.active).length,
+      faol: xodimlar.filter((x) => x.holat !== 'boshagan').length,
+      nofaol: xodimlar.filter((x) => x.holat === 'boshagan').length,
     }),
     [xodimlar]
   )
@@ -76,8 +67,8 @@ export default function XodimlarListPage() {
 
   const shown = useMemo(() => {
     let out = xodimlar
-    if (tab === 'faol') out = out.filter((x) => x.active)
-    if (tab === 'nofaol') out = out.filter((x) => !x.active)
+    if (tab === 'faol') out = out.filter((x) => x.holat !== 'boshagan')
+    if (tab === 'nofaol') out = out.filter((x) => x.holat === 'boshagan')
     if (search) {
       const q = search.trim().toLowerCase()
       const qDigits = q.replace(/\D/g, '')
@@ -91,7 +82,7 @@ export default function XodimlarListPage() {
     if (filters.viloyat) out = out.filter((x) => x.viloyat === filters.viloyat)
     if (filters.tuman) out = out.filter((x) => x.tuman === filters.tuman)
     if (filters.filial) out = out.filter((x) => x.filial === filters.filial)
-    if (filters.holat) out = out.filter((x) => (filters.holat === 'Faol' ? x.active : !x.active))
+    if (filters.holat) out = out.filter((x) => (x.holat === 'boshagan' ? 'Nofaol' : 'Faol') === filters.holat)
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((x) => matchesDateRange(x.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
@@ -154,13 +145,6 @@ export default function XodimlarListPage() {
             )}
           >
             <Filter className="h-4 w-4" /> Filtr
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setChoiceOpen(true)}
-            className="h-9 gap-2 rounded-xl border-[#E5E5E5] bg-white px-3.5 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
-          >
-            <UserPlus className="h-4 w-4" /> Ishga olish
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
@@ -254,12 +238,12 @@ export default function XodimlarListPage() {
                     <span
                       className={cn(
                         'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        x.active
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+                        x.holat === 'boshagan'
+                          ? 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+                          : 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
                       )}
                     >
-                      {x.active ? 'Faol' : 'Nofaol'}
+                      {x.holat === 'boshagan' ? 'Nofaol' : 'Faol'}
                     </span>
                   </td>
                 </tr>
@@ -281,41 +265,6 @@ export default function XodimlarListPage() {
         }}
       />
       <XodimlarFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
-
-      <HireChoiceModal
-        open={choiceOpen}
-        onOpenChange={setChoiceOpen}
-        onChooseSingle={() => {
-          setHireMultiple(false)
-          setHireOpen(true)
-        }}
-        onChooseBulk={() => {
-          setHireMultiple(true)
-          setHireOpen(true)
-        }}
-      />
-      <RecruitmentModal
-        open={hireOpen}
-        onOpenChange={setHireOpen}
-        record={null}
-        multiple={hireMultiple}
-        onSaveOne={({ employeeId, status, ...draftValues }) =>
-          dispatch(createRecruitment({ employeeId, status, draft: draftValues }))
-            .unwrap()
-            .then((created) => {
-              createdIdsRef.current.push(created.id)
-            })
-            .catch((err) => {
-              setToast(err || 'Saqlashda xatolik yuz berdi')
-              throw err
-            })
-        }
-        onDone={(count) => {
-          if (count > 1) setToast(`${count} ta xodim ishga olindi`)
-          else if (createdIdsRef.current[0]) navigate(`/malumotnomalar/ishga-qabul-qilish/${createdIdsRef.current[0]}`)
-          createdIdsRef.current = []
-        }}
-      />
 
       <Toast message={toast} />
     </div>

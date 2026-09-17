@@ -26,11 +26,6 @@ export function mapEmployee(e) {
     stir: e.stir ?? '',
     phone: e.phone_number ?? '',
     tavsif: e.description ?? '',
-    // "Kadr" profilining o'z holati (Xodim sifatida ishga olinganidan mustaqil — bu "Faol/
-    // Nofaol" shaxsiy profil holati). Backendda maydon nomi hujjatlashtirilmagan — eng
-    // ehtimoliy ikkitasini (`status`, `is_active`) birga o'qiymiz; ikkalasi ham yo'q bo'lsa
-    // (hali backend qo'llamasa) — standart bo'yicha Faol hisoblanadi.
-    active: e.status == null && e.is_active == null ? true : !!(e.status ?? e.is_active),
     yaratilgan: e.created_at ? formatDateTime(new Date(e.created_at)) : '',
     ozgartirilgan: e.updated_at ? formatDateTime(new Date(e.updated_at)) : '',
   }
@@ -124,10 +119,6 @@ export function buildEmployeePayload(draft) {
     stir: draft.stir ? draft.stir.replace(/\s/g, '') : '',
     phone_number: draft.phone ? draft.phone.replace(/[\s-]/g, '') : '',
     description: draft.tavsif ?? '',
-    // Maydon nomi hujjatlashtirilmagan — ehtimoliy ikkitasini birga yuboramiz, backend
-    // qaysi birini qo'llasa o'shani o'qiydi, qolganini e'tiborsiz qoldiradi.
-    status: draft.active,
-    is_active: draft.active,
   }
 }
 

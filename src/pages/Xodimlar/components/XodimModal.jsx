@@ -32,7 +32,6 @@ const EMPTY = {
   tuman: '',
   manzil: '',
   filial: '',
-  active: true,
   tavsif: '',
 }
 
@@ -83,7 +82,6 @@ function draftFromXodim(xodim) {
     tuman: xodim.tumanId ?? '',
     manzil: xodim.manzil ?? '',
     filial: xodim.filialId ?? '',
-    active: xodim.active ?? true,
     tavsif: xodim.tavsif ?? '',
   }
 }
