@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import RecruitmentModal from './components/RecruitmentModal'
 import HireChoiceModal from './components/HireChoiceModal'
+import EmployeePickerModal from './components/EmployeePickerModal'
 import XodimFilterModal, { EMPTY_XODIM_FILTERS } from './components/XodimFilterModal'
 
 const TH =
@@ -37,8 +38,7 @@ export default function IshgaQabulQilishListPage() {
   const listError = useSelector((s) => s.xodimlar.recruitmentsError)
   const branches = useSelector((s) => s.filiallar.list)
   const branchesStatus = useSelector((s) => s.filiallar.listStatus)
-  // RecruitmentModal xodimlar ro'yxatini o'zi ichida o'qiydi — bu yerda faqat mount'da
-  // yuklanganini kafolatlash uchun status kerak (kadrStatus qo'riqlanadi, pastdagi effektga q.).
+  const kadrlar = useSelector((s) => s.xodimlar.list)
   const kadrStatus = useSelector((s) => s.xodimlar.listStatus)
 
   const [tab, setTab] = useState('all')
@@ -47,13 +47,15 @@ export default function IshgaQabulQilishListPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [toast, setToast] = useState('')
 
-  // "+ Ishga olish" — avval "Bitta"/"Bir nechta" tanlanadi: ikkalasi ham BIR XIL RecruitmentModal'ni
-  // ochadi, faqat `hireMultiple` orqali "Xodim" maydoni ochadigan tanlash oynasi bitta yoki ko'p
-  // tanlash rejimida ishlaydi (Figma: oynaning o'zi pagersiz, bitta forma — tanlangan barcha
-  // xodimlarga bir xil qiymatlar qo'llaniladi, har biriga alohida forma YO'Q).
+  // "+ Ishga olish" — avval "Bitta"/"Bir nechta" tanlanadi (HireChoiceModal). "Bitta" to'g'ridan-
+  // to'g'ri RecruitmentModal'ni pagersiz-bir-slotli rejimda ochadi ("Xodim" maydoni bosilganda
+  // o'zi tanlash oynasini ochadi). "Bir nechta" avval EmployeePickerModal (ko'p tanlash) orqali
+  // xodimlar ro'yxatini tanlaydi, so'ng RecruitmentModal'ni shu ro'yxat bilan navbat/pager
+  // rejimida ochadi — har bir xodim uchun alohida maydonlar, pager orqali o'tiladi.
   const [choiceOpen, setChoiceOpen] = useState(false)
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false)
   const [hireOpen, setHireOpen] = useState(false)
-  const [hireMultiple, setHireMultiple] = useState(false)
+  const [hireEmployees, setHireEmployees] = useState(null)
   const createdIdsRef = useRef([])
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Ishga qabul qilish' }])
@@ -121,8 +123,8 @@ export default function IshgaQabulQilishListPage() {
         <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
           {[
             ['all', 'Barchasi', counts.all],
-            ['draft', 'Qoralama', counts.draft],
             ['confirmed', 'Tasdiqlangan', counts.confirmed],
+            ['draft', 'Qoralama', counts.draft],
             ['cancelled', 'Bekor qilingan', counts.cancelled],
           ].map(([key, label, n]) => {
             const active = tab === key
@@ -284,11 +286,18 @@ export default function IshgaQabulQilishListPage() {
         open={choiceOpen}
         onOpenChange={setChoiceOpen}
         onChooseSingle={() => {
-          setHireMultiple(false)
+          setHireEmployees(null)
           setHireOpen(true)
         }}
-        onChooseBulk={() => {
-          setHireMultiple(true)
+        onChooseBulk={() => setBulkPickerOpen(true)}
+      />
+      <EmployeePickerModal
+        open={bulkPickerOpen}
+        onOpenChange={setBulkPickerOpen}
+        employees={kadrlar}
+        multiple
+        onConfirm={(ids) => {
+          setHireEmployees(kadrlar.filter((k) => ids.includes(k.id)))
           setHireOpen(true)
         }}
       />
@@ -297,7 +306,7 @@ export default function IshgaQabulQilishListPage() {
         open={hireOpen}
         onOpenChange={setHireOpen}
         record={null}
-        multiple={hireMultiple}
+        employees={hireEmployees}
         onSaveOne={({ employeeId, status, ...draftValues }) =>
           dispatch(createRecruitment({ employeeId, status, draft: draftValues }))
             .unwrap()

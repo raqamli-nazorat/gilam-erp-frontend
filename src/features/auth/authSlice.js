@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { axiosAPI } from '@/services/axiosAPI'
+import * as userService from '@/services/userService'
+import { extractErrorMessage } from '@/services/apiHelpers'
 
 const MAX_ATTEMPTS = 5
 const BLOCK_DURATION_MS = 5 * 60 * 1000
@@ -39,12 +41,11 @@ function formatUser(rawUser) {
     rawUser.role ||
     (rawUser.is_staff ? 'Platforma admini' : 'Hodim')
 
-  const branchName = rawUser.branch_info?.name || rawUser.filial || '—'
-  const orgName =
-    rawUser.branch_info?.organization_name ||
-    rawUser.branch_info?.organization ||
-    rawUser.tashkilot ||
-    '—'
+  // Swagger tasdiqlagan haqiqiy shakl: User.organization/User.branch — nested "_info" obyekt
+  // emas, o'zi tayyor matn qatori (o'qish uchungina, tahrirlanmaydi — UserRequest'da bunday
+  // maydon umuman yo'q).
+  const branchName = rawUser.branch || rawUser.filial || '—'
+  const orgName = rawUser.organization || rawUser.tashkilot || '—'
 
   return {
     ...rawUser,
@@ -54,6 +55,7 @@ function formatUser(rawUser) {
     phone: rawUser.phone_number || rawUser.phone || '—',
     tashkilot: orgName,
     filial: branchName,
+    employeeId: rawUser.employee_info?.id ?? rawUser.employeeId ?? null,
   }
 }
 
@@ -151,6 +153,37 @@ export const login = createAsyncThunk(
   }
 )
 
+// Profil sahifasidagi "Saqlash" — faqat haqiqatan `User`da mavjud maydonlarni yangilaydi
+// (full_name/phone_number). Muvaffaqiyatli bo'lsa `state.user`ni ham yangilaydi — shu bilan
+// sidebar/topbar'dagi ism darhol yangi qiymatni ko'rsatadi.
+export const updateOwnProfile = createAsyncThunk(
+  'auth/updateOwnProfile',
+  async ({ id, fullName, phone }, { rejectWithValue }) => {
+    try {
+      const raw = await userService.updateUser(id, {
+        full_name: fullName.trim(),
+        phone_number: phone ? phone.replace(/[\s-]/g, '') : '',
+      })
+      return formatUser(raw)
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
+    }
+  }
+)
+
+// Backendda "joriy parolni tekshirish" bilan alohida endpoint yo'q — faqat
+// `PATCH accounts/users/{id}/ {password}` bor (oddiy, tekshiruvsiz almashtirish).
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async ({ id, password }, { rejectWithValue }) => {
+    try {
+      await userService.updateUser(id, { password })
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Parolni almashtirishda xatolik yuz berdi'))
+    }
+  }
+)
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -176,11 +209,6 @@ const authSlice = createSlice({
       } catch {
         /* ignore */
       }
-    },
-    passwordChanged(state, action) {
-      if (!state.user) return
-      state.user.passwordChangedAt = action.payload
-      writeStored('gilam-auth-user', state.user)
     },
   },
   extraReducers: (builder) => {
@@ -245,8 +273,13 @@ const authSlice = createSlice({
         state.status = 'error'
         state.errorMessage = payload.message || 'Tizimga ulanishda xatolik yuz berdi'
       })
+
+      .addCase(updateOwnProfile.fulfilled, (state, action) => {
+        state.user = { ...state.user, ...action.payload }
+        writeStored('gilam-auth-user', state.user)
+      })
   },
 })
 
-export const { unblock, logout, passwordChanged } = authSlice.actions
+export const { unblock, logout } = authSlice.actions
 export default authSlice.reducer

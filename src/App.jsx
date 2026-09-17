@@ -29,6 +29,7 @@ import MalumotnomaDetailPage from '@/pages/Malumotnomalar/MalumotnomaDetailPage'
 import DavlatPage from '@/pages/Malumotnomalar/DavlatPage'
 import ViloyatPage from '@/pages/Malumotnomalar/ViloyatPage'
 import TumanPage from '@/pages/Malumotnomalar/TumanPage'
+import IshGrafigiListPage from '@/pages/Malumotnomalar/IshGrafigiListPage'
 import XodimlarListPage from '@/pages/Xodimlar/XodimlarListPage'
 import XodimlarDetailPage from '@/pages/Xodimlar/XodimlarDetailPage'
 import IshgaQabulQilishListPage from '@/pages/Xodimlar/IshgaQabulQilishListPage'
@@ -100,6 +101,7 @@ function App() {
           <Route path="/malumotnomalar/davlat" element={<DavlatPage />} />
           <Route path="/malumotnomalar/viloyat" element={<ViloyatPage />} />
           <Route path="/malumotnomalar/tuman" element={<TumanPage />} />
+          <Route path="/malumotnomalar/ish-grafigi" element={<IshGrafigiListPage />} />
           <Route path="/malumotnomalar/xodimlar" element={<XodimlarListPage />} />
           <Route path="/malumotnomalar/xodimlar/:id" element={<XodimlarDetailPage />} />
           <Route path="/malumotnomalar/kadrlar" element={<Navigate to="/malumotnomalar/xodimlar" replace />} />

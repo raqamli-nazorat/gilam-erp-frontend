@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { fetchUserDetail } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { holatBadgeCls as xodimHolatBadgeCls, holatLabel as xodimHolatLabel } from '@/features/xodimlar/xodimlarData'
-import { fetchXodimDetail } from '@/features/xodimlar/xodimlarSlice'
+import { fetchXodimDetail, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
+import * as recruitmentService from '@/services/recruitmentService'
 import { getAuditLogs } from '@/services/auditService'
 import { getActionInfo, formatAuditDateTime } from '@/features/audit/auditData'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,13 @@ export default function FoydalanuvchilarDetailPage() {
   // Foydalanuvchiga bog'langan Xodim profili (bo'lsa) — Tahrirlash/Ishdan chiqarish/Qayta ishga
   // olish shu orqali ishlaydi (hr/employees + hr/recruitment-dismissals).
   const xodim = useSelector((s) => (s.xodimlar.current?.id === user?.employeeId ? s.xodimlar.current : null))
+  const currentUser = useSelector((s) => s.auth.user)
   const [toast, setToast] = useState('')
+
+  // Bog'langan xodimning to'liq ish tarixi — faqat "hozir bloklanganmi" emas, "hozirgina
+  // faollashtirildimi" (justRehired) degan savolga javob berish uchun kerak (XodimlarDetailPage
+  // bilan bir xil naqsh).
+  const [history, setHistory] = useState([])
 
   // Foydalanuvchining audit jurnali — haqiqiy /audits/logs/?actor=<id> orqali
   const [audit, setAudit] = useState([])
@@ -45,6 +52,23 @@ export default function FoydalanuvchilarDetailPage() {
   useEffect(() => {
     if (user?.employeeId) dispatch(fetchXodimDetail(user.employeeId))
   }, [user?.employeeId, dispatch])
+
+  useEffect(() => {
+    if (!user?.employeeId) return undefined
+    let cancelled = false
+    recruitmentService
+      .getRecruitmentDismissalsByEmployee(user.employeeId)
+      .then((rows) => {
+        if (cancelled) return
+        setHistory(rows.map(mapRecruitment).sort((a, b) => (a.yaratilganAt < b.yaratilganAt ? -1 : 1)))
+      })
+      .catch(() => {
+        if (!cancelled) setHistory([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.employeeId, xodim?.holat, xodim?.latestHireId])
 
   useEffect(() => {
     let cancelled = false
@@ -97,6 +121,13 @@ export default function FoydalanuvchilarDetailPage() {
   if (!user) return null
 
   const blocked = !xodim && user.holat === 'blocked'
+  const lastDismissal = [...history].reverse().find((r) => r.type === 'dismissal')
+  const lastRecord = history[history.length - 1]
+  const justRehired =
+    xodim?.holat === 'faol' &&
+    lastRecord?.type === 'recruitment' &&
+    history.length > 1 &&
+    history[history.length - 2]?.type === 'dismissal'
   const d = user.detail
 
   function copy(text, label) {
@@ -116,9 +147,19 @@ export default function FoydalanuvchilarDetailPage() {
           ]}
         />
 
-        {xodim?.holat === 'boshagan' && xodim.termination && (
+        {/* Figma: bog'langan xodim ishdan chiqarilganda ham bu sahifada "bloklangan"/"kirish
+            yopildi" tilida ko'rsatiladi (Foydalanuvchilar sahifasi uchun asosiy ma'no — hisobga
+            kirish yopilgani), garchi tagida bir xil TerminateEmployeeModal ishlatilsa ham. */}
+        {xodim?.holat === 'boshagan' && lastDismissal && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Xodim ishdan chiqarildi, {xodim.termination.at}. Sabab: {xodim.termination.reason}.
+            Foydalanuvchi bloklangan, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || '—'}. Kirish yopildi.
+            Blokladi: {currentUser?.fullName || '—'}.
+          </div>
+        )}
+        {xodim && justRehired && lastRecord && (
+          <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
+            Foydalanuvchi faollashtirilgan, {lastRecord.yaratilgan}. Faollashtirdi: {currentUser?.fullName || '—'}. Avvalgi
+            bloklash sababi audit jurnalida saqlangan.
           </div>
         )}
         {blocked && user.block && (
@@ -126,7 +167,7 @@ export default function FoydalanuvchilarDetailPage() {
             Foydalanuvchi bloklangan, {user.block.at}. Sabab: {user.block.reason}. Blokladi: {user.block.by}.
           </div>
         )}
-        {!blocked && user.activation && (
+        {!blocked && !xodim && user.activation && (
           <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
             Foydalanuvchi faollashtirilgan, {user.activation.at}. Faollashtirdi: {user.activation.by}. Avvalgi bloklash sababi audit
             jurnalida saqlangan.

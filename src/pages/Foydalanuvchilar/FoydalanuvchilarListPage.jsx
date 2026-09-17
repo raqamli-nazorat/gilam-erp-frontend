@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Loader2, Plus, Search, Users } from 'lucide-react'
+import { Filter, Loader2, Plus, Search, UserPlus, Users } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon, UserGroupIcon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
@@ -10,12 +10,16 @@ import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { createUser, fetchUsers, mapUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { createRecruitment, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
 import * as userService from '@/services/userService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import UserModal from './components/UserModal'
 import UserFilterModal, { EMPTY_USER_FILTERS } from './components/UserFilterModal'
+import HireChoiceModal from '@/pages/Xodimlar/components/HireChoiceModal'
+import EmployeePickerModal from '@/pages/Xodimlar/components/EmployeePickerModal'
+import RecruitmentModal from '@/pages/Xodimlar/components/RecruitmentModal'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
@@ -45,11 +49,27 @@ export default function FoydalanuvchilarListPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [toast, setToast] = useState('')
 
+  // "+ Ishga olish" — Xodimlar/Ishga qabul qilish bo'limlaridagi bilan bir xil HireChoiceModal
+  // (Bitta/Bir nechta) → (bir nechtada: EmployeePickerModal ko'p tanlash) → RecruitmentModal
+  // (navbat/pager) zanjiri, shu yerda ham qayta ishlatiladi — mavjud "Yangi foydalanuvchi"
+  // (to'g'ridan-to'g'ri Foydalanuvchi hisobi yaratish) o'rnini bosmaydi, unga qo'shimcha.
+  const kadrlar = useSelector((s) => s.xodimlar.list)
+  const kadrStatus = useSelector((s) => s.xodimlar.listStatus)
+  const [choiceOpen, setChoiceOpen] = useState(false)
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false)
+  const [hireOpen, setHireOpen] = useState(false)
+  const [hireEmployees, setHireEmployees] = useState(null)
+  const createdIdsRef = useRef([])
+
   usePageHeader('Platforma › Foydalanuvchilar')
 
   useEffect(() => {
     if (listStatus === 'idle') dispatch(fetchUsers())
   }, [listStatus, dispatch])
+
+  useEffect(() => {
+    if (kadrStatus === 'idle') dispatch(fetchXodimlar())
+  }, [kadrStatus, dispatch])
 
   // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
   useEffect(() => {
@@ -168,6 +188,13 @@ export default function FoydalanuvchilarListPage() {
             )}
           >
             <Filter className="h-4 w-4" /> Filtr
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setChoiceOpen(true)}
+            className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+          >
+            <UserPlus className="h-4 w-4" /> Ishga olish
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
@@ -306,6 +333,49 @@ export default function FoydalanuvchilarListPage() {
         }}
       />
       <UserFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+
+      <HireChoiceModal
+        open={choiceOpen}
+        onOpenChange={setChoiceOpen}
+        onChooseSingle={() => {
+          setHireEmployees(null)
+          setHireOpen(true)
+        }}
+        onChooseBulk={() => setBulkPickerOpen(true)}
+      />
+      <EmployeePickerModal
+        open={bulkPickerOpen}
+        onOpenChange={setBulkPickerOpen}
+        employees={kadrlar}
+        multiple
+        onConfirm={(ids) => {
+          setHireEmployees(kadrlar.filter((k) => ids.includes(k.id)))
+          setHireOpen(true)
+        }}
+      />
+      <RecruitmentModal
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        record={null}
+        employees={hireEmployees}
+        onSaveOne={({ employeeId, status, ...draftValues }) =>
+          dispatch(createRecruitment({ employeeId, status, draft: draftValues }))
+            .unwrap()
+            .then((created) => {
+              createdIdsRef.current.push(created.id)
+            })
+            .catch((err) => {
+              setToast(err || 'Saqlashda xatolik yuz berdi')
+              throw err
+            })
+        }
+        onDone={(count) => {
+          if (count > 1) setToast(`${count} ta xodim ishga olindi`)
+          else if (createdIdsRef.current[0]) navigate(`/malumotnomalar/ishga-qabul-qilish/${createdIdsRef.current[0]}`)
+          createdIdsRef.current = []
+        }}
+      />
+
       <Toast message={toast} />
     </div>
   )

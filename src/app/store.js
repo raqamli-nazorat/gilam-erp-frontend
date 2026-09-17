@@ -14,6 +14,7 @@ import tashkilotlarReducer from '@/features/tashkilotlar/tashkilotlarSlice'
 import filiallarReducer from '@/features/filiallar/filiallarSlice'
 import foydalanuvchilarReducer from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import xodimlarReducer from '@/features/xodimlar/xodimlarSlice'
+import ishGrafigiReducer from '@/features/ishGrafigi/ishGrafigiSlice'
 import {
   qualitySlice,
   unitSlice,
@@ -40,6 +41,7 @@ export const store = configureStore({
     filiallar: filiallarReducer,
     foydalanuvchilar: foydalanuvchilarReducer,
     xodimlar: xodimlarReducer,
+    ishGrafigi: ishGrafigiReducer,
     sifatlar: qualitySlice.reducer,
     birliklar: unitSlice.reducer,
     ranglar: colorSlice.reducer,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { ChevronDown, QrCode, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, QrCode, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { maskDate } from '@/components/ui/filter-modal'
 import { dmyToNum, maskMoney, unmaskMoney } from '@/lib/format'
@@ -40,21 +40,69 @@ export const compactFieldCls =
 export const compactLabelCls = 'mb-1.5 block text-[12px] font-medium leading-4 text-[#525252] dark:text-muted-foreground'
 
 // "Xodimni ishga olish" oynasining sarlavha qatori — Figma: chap tarafda sarlavha, o'ng
-// tarafda oddiy yopish (X) tugmasi. Pager YO'Q — bitta va bir nechta xodim ishga olish bir xil
-// oddiy sarlavhaga ega (dev-mode screenshotlar bilan tasdiqlangan: "Xodim" maydoni bosilganda
-// ochiladigan tanlash oynasigina bitta/ko'p tanlash rejimi bilan farqlanadi, oynaning o'zi emas).
-export function HireModalHeader({ title, onClose }) {
+// tarafda ixtiyoriy pager (`right` — masalan navbat pageri) va yopish (X) tugmasi.
+export function HireModalHeader({ title, onClose, right }) {
   return (
     <div className="flex h-[60px] shrink-0 items-center justify-between gap-2 px-6">
       <h2 className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">{title}</h2>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Yopish"
-        className="flex size-8 items-center justify-center rounded-md text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] dark:text-white/70 dark:hover:bg-white/10"
-      >
-        <X className="size-5" />
-      </button>
+      <div className="flex items-center gap-3">
+        {right}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Yopish"
+          className="flex size-8 items-center justify-center rounded-md text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] dark:text-white/70 dark:hover:bg-white/10"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Navbat pageri — "N-Xodim" (bitta) yoki "N-Xodim (N/JAMI)" (bir nechta) pill + oldingi/keyingi
+// o'qlar + navbatdan olib tashlash (qizil). O'q va olib-tashlash faqat navbatda 2+ xodim
+// bo'lganda faollashadi/ko'rinadi — bitta xodim tanlanganda pill statik "1-Xodim" bo'lib qoladi.
+export const pagerPillCls =
+  'flex h-7 items-center justify-center rounded-lg bg-[#F5F5F5] px-1.5 text-[13px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] dark:bg-white/10 dark:text-white'
+
+export function HireQueuePager({ index, total, onPrev, onNext, onRemove }) {
+  const showQueueControls = total > 1
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          disabled={!showQueueControls || index === 0}
+          onClick={onPrev}
+          className={cn(pagerPillCls, 'w-6 px-0 disabled:opacity-30')}
+          aria-label="Oldingi xodim"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <span className={pagerPillCls}>
+          {showQueueControls ? `${index + 1}-Xodim (${index + 1}/${total})` : '1-Xodim'}
+        </span>
+        <button
+          type="button"
+          disabled={!showQueueControls || index === total - 1}
+          onClick={onNext}
+          className={cn(pagerPillCls, 'w-6 px-0 disabled:opacity-30')}
+          aria-label="Keyingi xodim"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
+      {showQueueControls && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Navbatdan olib tashlash"
+          className="flex size-7 items-center justify-center rounded-lg bg-[#FEECEC] text-[#DC2626] shadow-[0px_1px_2px_0px_#0000001A] transition-colors hover:bg-[#FDD7D7] dark:bg-[#DC2626]/15"
+        >
+          <X className="size-4" />
+        </button>
+      )}
     </div>
   )
 }
