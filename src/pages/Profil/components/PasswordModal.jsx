@@ -15,10 +15,11 @@ const fieldCls =
   'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-const EMPTY = { next: '', confirm: '' }
+const EMPTY = { current: '', next: '', confirm: '' }
 
-// "Joriy parol" maydoni yo'q — backendda uni tekshiradigan endpoint mavjud emas
-// (faqat oddiy `PATCH accounts/users/{id}/ {password}`, tasdiqlashsiz almashtirish).
+// "Joriy parol" maydoni faqat Figma bilan moslik uchun ko'rsatiladi — backendda uni
+// tekshiradigan endpoint yo'q (faqat oddiy `PATCH accounts/users/{id}/ {password}`,
+// tasdiqlashsiz almashtirish), shuning uchun kiritilgan qiymat hech qayerga yuborilmaydi.
 export default function PasswordModal({ open, onOpenChange, onSave }) {
   const [draft, setDraft] = useState(EMPTY)
 
@@ -44,6 +45,19 @@ export default function PasswordModal({ open, onOpenChange, onSave }) {
         </DialogHeader>
 
         <div className="flex flex-col gap-5 px-6 pb-4 pt-2">
+          <p className="-mt-2 text-[13px] text-[#737373] dark:text-muted-foreground">
+            Xavfsizlik uchun joriy parolingizni kiriting va yangi parol o‘rnating
+          </p>
+          <div>
+            <Label className={labelCls}>Joriy parol</Label>
+            <Input
+              type="password"
+              value={draft.current}
+              onChange={(e) => set('current', e.target.value)}
+              placeholder="Joriy parolni kiriting"
+              className={fieldCls}
+            />
+          </div>
           <div>
             <Label className={labelCls}>Yangi parol</Label>
             <Input
