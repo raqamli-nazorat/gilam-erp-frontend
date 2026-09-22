@@ -65,9 +65,9 @@ function PdfFileIcon() {
   )
 }
 
-// Fayl faqat UI darajasida ushlab qolinadi — RecruitmentDismissal endpoint'ida hujjat
-// biriktirish maydoni yo'q (backendda bu hali qo'llanmagan), shuning uchun onConfirm'ga
-// uzatiladi-yu, hech qayerga yuborilmaydi.
+// Tanlangan fayl onConfirm(reason, file) orqali chaqiruvchiga uzatiladi — u "dismiss"
+// endpointiga multipart/form-data sifatida ("attachment" maydoni, real, backendda mavjud)
+// yuboradi (recruitmentService.dismissEmployee).
 export default function TerminateEmployeeModal({ open, onOpenChange, employee, onConfirm }) {
   const [reason, setReason] = useState('')
   const [file, setFile] = useState(null)

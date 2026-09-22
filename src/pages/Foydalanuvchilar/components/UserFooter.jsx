@@ -93,8 +93,8 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
           open={terminateOpen}
           onOpenChange={setTerminateOpen}
           employee={xodim}
-          onConfirm={(reason) => {
-            dispatch(terminateXodim({ id: xodim.id, reason, employee: xodim }))
+          onConfirm={(reason, file) => {
+            dispatch(terminateXodim({ id: xodim.id, reason, file }))
               .unwrap()
               .then(() => setToast('Xodim ishdan chiqarildi'))
               .catch((err) => setToast(err || 'Ishdan chiqarishda xatolik yuz berdi'))

@@ -51,6 +51,34 @@ export default function IshgaQabulQilishDetailPage() {
   const [rehireOpen, setRehireOpen] = useState(false)
   const [toast, setToast] = useState('')
 
+  // `record` (state.xodimlar.recruitments) RO'YXAT endpointidan keladi — backend ro'yxat
+  // javobida xodim/filial/lavozim ID'sini, karta raqami/oylik maydonlarini UMUMAN qaytarmaydi
+  // (faqat tekis F.I.SH./filial/lavozim NOMLARI, real OpenAPI sxemasi bilan tasdiqlangan —
+  // RecruitmentDismissalList vs RecruitmentDismissal). Shu sahifa esa aynan shu ID'larga
+  // muhtoj (Tahrirlash formasi, Ishdan chiqarish/Qayta ishga olish uchun xodim ID'si) —
+  // shuning uchun bitta hujjatning TO'LIQ (detal) shaklini alohida so'raymiz.
+  const [detail, setDetail] = useState(null)
+  useEffect(() => {
+    if (!id) return undefined
+    let cancelled = false
+    setDetail(null)
+    recruitmentService
+      .getRecruitmentDismissal(id)
+      .then((raw) => {
+        if (!cancelled) setDetail(mapRecruitment(raw))
+      })
+      .catch(() => {
+        if (!cancelled) setDetail(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  // Ro'yxatdan kelgan `record` (tashkilot NOMI bor — organization_name) + detaldan kelgan
+  // `detail` (ID'lar, karta, oylik bor, lekin tashkilot nomi umuman yo'q) birlashtiriladi.
+  const full = record ? { ...record, ...(detail ?? {}), tashkilot: record.tashkilot } : detail
+
   // Shu hujjat egasi bo'lgan xodimning haqiqiy ish holati — "Bekor qilish" endi shu hujjatning
   // o'z holatini emas, XODIMNING o'zini ishdan chiqaradi (terminateXodim), shuning uchun
   // "hozir ishlaydimi" degan savolga javobni bu hujjat emas, xodimning to'liq tarixi beradi.
@@ -71,14 +99,19 @@ export default function IshgaQabulQilishDetailPage() {
     if (branchesStatus === 'idle') dispatch(fetchBranches())
   }, [branchesStatus, dispatch])
 
-  // Hujjatning o'zi tashkilotni saqlamaydi, faqat filialni — tashkilot nomini filial orqali topamiz.
-  const tashkilot = branches.find((b) => b.id === record?.branchId)?.tashkilot ?? ''
+  // Hujjatning o'zi tashkilotni saqlamaydi, faqat filialni — ro'yxat javobi tashkilot nomini
+  // to'g'ridan-to'g'ri beradi (full.tashkilot); topilmasa (masalan hali yuklanmagan) filiallar
+  // ro'yxatidan qidiramiz.
+  const tashkilot = full?.tashkilot || branches.find((b) => b.id === full?.branchId)?.tashkilot || ''
 
+  // Xodim tarixi ham xuddi shu ro'yxat-endpoint muammosidan aziyat chekadi — `type` maydoni
+  // ro'yxat javobida yo'q, shuning uchun ikkita alohida `type` bo'yicha filtrlangan so'rov
+  // orqali OLIB, HAR BIRINI BIZ BILGAN TURI bilan belgilaymiz (getAllRecruitmentDismissalsTagged).
   useEffect(() => {
-    if (!record?.employeeId) return undefined
+    if (!full?.employeeId) return undefined
     let cancelled = false
     recruitmentService
-      .getRecruitmentDismissalsByEmployee(record.employeeId)
+      .getAllRecruitmentDismissalsTagged({ employee: full.employeeId })
       .then((rows) => {
         if (cancelled) return
         setHistory(rows.map(mapRecruitment).sort((a, b) => (a.yaratilganAt < b.yaratilganAt ? -1 : 1)))
@@ -89,7 +122,7 @@ export default function IshgaQabulQilishDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [record?.employeeId, historyVersion])
+  }, [full?.employeeId, historyVersion])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -109,9 +142,9 @@ export default function IshgaQabulQilishDetailPage() {
     history[history.length - 2]?.type === 'dismissal'
 
   const ishHaqi =
-    record.ishHaqiTuri === 'sales_percent'
-      ? `Savdodan foiz — ${formatNumber(record.fixFoiz, 0)}%`
-      : `Belgilangan summa — ${formatNumber(record.fixSumma, 2)} UZS`
+    full?.ishHaqiTuri === 'sales_percent'
+      ? `Savdodan foiz — ${formatNumber(full?.fixFoiz, 0)}%`
+      : `Belgilangan summa — ${formatNumber(full?.fixSumma, 2)} UZS`
 
   function setStatus(status) {
     dispatch(setRecruitmentStatus({ id: record.id, status }))
@@ -120,26 +153,13 @@ export default function IshgaQabulQilishDetailPage() {
       .catch((err) => setToast(err || 'Xatolik yuz berdi'))
   }
 
-  // Endi "Bekor qilish" o'rniga xodimning o'zini ishdan chiqaramiz (terminateXodim — yangi
-  // RecruitmentDismissal(type=dismissal) yozadi) va shu hujjatni ham "Bekor qilingan" deb
-  // belgilaymiz, so'ng xodim tarixini qayta yuklaymiz (banner/tugmalar shunga qarab yangilanadi).
-  function handleTerminate(reason) {
-    dispatch(
-      terminateXodim({
-        id: record.employeeId,
-        reason,
-        employee: {
-          filialId: record.branchId,
-          lavozimId: record.lavozimId,
-          kartaRaqami: record.kartaRaqami,
-          ishHaqiTuri: record.ishHaqiTuri,
-          ishHaqiSummasi: record.fixSumma,
-          ishHaqiFoizi: record.fixFoiz,
-          qoshimchaSumma: record.extraSumma,
-          qoshimchaFoizi: record.extraFoiz,
-        },
-      })
-    )
+  // Endi "Bekor qilish" o'rniga xodimning o'zini ishdan chiqaramiz (terminateXodim — maxsus
+  // "dismiss" endpointi orqali, filial/lavozim/karta/oylik backend tomonidan xodimning hozirgi
+  // faol yozuvidan avtomatik ko'chiriladi) va shu hujjatni ham "Bekor qilingan" deb belgilaymiz,
+  // so'ng xodim tarixini qayta yuklaymiz (banner/tugmalar shunga qarab yangilanadi). `full.
+  // employeeId` (ro'yxatdan emas, detaldan) kerak — ro'yxat javobida xodim ID'si umuman yo'q.
+  function handleTerminate(reason, file) {
+    dispatch(terminateXodim({ id: full.employeeId, reason, file }))
       .unwrap()
       .then(() => dispatch(setRecruitmentStatus({ id: record.id, status: 'cancelled' })).unwrap())
       .then(() => {
@@ -157,16 +177,16 @@ export default function IshgaQabulQilishDetailPage() {
   function handleRehire() {
     dispatch(
       rehireXodim({
-        id: record.employeeId,
+        id: full.employeeId,
         draft: {
-          filial: record.branchId,
-          lavozim: record.lavozimId,
-          kartaRaqami: record.kartaRaqami,
-          ishHaqiTuri: record.ishHaqiTuri,
-          ishHaqiSummasi: record.fixSumma,
-          ishHaqiFoizi: record.fixFoiz,
-          qoshimchaSumma: record.extraSumma,
-          qoshimchaFoizi: record.extraFoiz,
+          filial: full.branchId,
+          lavozim: full.lavozimId,
+          kartaRaqami: full.kartaRaqami,
+          ishHaqiTuri: full.ishHaqiTuri,
+          ishHaqiSummasi: full.fixSumma,
+          ishHaqiFoizi: full.fixFoiz,
+          qoshimchaSumma: full.extraSumma,
+          qoshimchaFoizi: full.extraFoiz,
           ishgaOlinganSana: new Date().toISOString().slice(0, 10),
         },
       })
@@ -249,11 +269,11 @@ export default function IshgaQabulQilishDetailPage() {
               <InfoRow label="Tashkiloti" value={tashkilot} />
               <InfoRow label="Filiali" value={record.branch} />
               <InfoRow label="Lavozimi" value={record.lavozim} />
-              <InfoRow label="Karta raqami" value={record.kartaRaqami} />
+              <InfoRow label="Karta raqami" value={full?.kartaRaqami} />
               <InfoRow label="Ishga olingan sana" value={record.sana} />
               <InfoRow label="Ish haqi turi" value={ishHaqi} />
-              <InfoRow label="Qo‘shimcha summa" value={`${formatNumber(record.extraSumma, 2)} UZS`} />
-              <InfoRow label="Qo‘shimcha foiz" value={`${formatNumber(record.extraFoiz, 0)} %`} />
+              <InfoRow label="Qo‘shimcha summa" value={`${formatNumber(full?.extraSumma, 2)} UZS`} />
+              <InfoRow label="Qo‘shimcha foiz" value={`${formatNumber(full?.extraFoiz, 0)} %`} />
               <InfoRow
                 label="Holati"
                 value={
@@ -281,8 +301,9 @@ export default function IshgaQabulQilishDetailPage() {
           <div className="flex items-center gap-2.5">
             <Button
               variant="outline"
+              disabled={!full?.employeeId}
               onClick={() => setEditOpen(true)}
-              className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
+              className="h-9 gap-2 rounded-lg border border-[#E5E5E5] bg-[#EFF1F7] px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-[#E3E7F0] disabled:opacity-60 dark:border-white/10 dark:bg-card dark:text-white dark:hover:bg-white/10"
             >
               <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
             </Button>
@@ -296,16 +317,18 @@ export default function IshgaQabulQilishDetailPage() {
             )}
             {employeeTerminated ? (
               <Button
+                disabled={!full?.employeeId}
                 onClick={() => setRehireOpen(true)}
-                className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+                className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:opacity-60"
               >
                 <Check className="h-4 w-4" /> Qayta ishga olish
               </Button>
             ) : (
               record.status === 'confirmed' && (
                 <Button
+                  disabled={!full?.employeeId}
                   onClick={() => setTerminateOpen(true)}
-                  className="h-9 gap-2 bg-[#DC2626] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
+                  className="h-9 gap-2 bg-[#DC2626] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C] disabled:opacity-60"
                 >
                   <X className="h-4 w-4" /> Ishdan chiqarish
                 </Button>
@@ -318,9 +341,9 @@ export default function IshgaQabulQilishDetailPage() {
       <RecruitmentModal
         open={editOpen}
         onOpenChange={setEditOpen}
-        record={record}
+        record={full}
         onSave={({ status, draft }) => {
-          dispatch(updateRecruitment({ id: record.id, employeeId: record.employeeId, status, draft }))
+          dispatch(updateRecruitment({ id: record.id, employeeId: full.employeeId, status, draft }))
             .unwrap()
             .then(() => setToast('O‘zgarishlar saqlandi'))
             .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
@@ -330,7 +353,7 @@ export default function IshgaQabulQilishDetailPage() {
         open={terminateOpen}
         onOpenChange={setTerminateOpen}
         employee={{ name: record.employeeName, lavozim: record.lavozim, tashkilot, filial: record.branch }}
-        onConfirm={(reason) => handleTerminate(reason)}
+        onConfirm={handleTerminate}
       />
       <RehireEmployeeModal
         open={rehireOpen}

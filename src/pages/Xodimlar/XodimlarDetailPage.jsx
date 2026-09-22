@@ -50,14 +50,19 @@ export default function XodimlarDetailPage() {
   }, [branchesStatus, dispatch])
 
   // Ish tarixi — bu xodimga tegishli barcha "Ishga olish" hujjatlari ("Ishga qabul qilish"
-  // bo'limidan, agar bo'lsa). Har biri o'z tashkilotini filialdan (state.filiallar.list)
-  // qidirib topadi — recruitment hujjati o'zi tashkilotni saqlamaydi, faqat filialni.
+  // bo'limidan, agar bo'lsa). `type` maydoni ro'yxat javobida umuman yo'q (real OpenAPI
+  // sxemasi bilan tasdiqlangan — LIST va RETRIEVE ikki xil serializer ishlatadi), shuning
+  // uchun oddiy ro'yxat so'rovi bilan `.type === 'recruitment'` filtri doim yolg'on chiqib,
+  // jadval doim bo'sh ko'rinardi — endi `type` bo'yicha filtrlangan (natijasi BIZ tomondan
+  // belgilangan) so'rov ishlatiladi. Tashkilot nomi ham endi to'g'ridan-to'g'ri (r.tashkilot,
+  // organization_name'dan) keladi — branchId ro'yxat javobida yo'q, filiallar bo'yicha qidirish
+  // ishlamas edi.
   useEffect(() => {
     if (!id) return
     let cancelled = false
     setHistoryStatus('loading')
     recruitmentService
-      .getRecruitmentDismissalsByEmployee(id)
+      .getAllRecruitmentDismissalsTagged({ employee: id })
       .then((rows) => {
         if (cancelled) return
         const records = rows.map(mapRecruitment).filter((r) => r.type === 'recruitment')
@@ -65,7 +70,7 @@ export default function XodimlarDetailPage() {
         setHistory(
           sorted.map((r, i) => ({
             ...r,
-            tashkilot: branches.find((b) => b.id === r.branchId)?.tashkilot ?? '—',
+            tashkilot: r.tashkilot || branches.find((b) => b.id === r.branchId)?.tashkilot || '—',
             holat: i === 0 ? 'Faol' : 'Tugatilgan',
           }))
         )
