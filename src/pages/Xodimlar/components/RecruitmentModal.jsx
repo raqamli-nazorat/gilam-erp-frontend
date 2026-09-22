@@ -30,7 +30,7 @@ const SINGLE_KEY = '__single__'
 //   navbat — har bir xodimning O'Z alohida maydonlari bor, pager ("N-Xodim (N/JAMI)") orqali
 //   navbat bo'ylab o'tiladi, qizil tugma joriy xodimni navbatdan (saqlamasdan) olib tashlaydi.
 //   Saqlash/Tasdiqlash butun navbatni — har birini o'z maydonlari bilan — bir yo'la yuboradi.
-export default function RecruitmentModal({ open, onOpenChange, record, employees, onSave, onSaveOne, onDone }) {
+export default function RecruitmentModal({ open, onOpenChange, record, employees, onSave, onSaveOne, onSaveBulk, onDone }) {
   const isEdit = !!record
   const isBulk = Array.isArray(employees)
   const { orgs, branches, positions } = useHireCatalogs(open)
@@ -53,8 +53,12 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
     setPending(false)
     if (record) {
       const nextDraft = {
-        tashkilot: '', // recruitment hujjati o'zi tashkilotni saqlamaydi, faqat filialni
-        filial: record.filialId ?? '',
+        // Hujjatning o'zi tashkilotni saqlamaydi, faqat filialni — filial orqali qaysi
+        // tashkilotga tegishli ekanini branches ro'yxatidan topamiz (aks holda Tashkilot
+        // bo'sh qolib, Filial tanlagichi ham hech narsa topa olmasdi — filialOptions
+        // draft.tashkilot bo'yicha filtrlanadi).
+        tashkilot: branches.find((b) => b.id === record.branchId)?.tashkilotId ?? '',
+        filial: record.branchId ?? '',
         lavozim: record.lavozimId ?? '',
         kartaRaqami: record.kartaRaqami ?? '',
         ishHaqiTuri: record.ishHaqiTuri ?? 'fixed_amount',
@@ -77,8 +81,10 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
       setDrafts({ [SINGLE_KEY]: EMPTY_HIRE_DRAFT })
       setActiveIndex(0)
     }
+    // `branches` deps'ga qo'shildi — modal ochilganda hali yuklanmagan bo'lishi mumkin
+    // (useHireCatalogs asinxron so'raydi), yuklangach effekt qayta ishlab tashkilotni to'g'ri hosil qiladi.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, record, isBulk])
+  }, [open, record, isBulk, branches])
 
   const current = queue[activeIndex]
   const keyFor = (item) => (isBulk ? item?.id : SINGLE_KEY)
@@ -115,14 +121,23 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
     if (!createCanSave || pending) return
     setPending(true)
     try {
-      for (const item of queue) {
-        // eslint-disable-next-line no-await-in-loop
-        await onSaveOne({ employeeId: item.id, status, ...buildHireValues(drafts[keyFor(item)]) })
+      // Bir nechta xodim (bulk) — bitta so'rovda (onSaveBulk) yuboramiz, N ta alohida
+      // so'rov o'rniga. Bitta xodim (tanlab yoki navbatda bitta) — onSaveOne yetarli.
+      if (isBulk && queue.length > 1 && onSaveBulk) {
+        await onSaveBulk(
+          queue.map((item) => ({ employeeId: item.id, draft: buildHireValues(drafts[keyFor(item)]) })),
+          status
+        )
+      } else {
+        for (const item of queue) {
+          // eslint-disable-next-line no-await-in-loop
+          await onSaveOne({ employeeId: item.id, status, ...buildHireValues(drafts[keyFor(item)]) })
+        }
       }
       onDone(queue.length)
       onOpenChange(false)
     } catch {
-      // xatolik haqida toast chaqiruvchi tomonda (onSaveOne) ko'rsatiladi; oyna ochiq qoladi
+      // xatolik haqida toast chaqiruvchi tomonda (onSaveOne/onSaveBulk) ko'rsatiladi; oyna ochiq qoladi
     } finally {
       setPending(false)
     }

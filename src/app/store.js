@@ -22,6 +22,7 @@ import {
   positionSlice,
   counterpartyTypeSlice,
   countrySlice,
+  designSlice,
 } from '@/features/malumotnomalar/referenceEntities'
 
 export const store = configureStore({
@@ -48,5 +49,6 @@ export const store = configureStore({
     lavozimlar: positionSlice.reducer,
     kontragentTurlari: counterpartyTypeSlice.reducer,
     davlatlar: countrySlice.reducer,
+    dizaynlar: designSlice.reducer,
   },
 })

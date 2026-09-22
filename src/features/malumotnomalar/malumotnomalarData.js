@@ -371,6 +371,24 @@ export const MALUMOTNOMA_CONFIG = {
     // rows: backend (catalog/qualities/) orqali ApiListDetail yuklaydi — pastga qarang REFERENCE_API_REGISTRY.
   },
 
+  dizayn: {
+    kind: 'list',
+    entity: 'dizayn',
+    columns: [
+      { key: 'name', label: 'NOMI', align: 'left' },
+      { key: 'sifatNomi', label: 'SIFAT', align: 'left' },
+      { key: 'tavsif', label: 'TAVSIF', align: 'left' },
+    ],
+    modalFields: [
+      { key: 'name', label: 'Nomi', kind: 'text', required: true, placeholder: 'Masalan: Klassik', full: true },
+      // options: MalumotnomaDetailPage tomonidan state.sifatlar.list'dan dinamik to'ldiriladi.
+      { key: 'sifatId', label: 'Sifat', kind: 'select', required: true, options: [], displayKey: 'sifatNomi' },
+      { key: 'tavsif', label: 'Tavsif', kind: 'textarea', placeholder: 'Qayerda ishlatilishi', full: true },
+    ],
+    deleteNote: 'Bu dizayn bilan belgilangan tovarlar tarixda saqlanadi.',
+    // rows: backend (catalog/designs/) orqali ApiListDetail yuklaydi — pastga qarang REFERENCE_API_REGISTRY.
+  },
+
   'olchov-birliklari': {
     kind: 'list',
     entity: "o'lchov birligi",

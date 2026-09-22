@@ -86,7 +86,7 @@ export default function FoydalanuvchilarDetailPage() {
     if (!user?.employeeId) return undefined
     let cancelled = false
     recruitmentService
-      .getRecruitmentDismissalsByEmployee(user.employeeId)
+      .getAllRecruitmentDismissalsTagged({ employee: user.employeeId })
       .then((rows) => {
         if (cancelled) return
         setHistory(rows.map(mapRecruitment).sort((a, b) => (a.yaratilganAt < b.yaratilganAt ? -1 : 1)))

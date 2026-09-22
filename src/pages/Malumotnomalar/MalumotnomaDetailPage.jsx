@@ -13,7 +13,11 @@ import {
   MALUMOTNOMA_MENU,
   withRecordMeta,
 } from '@/features/malumotnomalar/malumotnomalarData'
-import { REFERENCE_API_REGISTRY, buildReferencePayload } from '@/features/malumotnomalar/referenceEntities'
+import {
+  REFERENCE_API_REGISTRY,
+  buildReferencePayload,
+  qualitySlice,
+} from '@/features/malumotnomalar/referenceEntities'
 import { mapRecord } from '@/features/malumotnomalar/referenceSlices'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -65,6 +69,19 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
   useEffect(() => {
     if (state.listStatus === 'idle') dispatch(apiEntry.slice.fetchItems())
   }, [state.listStatus, dispatch, apiEntry])
+
+  // Dizayn kabi bir FK'ga ("Sifat") bog'liq ma'lumotnomalar uchun tanlagich ro'yxatini
+  // ham yuklab, modal maydonining `options`'ini dinamik to'ldiramiz.
+  const qualityState = useSelector((s) => s.sifatlar)
+  useEffect(() => {
+    if (apiEntry.hasQuality && qualityState.listStatus === 'idle') dispatch(qualitySlice.fetchItems())
+  }, [apiEntry.hasQuality, qualityState.listStatus, dispatch])
+
+  const modalFields = useMemo(() => {
+    if (!apiEntry.hasQuality) return config.modalFields
+    const options = qualityState.list.map((q) => ({ value: q.id, label: q.name }))
+    return config.modalFields.map((f) => (f.key === 'sifatId' ? { ...f, options } : f))
+  }, [config.modalFields, apiEntry.hasQuality, qualityState.list])
 
   // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
   useEffect(() => {
@@ -305,7 +322,7 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         open={!!modalRec}
         onOpenChange={(next) => !next && setModalRec(null)}
         entity={config.entity}
-        fields={config.modalFields}
+        fields={modalFields}
         record={modalRec === 'new' ? null : modalRec}
         onSave={saveRecord}
         onDelete={() => {
@@ -319,7 +336,7 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         onOpenChange={(next) => !next && setDelRec(null)}
         entity={config.entity}
         record={delRec}
-        fields={config.modalFields}
+        fields={modalFields}
         onDelete={confirmDelete}
       />
       <MalumotnomaFilterModal

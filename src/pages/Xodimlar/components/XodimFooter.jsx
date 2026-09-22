@@ -86,8 +86,8 @@ export default function XodimFooter({ employee }) {
         open={terminateOpen}
         onOpenChange={setTerminateOpen}
         employee={employee}
-        onConfirm={(reason) => {
-          dispatch(terminateXodim({ id: employee.id, reason, employee }))
+        onConfirm={(reason, file) => {
+          dispatch(terminateXodim({ id: employee.id, reason, file }))
             .unwrap()
             .then(() => setToast('Xodim ishdan chiqarildi'))
             .catch((err) => setToast(err || 'Ishdan chiqarishda xatolik yuz berdi'))

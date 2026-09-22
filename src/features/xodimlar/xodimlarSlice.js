@@ -32,27 +32,62 @@ export function mapEmployee(e) {
 }
 
 // "Ishga qabul qilish" ro'yxati uchun uch holatli ish jarayoni (Qoralama/Tasdiqlangan/Bekor
-// qilingan) — backendda bu maydon hujjatlashtirilmagan, shuning uchun bor-yo'qligini
-// tekshirmasdan o'qiymiz: mavjud bo'lmasa (eski yozuvlar, yoki backend hali qo'llamasa),
-// "confirmed" deb hisoblaymiz — bu hozirgi "hujjat = faol ishga olingan" ma'nosiga mos keladi.
+// qilingan) — RecruitmentDismissal'da bunday maydon umuman yo'q (real OpenAPI sxemasi bilan
+// tasdiqlangan: na Response, na Request shaklida "status" degan maydon yo'q), shuning uchun
+// backend uni HECH QACHON saqlamaydi — sahifa yangilansa har doim "yo'q" (fallback) holatga
+// qaytadi. Tashkilotlar/Foydalanuvchilar'da xuddi shunday yetishmayotgan meta-maydonlar uchun
+// ishlatilgan konvensiyani takrorlaymiz: qiymatni brauzerning o'zida (localStorage) hujjat id'si
+// bo'yicha saqlaymiz. Faqat shu brauzerda ishlaydi (boshqa foydalanuvchi/qurilmada ko'rinmaydi)
+// — bu cheklov Tashkilotlar/Foydalanuvchilar'dagi bir xil pattern uchun ham qabul qilingan edi.
 const RECRUITMENT_STATUSES = ['draft', 'confirmed', 'cancelled']
-function mapRecruitmentStatus(raw) {
-  return RECRUITMENT_STATUSES.includes(raw) ? raw : 'confirmed'
+const STATUS_STORAGE_PREFIX = 'gilam:recruitmentStatus:'
+
+function readLocalStatus(id) {
+  try {
+    const v = localStorage.getItem(STATUS_STORAGE_PREFIX + id)
+    return RECRUITMENT_STATUSES.includes(v) ? v : null
+  } catch {
+    return null
+  }
+}
+
+export function writeLocalStatus(id, status) {
+  try {
+    if (RECRUITMENT_STATUSES.includes(status)) localStorage.setItem(STATUS_STORAGE_PREFIX + id, status)
+  } catch {
+    // localStorage yo'q/to'lgan bo'lsa — sukut bo'yicha e'tiborsiz qoldiriladi, faqat status
+    // sahifa yangilanguncha eslab qolinmaydi (yangi/eski xatti-harakat).
+  }
+}
+
+function mapRecruitmentStatus(id, raw) {
+  return readLocalStatus(id) ?? (RECRUITMENT_STATUSES.includes(raw) ? raw : 'confirmed')
 }
 
 // Backend "RecruitmentDismissal" — bitta "ishga olish"/"ishdan chiqarish" hujjati.
 // Eksport qilingan — XodimlarDetailPage.jsx ish tarixi jadvali va Ishga qabul qilish ro'yxati
 // shundan foydalanadi.
+// MUHIM: backend RO'YXAT (`GET .../`) va DETAL (`GET .../{id}/`) uchun IKKI XIL serializer
+// ishlatadi (real sxema bilan tasdiqlangan) — ro'yxat faqat tekis `employee_name`/
+// `branch_name`/`position_name`/`organization_name` (ID'siz, `type`siz, karta/oylik'siz)
+// qaytaradi, detal esa nested `employee_info`/`branch_info`/`position_info` (ID bilan) +
+// `type`/`card_number`/`salary_type`/summalar. Shuning uchun har bir maydon avval nested
+// (detal) shaklni, topilmasa tekis (ro'yxat) shaklni o'qiydi — qaysi endpointdan kelganidan
+// qat'i nazar to'g'ri ishlashi uchun. `type` ro'yxatda umuman yo'q — uni chaqiruvchi o'zi
+// bilgan holda belgilashi kerak (getAllRecruitmentDismissalsTagged'ga qarang).
 export function mapRecruitment(r) {
   return {
     id: r.id,
-    type: r.type, // 'recruitment' | 'dismissal'
-    status: mapRecruitmentStatus(r.status),
+    type: r.type, // 'recruitment' | 'dismissal' — faqat detal javobida yoki chaqiruvchi belgilasa bor
+    status: mapRecruitmentStatus(r.id, r.status),
     employeeId: r.employee_info?.id ?? '',
-    employeeName: r.employee_info?.full_name ?? '',
+    employeeName: r.employee_info?.full_name ?? r.employee_name ?? '',
     branchId: r.branch_info?.id ?? '',
-    branch: r.branch_info?.name ?? '',
-    lavozim: r.position_info?.name ?? '',
+    branch: r.branch_info?.name ?? r.branch_name ?? '',
+    // Faqat ro'yxat javobida bor (tashkilotni topish uchun filial ID kerak emas) — detaldan
+    // kelganda bo'sh qoladi, chaqiruvchi tomon filiallar ro'yxatidan qidirib topadi (eski usul).
+    tashkilot: r.organization_name ?? '',
+    lavozim: r.position_info?.name ?? r.position_name ?? '',
     lavozimId: r.position_info?.id ?? '',
     kartaRaqami: r.card_number ?? '',
     ishHaqiTuri: r.salary_type ?? 'fixed_amount',
@@ -136,11 +171,15 @@ function buildRecruitmentPayload(type, employeeId, draft) {
     extra_percent: draft.qoshimchaFoizi ?? 0,
     rec_dism_date: draft.ishgaOlinganSana || undefined,
     dismissal_reason: draft.dismissalReason ?? '',
-    // "Ishga qabul qilish" ro'yxatining Qoralama/Tasdiqlangan/Bekor qilingan holati — maydon
-    // nomi hujjatlashtirilmagan, shuning uchun faqat aniq berilganda qo'shiladi (masalan
-    // Tahrirlashda status o'zgartirilmaydi).
-    ...(draft.status ? { status: draft.status } : {}),
   }
+}
+
+// bulk-create endpointining har bir item shakli — buildRecruitmentPayload bilan bir xil, faqat
+// `type` (butun so'rov uchun bitta marta, "recruitment" deb qat'iy belgilangan) va
+// `dismissal_reason` (bu endpointda mavjud emas) siz.
+function buildBulkRecruitmentItem(employeeId, draft) {
+  const { type: _type, dismissal_reason: _reason, ...item } = buildRecruitmentPayload('recruitment', employeeId, draft)
+  return item
 }
 
 const initialState = {
@@ -165,15 +204,43 @@ const initialState = {
   saveError: '',
 }
 
+// combineXodim'ga "eng oxirgi" va "eng oxirgi ISHGA OLISH" hujjat(lar)ining filial/lavozim/
+// karta/oylik maydonlari kerak — bular ro'yxat javobida umuman yo'q (yuqoridagi mapRecruitment
+// izohiga qarang), faqat DETAL javobida bor. Shuning uchun aniqlangan hujjat(lar)ni alohida,
+// to'liq holda qayta so'raymiz (ko'pi bilan 2 ta qo'shimcha so'rov — bitta xodim sahifasi
+// uchun qabul qilinadigan narx). `tashkilot` maydoni ataylab saqlanadi (detalda yo'q, faqat
+// ro'yxatda bor edi — aks holda enrichlash uni bo'shatib qo'yardi).
+async function enrichLatestRecords(records) {
+  const sorted = [...records].sort((a, b) => {
+    if (a.sana !== b.sana) return a.sana < b.sana ? 1 : -1
+    return a.yaratilganAt < b.yaratilganAt ? 1 : -1
+  })
+  const latest = sorted[0]
+  const latestHire = sorted.find((r) => r.type === 'recruitment')
+  const idsToFetch = [...new Set([latest?.id, latestHire?.id].filter(Boolean))]
+  if (idsToFetch.length === 0) return records
+  const fullRaw = await Promise.all(idsToFetch.map((fid) => recruitmentService.getRecruitmentDismissal(fid)))
+  const fullById = new Map(fullRaw.map((raw) => [raw.id, mapRecruitment(raw)]))
+  return records.map((r) => {
+    if (!fullById.has(r.id)) return r
+    const { tashkilot: _ignored, ...full } = fullById.get(r.id)
+    return { ...r, ...full }
+  })
+}
+
 export const fetchXodimlar = createAsyncThunk('xodimlar/fetchXodimlar', async (_, { rejectWithValue }) => {
   try {
     const [employeesRaw, recordsRaw] = await Promise.all([
       employeeService.getAllEmployees(),
-      recruitmentService.getAllRecruitmentDismissals(),
+      recruitmentService.getAllRecruitmentDismissalsTagged(),
     ])
     const employees = employeesRaw.map(mapEmployee)
     const records = recordsRaw.map(mapRecruitment)
-    return employees.map((e) => combineXodim(e, records.filter((r) => r.employeeId === e.id)))
+    // Ro'yxat javobida xodim ID'si yo'q (faqat F.I.SH. matni bor) — shuning uchun hujjatni
+    // xodimga ID emas, F.I.SH. bo'yicha bog'laymiz. Kamchilik: bir xil ismli ikki xodim bo'lsa
+    // noto'g'ri moslashishi mumkin — bu backendning ro'yxat javobi ID bermasligi bilan bog'liq
+    // cheklov, ID'siz boshqa ishonchli yo'l yo'q (har bir xodim uchun alohida so'rov N+1 bo'lardi).
+    return employees.map((e) => combineXodim(e, records.filter((r) => r.employeeName === e.name)))
   } catch (error) {
     return rejectWithValue(extractErrorMessage(error, 'Xodimlarni yuklab bo‘lmadi'))
   }
@@ -185,9 +252,10 @@ export const fetchXodimDetail = createAsyncThunk(
     try {
       const [employeeRaw, recordsRaw] = await Promise.all([
         employeeService.getEmployee(id),
-        recruitmentService.getRecruitmentDismissalsByEmployee(id),
+        recruitmentService.getAllRecruitmentDismissalsTagged({ employee: id }),
       ])
-      return combineXodim(mapEmployee(employeeRaw), recordsRaw.map(mapRecruitment))
+      const records = await enrichLatestRecords(recordsRaw.map(mapRecruitment))
+      return combineXodim(mapEmployee(employeeRaw), records)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Xodim topilmadi'))
     }
@@ -224,7 +292,9 @@ export const createXodim = createAsyncThunk(
       const recRaw = await recruitmentService.createRecruitmentDismissal(
         buildRecruitmentPayload('recruitment', employee.id, draft)
       )
-      return combineXodim(employee, [mapRecruitment(recRaw)])
+      // Bu POST javobi ("EmployeeRecruitment" sxemasi) `type` maydonini qaytarmaydi (u
+      // ushbu action uchun doim "recruitment" — sxemada ham yo'q), o'zimiz belgilaymiz.
+      return combineXodim(employee, [mapRecruitment({ ...recRaw, type: 'recruitment' })])
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
     }
@@ -244,40 +314,31 @@ export const updateXodim = createAsyncThunk(
       }
       const [employeeRaw, recordsRaw] = await Promise.all([
         employeeService.getEmployee(id),
-        recruitmentService.getRecruitmentDismissalsByEmployee(id),
+        recruitmentService.getAllRecruitmentDismissalsTagged({ employee: id }),
       ])
-      return combineXodim(mapEmployee(employeeRaw), recordsRaw.map(mapRecruitment))
+      const records = await enrichLatestRecords(recordsRaw.map(mapRecruitment))
+      return combineXodim(mapEmployee(employeeRaw), records)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
     }
   }
 )
 
-// Ishdan chiqarish — yangi RecruitmentDismissal (type=dismissal) yozadi; sxema position/
-// karta/oylik turini ham talab qilgani uchun xodimning oxirgi ma'lumotlari qayta yuboriladi.
+// Ishdan chiqarish — maxsus "dismiss" endpointi orqali (faqat xodim/sabab/fayl kerak, filial/
+// lavozim/karta/oylik xodimning hozirgi faol yozuvidan backend tomonidan avtomatik ko'chiriladi,
+// mijoz tomonidan qo'lda qayta yuborilmaydi — eski usul shu maydonlarni qo'lda re-send qilardi,
+// bu esa chaqiruvchi tomonda eskirgan/noto'g'ri qiymat yuborish xavfini tug'dirar edi).
 export const terminateXodim = createAsyncThunk(
   'xodimlar/terminateXodim',
-  async ({ id, reason, employee }, { rejectWithValue }) => {
+  async ({ id, reason, file }, { rejectWithValue }) => {
     try {
-      await recruitmentService.createRecruitmentDismissal(
-        buildRecruitmentPayload('dismissal', id, {
-          filial: employee.filialId,
-          lavozim: employee.lavozimId,
-          kartaRaqami: employee.kartaRaqami,
-          ishHaqiTuri: employee.ishHaqiTuri,
-          ishHaqiSummasi: employee.ishHaqiSummasi,
-          ishHaqiFoizi: employee.ishHaqiFoizi,
-          qoshimchaSumma: employee.qoshimchaSumma,
-          qoshimchaFoizi: employee.qoshimchaFoizi,
-          ishgaOlinganSana: new Date().toISOString().slice(0, 10),
-          dismissalReason: reason,
-        })
-      )
+      await recruitmentService.dismissEmployee({ employeeId: id, reason, file })
       const [employeeRaw, recordsRaw] = await Promise.all([
         employeeService.getEmployee(id),
-        recruitmentService.getRecruitmentDismissalsByEmployee(id),
+        recruitmentService.getAllRecruitmentDismissalsTagged({ employee: id }),
       ])
-      return combineXodim(mapEmployee(employeeRaw), recordsRaw.map(mapRecruitment))
+      const records = await enrichLatestRecords(recordsRaw.map(mapRecruitment))
+      return combineXodim(mapEmployee(employeeRaw), records)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Ishdan chiqarishda xatolik yuz berdi'))
     }
@@ -293,9 +354,10 @@ export const rehireXodim = createAsyncThunk(
       await recruitmentService.createRecruitmentDismissal(buildRecruitmentPayload('recruitment', id, draft))
       const [employeeRaw, recordsRaw] = await Promise.all([
         employeeService.getEmployee(id),
-        recruitmentService.getRecruitmentDismissalsByEmployee(id),
+        recruitmentService.getAllRecruitmentDismissalsTagged({ employee: id }),
       ])
-      return combineXodim(mapEmployee(employeeRaw), recordsRaw.map(mapRecruitment))
+      const records = await enrichLatestRecords(recordsRaw.map(mapRecruitment))
+      return combineXodim(mapEmployee(employeeRaw), records)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Qayta ishga olishda xatolik yuz berdi'))
     }
@@ -332,27 +394,52 @@ export const deleteKadr = createAsyncThunk('xodimlar/deleteKadr', async (id, { r
   }
 })
 
-// "Ishga qabul qilish" ro'yxati — barcha RecruitmentDismissal hujjatlari (type'idan qat'i
-// nazar, sahifa o'zi 'recruitment' turini filtrlaydi).
+// "Ishga qabul qilish" ro'yxati — faqat 'recruitment' turidagi hujjatlar (bu bo'lim "ishga
+// olish" jarayoni haqida; 'dismissal' hujjatlari bu yerga chiqmasligi kerak — avval type filtri
+// yo'q edi, shuning uchun bitta xodimni ishdan chiqarish hujjati ham shu ro'yxatda, xuddi yangi
+// ishga olingandek ko'rinardi). Backend `type` bo'yicha haqiqiy filtrlashni qo'llab-quvvatlaydi.
 export const fetchRecruitments = createAsyncThunk('xodimlar/fetchRecruitments', async (_, { rejectWithValue }) => {
   try {
-    const results = await recruitmentService.getAllRecruitmentDismissals()
-    return results.map(mapRecruitment)
+    const results = await recruitmentService.getAllRecruitmentDismissals({ type: 'recruitment' })
+    // `type` so'rov parametri sifatida filtrlaydi, lekin ro'yxat javobida maydonning o'zi yo'q
+    // (yuqoridagi mapRecruitment izohiga qarang) — biz aniq bilgan holda qo'lda belgilaymiz.
+    return results.map((r) => mapRecruitment({ ...r, type: 'recruitment' }))
   } catch (error) {
     return rejectWithValue(extractErrorMessage(error, 'Ro‘yxatni yuklab bo‘lmadi'))
   }
 })
 
 // Yangi "Ishga qabul qilish" hujjati — status 'draft' (Saqlash) yoki 'confirmed' (Tasdiqlash)
-// bo'lib yaratiladi.
+// bo'lib yaratiladi. Backendda status maydoni yo'qligi sababli (yuqoridagi izohga qarang)
+// tanlangan holat natijadagi hujjat id'si bo'yicha localStorage'ga yoziladi.
 export const createRecruitment = createAsyncThunk(
   'xodimlar/createRecruitment',
   async ({ employeeId, status, draft }, { rejectWithValue }) => {
     try {
       const raw = await recruitmentService.createRecruitmentDismissal(
-        buildRecruitmentPayload('recruitment', employeeId, { ...draft, status })
+        buildRecruitmentPayload('recruitment', employeeId, draft)
       )
-      return mapRecruitment(raw)
+      writeLocalStatus(raw.id, status)
+      // Bu POST javobi ("EmployeeRecruitment" sxemasi) `type` maydonini qaytarmaydi — o'zimiz belgilaymiz.
+      return mapRecruitment({ ...raw, type: 'recruitment' })
+    } catch (error) {
+      return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
+    }
+  }
+)
+
+// Bir nechta xodimni bitta so'rovda ishga olish (bulk-create) — navbatdagi har bir xodim
+// uchun bitta-bitta POST yuborish o'rniga, hammasini bitta so'rovda yuboradi.
+export const bulkCreateRecruitments = createAsyncThunk(
+  'xodimlar/bulkCreateRecruitments',
+  async ({ items, status }, { rejectWithValue }) => {
+    try {
+      const rawItems = await recruitmentService.bulkCreateRecruitments(
+        items.map(({ employeeId, draft }) => buildBulkRecruitmentItem(employeeId, draft))
+      )
+      const mapped = rawItems.map((raw) => mapRecruitment({ ...raw, type: 'recruitment' }))
+      mapped.forEach((r) => writeLocalStatus(r.id, status))
+      return mapped.map((r) => ({ ...r, status }))
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
     }
@@ -365,8 +452,9 @@ export const updateRecruitment = createAsyncThunk(
     try {
       const raw = await recruitmentService.updateRecruitmentDismissal(
         id,
-        buildRecruitmentPayload('recruitment', employeeId, { ...draft, status })
+        buildRecruitmentPayload('recruitment', employeeId, draft)
       )
+      writeLocalStatus(id, status)
       return mapRecruitment(raw)
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
@@ -374,13 +462,14 @@ export const updateRecruitment = createAsyncThunk(
   }
 )
 
-// Faqat holatni o'zgartiradi (Tasdiqlash/Bekor qilish) — qolgan maydonlarga tegmaydi.
+// Faqat holatni o'zgartiradi (Tasdiqlash/Bekor qilish) — backendga hech narsa yubormaydi
+// (maydon mavjud emas), faqat localStorage'dagi belgini yangilaydi.
 export const setRecruitmentStatus = createAsyncThunk(
   'xodimlar/setRecruitmentStatus',
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      const raw = await recruitmentService.updateRecruitmentDismissal(id, { status })
-      return mapRecruitment(raw)
+      writeLocalStatus(id, status)
+      return { id, status }
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Holatni o‘zgartirishda xatolik yuz berdi'))
     }
@@ -554,6 +643,19 @@ const xodimlarSlice = createSlice({
         state.recruitments.unshift(action.payload)
       })
       .addCase(createRecruitment.rejected, (state, action) => {
+        state.saveStatus = 'failed'
+        state.saveError = action.payload || 'Xatolik'
+      })
+
+      .addCase(bulkCreateRecruitments.pending, (state) => {
+        state.saveStatus = 'loading'
+        state.saveError = ''
+      })
+      .addCase(bulkCreateRecruitments.fulfilled, (state, action) => {
+        state.saveStatus = 'succeeded'
+        state.recruitments.unshift(...action.payload)
+      })
+      .addCase(bulkCreateRecruitments.rejected, (state, action) => {
         state.saveStatus = 'failed'
         state.saveError = action.payload || 'Xatolik'
       })
