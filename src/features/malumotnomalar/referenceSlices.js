@@ -13,6 +13,9 @@ export function mapRecord(raw) {
     name: raw.name ?? '',
     tavsif: raw.description ?? '',
     hex: raw.color_hex ?? undefined,
+    // Faqat Design'da bor — sifat FK'si nested obyekt sifatida qaytadi (quality_info: {id, name}).
+    sifatId: raw.quality_info?.id,
+    sifatNomi: raw.quality_info?.name ?? '',
     // Country kabi ba'zi modellarda "status" maydoni umuman yo'q — bunday holda doim faol hisoblanadi.
     active: raw.status == null ? true : !!raw.status,
     yaratilgan: raw.created_at ? formatDateTime(new Date(raw.created_at)) : '',

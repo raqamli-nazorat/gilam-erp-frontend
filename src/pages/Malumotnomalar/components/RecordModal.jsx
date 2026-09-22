@@ -68,15 +68,25 @@ export default function RecordModal({ open, onOpenChange, entity, fields, record
               {f.kind === 'select' ? (
                 <Select value={draft[f.key] || '__none'} onValueChange={(v) => set(f.key, v === '__none' ? '' : v)}>
                   <SelectTrigger className={fieldCls}>
-                    <SelectValue>{(v) => (v === '__none' ? <span className="text-[#737373]">Tanlang</span> : v)}</SelectValue>
+                    <SelectValue>
+                      {(v) => {
+                        if (v === '__none') return <span className="text-[#737373]">Tanlang</span>
+                        const opt = f.options.find((o) => (typeof o === 'object' ? o.value : o) === v)
+                        return opt && typeof opt === 'object' ? opt.label : v
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none">Tanlang</SelectItem>
-                    {f.options.map((o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ))}
+                    {f.options.map((o) => {
+                      const value = typeof o === 'object' ? o.value : o
+                      const label = typeof o === 'object' ? o.label : o
+                      return (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               ) : f.kind === 'textarea' ? (

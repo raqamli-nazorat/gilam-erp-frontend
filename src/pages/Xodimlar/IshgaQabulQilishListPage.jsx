@@ -8,7 +8,7 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { fetchBranches } from '@/features/filiallar/filiallarSlice'
-import { createRecruitment, fetchRecruitments, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
+import { bulkCreateRecruitments, createRecruitment, fetchRecruitments, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -85,9 +85,11 @@ export default function IshgaQabulQilishListPage() {
     setToast(`${label} nusxalandi`)
   }
 
-  // Har bir hujjatning tashkilotini filialdan qidiramiz — hujjatning o'zi tashkilotni saqlamaydi.
+  // Ro'yxat javobi tashkilot nomini to'g'ridan-to'g'ri beradi (r.tashkilot, mapRecruitment
+  // orqali organization_name'dan) — topilmasa (masalan detaldan kelgan bo'lsa) filiallar
+  // ro'yxatidan qidiramiz.
   const enriched = useMemo(
-    () => records.map((r) => ({ ...r, tashkilot: branches.find((b) => b.id === r.branchId)?.tashkilot ?? '' })),
+    () => records.map((r) => ({ ...r, tashkilot: r.tashkilot || branches.find((b) => b.id === r.branchId)?.tashkilot || '' })),
     [records, branches]
   )
 
@@ -312,6 +314,17 @@ export default function IshgaQabulQilishListPage() {
             .unwrap()
             .then((created) => {
               createdIdsRef.current.push(created.id)
+            })
+            .catch((err) => {
+              setToast(err || 'Saqlashda xatolik yuz berdi')
+              throw err
+            })
+        }
+        onSaveBulk={(items, status) =>
+          dispatch(bulkCreateRecruitments({ items, status }))
+            .unwrap()
+            .then((created) => {
+              created.forEach((r) => createdIdsRef.current.push(r.id))
             })
             .catch((err) => {
               setToast(err || 'Saqlashda xatolik yuz berdi')
