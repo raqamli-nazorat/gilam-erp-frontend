@@ -334,7 +334,7 @@ export default function Sidebar() {
                   {avatar}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{user?.fullName ?? 'Foydalanuvchi'}</p>
-                    <p className="truncate text-xs text-white/60">{user?.role || ''}</p>
+                    <p className="truncate text-xs text-white/60">{user?.role?.name || ''}</p>
                   </div>
                 </button>
               }
