@@ -175,7 +175,6 @@ export default function TumanPage() {
               <th className={cn(TH, 'text-left')}>DAVLAT</th>
               <th className={cn(TH, 'text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'text-left')}>YANGILANGAN</th>
-              <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -218,11 +217,6 @@ export default function TumanPage() {
                   <td className={TD_MUTED}>{regionCountry[d.regionId] || '—'}</td>
                   <td className={TD_MUTED}>{d.yaratilgan || '—'}</td>
                   <td className={TD_MUTED}>{d.ozgartirilgan || '—'}</td>
-                  <td className="px-4">
-                    <span className="inline-flex h-[22px] items-center rounded-full bg-[#E6FAF1] px-2.5 text-[11px] font-medium tracking-[0.3px] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]">
-                      Faol
-                    </span>
-                  </td>
                 </tr>
               ))
             )}

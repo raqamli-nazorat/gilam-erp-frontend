@@ -207,7 +207,6 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
               ))}
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -284,18 +283,6 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
                   ))}
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>
-                  <td className="px-4 whitespace-nowrap">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.active
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
-                      )}
-                    >
-                      {r.active ? 'Faol' : 'Arxiv'}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}
