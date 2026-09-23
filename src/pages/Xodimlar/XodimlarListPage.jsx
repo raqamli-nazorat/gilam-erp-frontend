@@ -167,7 +167,6 @@ export default function XodimlarListPage() {
               <th className={cn(TH, 'text-left')}>VILOYAT</th>
               <th className={cn(TH, 'text-left')}>TUMAN</th>
               <th className={cn(TH, 'text-left')}>FILIAL</th>
-              <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -234,18 +233,6 @@ export default function XodimlarListPage() {
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.viloyat || '—'}</td>
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.tuman || '—'}</td>
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.filial || '—'}</td>
-                  <td className="px-4">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        x.holat === 'boshagan'
-                          ? 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
-                          : 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                      )}
-                    >
-                      {x.holat === 'boshagan' ? 'Nofaol' : 'Faol'}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}

@@ -144,7 +144,6 @@ export default function ViloyatPage() {
               <th className={cn(TH, 'text-left')}>TUMANLAR</th>
               <th className={cn(TH, 'text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'text-left')}>YANGILANGAN</th>
-              <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -177,12 +176,7 @@ export default function ViloyatPage() {
                   <td className={TD_MUTED}>{r.countryName || '—'}</td>
                   <td className={TD_MUTED}>{tumanCountByRegion[r.id] ?? 0} ta</td>
                   <td className={TD_MUTED}>{r.yaratilgan || '—'}</td>
-                  <td className={TD_MUTED}>{r.ozgartirilgan || '—'}</td>
-                  <td className="px-4">
-                    <span className="inline-flex h-[22px] items-center rounded-full bg-[#E6FAF1] px-2.5 text-[11px] font-medium tracking-[0.3px] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]">
-                      Faol
-                    </span>
-                  </td>
+                  <td className={TD_MUTED}>{r.ozgartirilgan || '—'}</td>`
                 </tr>
               ))
             )}

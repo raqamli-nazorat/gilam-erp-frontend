@@ -166,27 +166,27 @@ export function generateCardNumber() {
   return `AC-${digits}`
 }
 
-export function buildHireValues(draft) {
+export function buildHireValues(draft, employee) {
   return {
-    tashkilot: draft.tashkilot,
-    filial: draft.filial,
-    lavozim: draft.lavozim,
-    kartaRaqami: draft.kartaRaqami.trim() || generateCardNumber(),
-    ishHaqiTuri: draft.ishHaqiTuri,
-    ishHaqiSummasi: Number(unmaskMoney(draft.ishHaqiSummasi)) || 0,
-    ishHaqiFoizi: Number(draft.ishHaqiFoizi) || 0,
+    tashkilot: draft?.tashkilot || employee?.tashkilotId || '',
+    filial: draft?.filial || employee?.filialId || '',
+    lavozim: draft?.lavozim,
+    kartaRaqami: draft?.kartaRaqami?.trim() || generateCardNumber(),
+    ishHaqiTuri: draft?.ishHaqiTuri || 'fixed_amount',
+    ishHaqiSummasi: Number(unmaskMoney(draft?.ishHaqiSummasi)) || 0,
+    ishHaqiFoizi: Number(draft?.ishHaqiFoizi) || 0,
     // toIsoDate allaqachon ISO ("YYYY-MM-DD") qaytaradi — oldin bu yerda formatDate() bilan
     // yana bir marta (noto'g'ri) DD.MM.YYYY'ga o'girib qo'yilardi, backend esa ISO kutadi.
-    ishgaOlinganSana: toIsoDate(draft.ishgaOlinganSana) || new Date().toISOString().slice(0, 10),
-    qoshimchaSumma: Number(unmaskMoney(draft.qoshimchaSumma)) || 0,
-    qoshimchaFoizi: Number(draft.qoshimchaFoizi) || 0,
+    ishgaOlinganSana: toIsoDate(draft?.ishgaOlinganSana) || new Date().toISOString().slice(0, 10),
+    qoshimchaSumma: Number(unmaskMoney(draft?.qoshimchaSumma)) || 0,
+    qoshimchaFoizi: Number(draft?.qoshimchaFoizi) || 0,
   }
 }
 
 // Karta raqami saqlangandan keyin backend tomonidan avtomatik beriladi (foydalanuvchi
 // qo'lda kiritmaydi) — shuning uchun majburiy maydonlar ro'yxatida emas.
 export function isHireDraftValid(draft) {
-  return !!draft.tashkilot && !!draft.filial && !!draft.lavozim && !!draft.ishgaOlinganSana
+  return !!draft.lavozim && !!draft.ishgaOlinganSana
 }
 
 export function Picker({ value, onChange, placeholder, options, disabled, compact }) {
@@ -249,36 +249,6 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
 
   return (
     <div className={cn('grid grid-cols-2', compact ? 'gap-x-4 gap-y-4' : 'gap-x-6 gap-y-5')}>
-      <div>
-        <Label className={lCls}>Tashkilot</Label>
-        {/* Figma: "Tashkilot" bosilganda oddiy dropdown emas, izlab-tanlash oynasi (TashkilotPickerModal) ochiladi. */}
-        <button
-          type="button"
-          onClick={() => setTashkilotPickerOpen(true)}
-          className={cn(fCls, 'flex items-center justify-between text-left')}
-        >
-          <span className={cn('truncate', !tashkilotName && 'text-[#737373]')}>{tashkilotName || 'Tashkilotni tanlang'}</span>
-          <ChevronDown className={cn('shrink-0 text-[#737373]', compact ? 'size-3.5' : 'size-4')} />
-        </button>
-        <TashkilotPickerModal
-          open={tashkilotPickerOpen}
-          onOpenChange={setTashkilotPickerOpen}
-          organizations={orgs}
-          onConfirm={(id) => set('tashkilot', id)}
-        />
-      </div>
-      <div>
-        <Label className={lCls}>Filial</Label>
-        <Picker
-          value={draft.filial}
-          onChange={(v) => set('filial', v)}
-          placeholder={draft.tashkilot ? 'Filialni tanlang' : 'Avval tashkilotni tanlang'}
-          options={filialOptions}
-          disabled={!draft.tashkilot}
-          compact={compact}
-        />
-      </div>
-
       <div>
         <Label className={lCls}>Lavozim</Label>
         <Picker value={draft.lavozim} onChange={(v) => set('lavozim', v)} placeholder="Lavozimni tanlang" options={positions} compact={compact} />

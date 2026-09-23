@@ -134,7 +134,6 @@ export default function RollarPage() {
               <th className={cn(TH, 'h-10 text-right')}>FOYDALANUVCHILAR</th>
               <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -180,18 +179,6 @@ export default function RollarPage() {
                   <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.usersCount}</td>
                   <td className={TD_MUTED}>{r.yaratilgan}</td>
                   <td className={TD_MUTED}>{r.ozgartirilgan}</td>
-                  <td className="px-4">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.holat === 'active'
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
-                      )}
-                    >
-                      {r.holat === 'active' ? 'Faol' : 'Nofaol'}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}
