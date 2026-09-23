@@ -30,13 +30,13 @@ import TashkilotPickerModal from './TashkilotPickerModal'
 // (qalin qora chegara + tўliq dumaloq burchak) — shuning uchun `border` (1px) va
 // `appearance-none` endi majburiy qo'shildi.
 export const fieldCls =
-  'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
-export const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
+  'h-9 data-[size=default]:h-9 [&[data-size]]:h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal leading-[18px] text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] outline-none focus-visible:border-[#0052D2] focus-visible:ring-0 dark:border-white/10 dark:bg-card dark:text-white'
+export const labelCls = 'mb-1.5 block text-[13px] font-medium leading-4 text-[#3F3F46] dark:text-muted-foreground'
 
 // Bir xil "control" o'lcham — RecruitmentModal'ning ham bitta, ham bir nechta xodim (navbat)
 // rejimlarida ishlatiladi.
 export const compactFieldCls =
-  'h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 data-[size=default]:h-9 [&[data-size]]:h-9 w-full appearance-none rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal leading-[18px] text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] outline-none focus-visible:border-[#0052D2] focus-visible:ring-0 dark:border-white/10 dark:bg-card dark:text-white'
 export const compactLabelCls = 'mb-1.5 block text-[12px] font-medium leading-4 text-[#525252] dark:text-muted-foreground'
 
 // "Xodimni ishga olish" oynasining sarlavha qatori — Figma: chap tarafda sarlavha, o'ng
@@ -192,10 +192,10 @@ export function isHireDraftValid(draft) {
 export function Picker({ value, onChange, placeholder, options, disabled, compact }) {
   return (
     <Select value={value || '__none'} onValueChange={(v) => onChange(v === '__none' ? '' : v)} disabled={disabled}>
-      <SelectTrigger className={cn(compact ? compactFieldCls : fieldCls, disabled && 'opacity-60')}>
+      <SelectTrigger className={cn(compact ? compactFieldCls : fieldCls, 'justify-between font-normal', disabled && 'opacity-60')}>
         <SelectValue>
           {(v) => {
-            if (v === '__none') return <span className="text-[#737373]">{placeholder}</span>
+            if (v === '__none' || !v) return <span className="text-[#737373]">{placeholder}</span>
             return options.find((o) => o.id === v)?.name ?? ''
           }}
         </SelectValue>
@@ -235,7 +235,7 @@ export function useHireCatalogs(open) {
 // Tashkilot → Filial → Lavozim → Karta → Ish haqi turi/(summasi yoki foizi) → Ishga olingan sana →
 // Qo'shimcha summa/foizi — RecruitmentDismissal'ning to'liq maydonlar to'plami.
 // compact: true — "Xodimni ishga olish" pager oynasining Figma dev-spec o'lchamlari (36px maydon,
-// 12px label). false/undefined — odatiy Tahrirlash oynasi (44px maydon).
+// 12px label). false/undefined — odatiy Tahrirlash oynasi (36px maydon).
 export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, positions, compact }) {
   const [tashkilotPickerOpen, setTashkilotPickerOpen] = useState(false)
   const filialOptions = useMemo(
@@ -249,6 +249,36 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
 
   return (
     <div className={cn('grid grid-cols-2', compact ? 'gap-x-4 gap-y-4' : 'gap-x-6 gap-y-5')}>
+      <div>
+        <Label className={lCls}>Tashkilot</Label>
+        <button
+          type="button"
+          onClick={() => setTashkilotPickerOpen(true)}
+          className={cn(fCls, 'flex items-center justify-between text-left')}
+        >
+          <span className={cn('truncate', !tashkilotName && 'text-[#737373]')}>{tashkilotName || 'Tashkilotni tanlang'}</span>
+          <ChevronDown className={cn('shrink-0 text-[#737373]', compact ? 'size-3.5' : 'size-4')} />
+        </button>
+        <TashkilotPickerModal
+          open={tashkilotPickerOpen}
+          onOpenChange={setTashkilotPickerOpen}
+          organizations={orgs}
+          onConfirm={(id) => set('tashkilot', id)}
+        />
+      </div>
+
+      <div>
+        <Label className={lCls}>Filial</Label>
+        <Picker
+          value={draft.filial}
+          onChange={(v) => set('filial', v)}
+          placeholder={draft.tashkilot ? 'Filialni tanlang' : 'Avval tashkilotni tanlang'}
+          options={filialOptions}
+          disabled={!draft.tashkilot}
+          compact={compact}
+        />
+      </div>
+
       <div>
         <Label className={lCls}>Lavozim</Label>
         <Picker value={draft.lavozim} onChange={(v) => set('lavozim', v)} placeholder="Lavozimni tanlang" options={positions} compact={compact} />
@@ -276,7 +306,7 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
       <div>
         <Label className={lCls}>Ish haqi turi</Label>
         <Select value={draft.ishHaqiTuri} onValueChange={(v) => set('ishHaqiTuri', v)}>
-          <SelectTrigger className={fCls}>
+          <SelectTrigger className={cn(fCls, 'justify-between font-normal')}>
             <SelectValue>{(v) => ISH_HAQI_TURLARI.find((t) => t.value === v)?.label ?? ''}</SelectValue>
           </SelectTrigger>
           <SelectContent>

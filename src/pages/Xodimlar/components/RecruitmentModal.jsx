@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { maskMoney } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import RecruitmentFieldsGrid, {
   EMPTY_HIRE_DRAFT,
   HireModalHeader,
@@ -209,7 +210,7 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
         {isEdit ? (
           <div className="min-h-0 flex-1 overflow-auto px-6 pb-5 pt-2">
             <div className="mb-4">
-              <label className={compactLabelCls}>Xodim</label>
+              <Label className={compactLabelCls}>Xodim</Label>
               <div className={cn(compactFieldCls, 'flex items-center bg-[#F5F5F5] text-[#0A0A0A] dark:bg-white/5 dark:text-white')}>
                 {editEmployeeName}
               </div>
@@ -220,7 +221,7 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
           current && (
             <div className="min-h-0 flex-1 overflow-auto px-6 pb-5 pt-2">
               <div className="mb-4">
-                <label className={compactLabelCls}>Xodim</label>
+                <Label className={compactLabelCls}>Xodim</Label>
                 {isBulk ? (
                   <div className={cn(compactFieldCls, 'flex items-center bg-[#F5F5F5] text-[#0A0A0A] dark:bg-white/5 dark:text-white')}>
                     {current.name}
