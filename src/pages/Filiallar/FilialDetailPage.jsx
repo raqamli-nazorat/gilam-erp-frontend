@@ -97,34 +97,42 @@ export default function FilialDetailPage() {
                     <th className={cn(THb, 'text-left')}>F.I.SH.</th>
                     <th className={cn(THb, 'text-left')}>LAVOZIM</th>
                     <th className={cn(THb, 'text-left')}>TELEFON</th>
-                    <th className={cn(THb, 'pr-4 text-left')}>HOLAT</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {d.xodimlar.length === 0 ? (
-                    <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Bu ma’lumot hali mavjud emas</td></tr>
+                  {(!branch.employees || branch.employees.length === 0) && (!d.xodimlar || d.xodimlar.length === 0) ? (
+                    <tr><td colSpan={4} className="py-14 text-center text-sm text-[#737373]">Bu ma’lumot hali mavjud emas</td></tr>
                   ) : (
-                    d.xodimlar.map((x, i) => (
-                      <tr key={x.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
-                        <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
-                        <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
-                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim}</td>
-                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
-                          <span className="inline-flex items-center gap-1.5">
-                            {x.phone}
-                            <button
-                              type="button"
-                              onClick={() => copy(x.phone, 'Telefon')}
-                              className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
-                              aria-label="Nusxa olish"
-                            >
-                              <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
-                            </button>
-                          </span>
-                        </td>
-                        <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{x.holat}</td>
-                      </tr>
-                    ))
+                    (branch.employees?.length ? branch.employees : d.xodimlar).map((x, i) => {
+                      const fullName = x.full_name || x.name || '—'
+                      const position = x.position || x.lavozim || '—'
+                      const phone = x.phone_number || x.phone || ''
+
+                      return (
+                        <tr key={x.id || i} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                          <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
+                          <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{fullName}</td>
+                          <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{position}</td>
+                          <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
+                            {phone ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                {phone}
+                                <button
+                                  type="button"
+                                  onClick={() => copy(phone, 'Telefon')}
+                                  className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                                  aria-label="Nusxa olish"
+                                >
+                                  <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
+                                </button>
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>

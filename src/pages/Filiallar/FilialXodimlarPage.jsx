@@ -8,14 +8,14 @@ export default function FilialXodimlarPage() {
   if (!branch) return null
 
   const s = branch.detail.xodimlarStats
-  const rows = branch.detail.xodimlar
+  const rows = branch.employees?.length ? branch.employees : branch.detail.xodimlar
 
   return (
     <FilialSubShell
       branch={branch}
       crumbTail="Xodimlar"
       statItems={[
-        { title: 'XODIMLAR', value: `${formatNumber(s.xodimlar, 0)} ta` },
+        { title: 'XODIMLAR', value: `${formatNumber(branch.stats.xodimlar ?? s.xodimlar, 0)} ta` },
         { title: 'SOTUVCHI', value: `${formatNumber(s.sotuvchi, 0)} ta` },
         { title: 'KASSIR', value: `${formatNumber(s.kassir, 0)} ta` },
         { title: 'ISH HAQI FONDI', value: `${formatNumber(s.ishHaqiFondi, 2)} UZS` },
@@ -31,15 +31,21 @@ export default function FilialXodimlarPage() {
       ]}
     >
       {rows.map((x, i) => {
-        const working = x.holat === 'Faol'
+        const fullName = x.full_name || x.name || '—'
+        const position = x.position || x.lavozim || '—'
+        const phone = x.phone_number || x.phone || '—'
+        const working = x.holat === 'Faol' || !x.holat
         return (
-          <tr key={x.id} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+          <tr key={x.id || i} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
             <td className={TD_IDX}>{i + 1}</td>
-            <td className={TD_LINK}>{x.name}</td>
-            <td className={TD}>{x.lavozim}</td>
-            <td className={cn(TD, 'text-[#737373]')}>{x.phone}<CopyBtn value={x.phone} /></td>
-            <td className={TD}>{x.ishHaqiTuri}</td>
-            <td className={cn(TD, 'text-[#737373]')}>{x.ishgaKirgan}</td>
+            <td className={TD_LINK}>{fullName}</td>
+            <td className={TD}>{position}</td>
+            <td className={cn(TD, 'text-[#737373]')}>
+              {phone}
+              {phone !== '—' && <CopyBtn value={phone} />}
+            </td>
+            <td className={TD}>{x.ishHaqiTuri || '—'}</td>
+            <td className={cn(TD, 'text-[#737373]')}>{x.ishgaKirgan || '—'}</td>
             <td className="px-4">
               <span
                 className={cn(
