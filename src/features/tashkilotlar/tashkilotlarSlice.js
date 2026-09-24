@@ -12,6 +12,8 @@ import * as organizationService from '@/services/organizationService'
 // servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
 export function mapOrg(o) {
   const suspended = !!o.is_suspended
+  const rawBranches = Array.isArray(o.branches) ? o.branches : []
+  const branchCount = Number(o.branches_count) || rawBranches.length
   return {
     id: o.id,
     name: o.name ?? '',
@@ -30,30 +32,33 @@ export function mapOrg(o) {
     // updated_at'dan foydalanamiz (to'xtatish/faollashtirish updated_at'ni yangilaydi).
     updatedAt: o.updated_at ? formatDateTime(new Date(o.updated_at)) : '',
     status: suspended ? 'suspended' : 'active',
-    branchCount: Number(o.branches_count) || 0,
+    branchCount,
+    branchesActiveCount: o.branches_active_count != null ? Number(o.branches_active_count) : null,
+    branchesClosedCount: o.branches_closed_count != null ? Number(o.branches_closed_count) : null,
     stats: {
-      filiallar: Number(o.branches_count) || 0,
+      filiallar: branchCount,
       foydalanuvchilar: null,
       mijozlar: null,
       savdo: null,
     },
-    branches: [],
+    branches: rawBranches.map(mapBranch),
     users: [],
     suspend: suspended ? { reason: o.suspension_reason ?? '', at: o.updated_at ? formatDateTime(new Date(o.updated_at)) : '' } : null,
   }
 }
 
-// Backend "Branch" serializeri: id, name, address, warehouses_count, status, region_info, district_info.
-// Xodimlar soni uchun hali endpoint yo'q — `xodim: null`.
+// Backend "Branch" serializeri (detail va list): id, name, address, phone, is_closed, warehouses_count, employees_count, ...
 function mapBranch(b) {
   return {
     id: b.id,
     name: b.name ?? '',
-    viloyat: b.region_info?.name ?? '',
-    tuman: b.district_info?.name ?? '',
+    phone: b.phone ?? '',
+    viloyat: b.region_info?.name ?? b.region?.name ?? '',
+    tuman: b.district_info?.name ?? b.district?.name ?? '',
     manzil: b.address ?? '',
-    xodim: null,
-    ombor: Number(b.warehouses_count) || 0,
+    isClosed: !!b.is_closed,
+    xodim: b.employees_count != null ? Number(b.employees_count) : (Array.isArray(b.employees) ? b.employees.length : null),
+    ombor: b.warehouses_count != null ? Number(b.warehouses_count) : (Array.isArray(b.warehouses) ? b.warehouses.length : null),
   }
 }
 
@@ -201,8 +206,7 @@ const tashkilotlarSlice = createSlice({
       })
       .addCase(fetchOrganizationDetail.fulfilled, (state, action) => {
         state.detailStatus = 'succeeded'
-        const prevBranches = state.current?.id === action.payload.id ? state.current.branches : []
-        state.current = { ...action.payload, branches: prevBranches }
+        state.current = action.payload
       })
       .addCase(fetchOrganizationDetail.rejected, (state, action) => {
         state.detailStatus = 'failed'
@@ -260,7 +264,7 @@ const tashkilotlarSlice = createSlice({
         const idx = state.list.findIndex((o) => o.id === action.payload.id)
         if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
         if (state.current?.id === action.payload.id) {
-          state.current = { ...state.current, ...action.payload, branches: state.current.branches }
+          state.current = action.payload
         }
       })
       .addCase(suspendOrganization.rejected, (state, action) => {
@@ -277,7 +281,7 @@ const tashkilotlarSlice = createSlice({
         const idx = state.list.findIndex((o) => o.id === action.payload.id)
         if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload }
         if (state.current?.id === action.payload.id) {
-          state.current = { ...state.current, ...action.payload, branches: state.current.branches }
+          state.current = action.payload
         }
       })
       .addCase(activateOrganization.rejected, (state, action) => {
