@@ -13,65 +13,29 @@ const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
-// Backend "WorkSchedule"da hafta kunlari (Du/Se/Ch...) uchun alohida maydon yo'q (Swagger
-// tasdiqlagan) — shuning uchun bu tanlov faqat Tavsifni avtomatik shakllantirish uchun
-// ishlatiladi (UI-only), saqlashda alohida maydon sifatida yuborilmaydi.
-const WEEKDAYS = [
-  { key: 'mon', label: 'Du' },
-  { key: 'tue', label: 'Se' },
-  { key: 'wed', label: 'Ch' },
-  { key: 'thu', label: 'Pa' },
-  { key: 'fri', label: 'Ju' },
-  { key: 'sat', label: 'Sh' },
-  { key: 'sun', label: 'Ya' },
+// Backend "WorkSchedule.days": 0=Dushanba ... 6=Yakshanba — key shu raqamning o'zi.
+export const WEEKDAYS = [
+  { key: 0, label: 'Du' },
+  { key: 1, label: 'Se' },
+  { key: 2, label: 'Ch' },
+  { key: 3, label: 'Pa' },
+  { key: 4, label: 'Ju' },
+  { key: 5, label: 'Sh' },
+  { key: 6, label: 'Ya' },
 ]
 
-function formatDaysPart(days) {
+export function formatDaysPart(days) {
   if (days.length === 0) return ''
   if (days.length === 7) return 'kunlik'
   const idxs = days.map((d) => WEEKDAYS.findIndex((w) => w.key === d)).sort((a, b) => a - b)
   const contiguous = idxs.every((v, i) => i === 0 || v === idxs[i - 1] + 1)
   if (contiguous && idxs.length > 1) return `${WEEKDAYS[idxs[0]].label}-${WEEKDAYS[idxs[idxs.length - 1]].label}`
-  // "/" (vergul emas) — daysPart'ning o'zi tavsifning boshqa qismidan (timePart) faqat bitta
-  // vergul bilan ajratiladi, shuning uchun daysPart ichida vergul bo'lmasligi kerak
-  // (parseDaysFromTavsif shu bitta vergulga tayanadi).
   return idxs.map((i) => WEEKDAYS[i].label).join('/')
 }
 
 function autoTavsif(fromHour, toHour, days) {
   const timePart = fromHour && toHour ? `${fromHour}-${toHour}` : ''
   return [timePart, formatDaysPart(days)].filter(Boolean).join(', ')
-}
-
-// formatDaysPart/autoTavsif'ning teskarisi — backendda "days" saqlanmagani uchun, tahrirlashda
-// oldin tanlangan Ish kunlarini FAQAT shu (o'zimiz yozgan) Tavsif matnidan qayta tiklaymiz.
-// Matn qo'lda o'zgartirilgan/mos kelmasa — bo'sh massiv qaytadi (tiklab bo'lmadi, xato emas).
-function parseDaysFromTavsif(tavsif) {
-  if (!tavsif) return []
-  const commaIdx = tavsif.indexOf(',')
-  const daysPart = (commaIdx === -1 ? tavsif : tavsif.slice(commaIdx + 1)).trim()
-  if (!daysPart) return []
-  if (/^kunlik$/i.test(daysPart)) return WEEKDAYS.map((w) => w.key)
-  const rangeMatch = daysPart.match(/^([A-Za-z]{2})-([A-Za-z]{2})$/)
-  if (rangeMatch) {
-    const fromIdx = WEEKDAYS.findIndex((w) => w.label === rangeMatch[1])
-    const toIdx = WEEKDAYS.findIndex((w) => w.label === rangeMatch[2])
-    return fromIdx !== -1 && toIdx !== -1 && fromIdx <= toIdx
-      ? WEEKDAYS.slice(fromIdx, toIdx + 1).map((w) => w.key)
-      : []
-  }
-  const labels = daysPart.split('/').map((s) => s.trim())
-  const keys = labels.map((l) => WEEKDAYS.find((w) => w.label === l)?.key).filter(Boolean)
-  return keys.length === labels.length ? keys : []
-}
-
-// Backend WorkSchedule majburiy sana oralig'ini (from_date/to_date) talab qiladi, lekin Figma
-// dizaynida bunday maydon ko'rsatilmagan — shuning uchun orqa fonda "bugundan cheksizga"
-// (uzoq kelajak sanasi) avtomatik belgilanadi, foydalanuvchiga ko'rinmaydi. Tahrirlashda
-// mavjud yozuvning o'z sanasi saqlanadi (o'zgartirilmaydi).
-const FAR_FUTURE_DATE = '2099-12-31'
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 const EMPTY = { filialId: '', name: '', tavsif: '', fromHour: '', toHour: '', days: [] }
@@ -93,21 +57,20 @@ export default function IshGrafigiModal({ open, onOpenChange, record, onSave, on
   useEffect(() => {
     if (!open) return
     const tavsif = record?.tavsif ?? ''
-    const parsedDays = isEdit ? parseDaysFromTavsif(tavsif) : []
+    const days = record?.days ?? []
+    const fromHour = record?.fromHour ?? ''
+    const toHour = record?.toHour ?? ''
     setDraft({
       filialId: record?.filialId ?? '',
       name: record?.name ?? '',
       tavsif,
-      fromDate: record?.fromDate || todayIso(),
-      toDate: record?.toDate || FAR_FUTURE_DATE,
-      fromHour: record?.fromHour ?? '',
-      toHour: record?.toHour ?? '',
-      days: parsedDays,
+      fromHour,
+      toHour,
+      days,
     })
-    // Tavsif avtomatik shakllantirilgan ko'rinsa (Ish kunlari undan muvaffaqiyatli tiklandi)
-    // — yana avtomatik yangilanishda davom etadi. Qo'lda yozilgan/mos kelmaydigan tavsif
-    // bo'lsa (tiklab bo'lmadi) — endi tegilmaydi, foydalanuvchi matni ustidan yozilmaydi.
-    setTavsifTouched(isEdit && parsedDays.length === 0 && !!tavsif)
+    // Tavsif avtomatik shakllantirilgan bo'lsa — avtomatik yangilanishda davom etadi; qo'lda
+    // yozilgan bo'lsa — foydalanuvchi matni ustidan yozilmaydi.
+    setTavsifTouched(isEdit && !!tavsif && tavsif !== autoTavsif(fromHour, toHour, days))
   }, [open, record, isEdit])
 
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
@@ -129,8 +92,7 @@ export default function IshGrafigiModal({ open, onOpenChange, record, onSave, on
       return next
     })
 
-  const canSave = draft.name.trim().length > 0 && !!draft.filialId && !!draft.fromHour && !!draft.toHour
-  const restDays = 7 - draft.days.length
+  const canSave = draft.name.trim().length > 0 && !!draft.filialId && !!draft.fromHour && !!draft.toHour && draft.days.length > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,7 +157,7 @@ export default function IshGrafigiModal({ open, onOpenChange, record, onSave, on
             <div className="mb-1.5 flex items-center justify-between">
               <Label className="text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground">Ish kunlari</Label>
               <span className="text-[12px] font-medium text-[#737373] dark:text-muted-foreground">
-                {draft.days.length}/{restDays}
+                {draft.days.length}/7
               </span>
             </div>
             <div className="grid grid-cols-7 gap-2">
