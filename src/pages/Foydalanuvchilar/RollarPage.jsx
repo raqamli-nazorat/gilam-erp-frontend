@@ -139,7 +139,7 @@ export default function RollarPage() {
           <tbody>
             {rolesLoading && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center">
+                <td colSpan={5} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -148,7 +148,7 @@ export default function RollarPage() {
               </tr>
             ) : rolesError && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center">
+                <td colSpan={5} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -163,7 +163,7 @@ export default function RollarPage() {
               </tr>
             ) : shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={5} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Rol topilmadi
                 </td>
               </tr>
@@ -184,12 +184,12 @@ export default function RollarPage() {
             )}
             {shownRoles.length > 0 && rolesHasMore && !rolesLoading && (
               <tr ref={rolesSentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={6} className="h-1 border-0 p-0" />
+                <td colSpan={5} className="h-1 border-0 p-0" />
               </tr>
             )}
             {rolesLoadingMore && (
               <tr>
-                <td colSpan={6} className="py-4 text-center">
+                <td colSpan={5} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…

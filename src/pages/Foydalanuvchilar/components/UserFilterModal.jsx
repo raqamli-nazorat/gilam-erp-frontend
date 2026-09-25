@@ -13,13 +13,17 @@ export default function UserFilterModal({ open, onOpenChange, filters, onApply }
   const orgs = useSelector((s) => s.tashkilotlar.list)
   const branches = useSelector((s) => s.filiallar.list)
   const roles = useSelector((s) => s.foydalanuvchilar.roles)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
+  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
+  const rolesStatus = useSelector((s) => s.foydalanuvchilar.rolesStatus)
 
   useEffect(() => {
+    // Faqat hali yuklanmagan bo'lsa — har ochilishda barcha sahifalarni qayta so'ramaslik uchun.
     if (!open) return
-    dispatch(fetchOrganizations())
-    dispatch(fetchBranches())
-    dispatch(fetchRoles())
-  }, [open, dispatch])
+    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
+    if (branchesStatus === 'idle') dispatch(fetchBranches())
+    if (rolesStatus === 'idle') dispatch(fetchRoles())
+  }, [open, orgsStatus, branchesStatus, rolesStatus, dispatch])
 
   const set = (k, v) =>
     setDraft((d) => {

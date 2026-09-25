@@ -26,9 +26,17 @@ export function mapEmployee(e) {
     stir: e.stir ?? '',
     phone: e.phone_number ?? '',
     tavsif: e.description ?? '',
+    // Backend'ning o'z ish holati (ro'yxat sahifasi uchun — sahifalab yuklanganda ish tarixisiz).
+    employmentStatus: e.employment_status ?? '',
     yaratilgan: e.created_at ? formatDateTime(new Date(e.created_at)) : '',
     ozgartirilgan: e.updated_at ? formatDateTime(new Date(e.updated_at)) : '',
   }
+}
+
+// Backend Employee.employment_status qiymatlari sxemada sanab ko'rsatilmagan — ishdan
+// chiqarilganni bildiruvchi qiymatlar true, qolganlari (ishlayapti) false.
+export function isEmployeeDismissed(employee) {
+  return /dismiss|fired|terminat|inactive|chiqarilgan|bo.?shagan/i.test(employee?.employmentStatus ?? '')
 }
 
 // "Ishga qabul qilish" ro'yxati uchun uch holatli ish jarayoni (Qoralama/Tasdiqlangan/Bekor

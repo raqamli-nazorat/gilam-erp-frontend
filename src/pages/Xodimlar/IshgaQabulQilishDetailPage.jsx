@@ -15,7 +15,7 @@ import {
   terminateXodim,
   updateRecruitment,
 } from '@/features/xodimlar/xodimlarSlice'
-import { fetchBranches } from '@/features/filiallar/filiallarSlice'
+import { getBranch } from '@/services/branchService'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import { Panel, InfoRow, surface } from './components/InfoPanel'
@@ -44,7 +44,6 @@ export default function IshgaQabulQilishDetailPage() {
   const dispatch = useDispatch()
   const record = useSelector((s) => s.xodimlar.recruitments.find((r) => r.id === id))
   const branches = useSelector((s) => s.filiallar.list)
-  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
   const currentUser = useSelector((s) => s.auth.user)
   const [editOpen, setEditOpen] = useState(false)
   const [terminateOpen, setTerminateOpen] = useState(false)
@@ -58,17 +57,19 @@ export default function IshgaQabulQilishDetailPage() {
   // muhtoj (Tahrirlash formasi, Ishdan chiqarish/Qayta ishga olish uchun xodim ID'si) —
   // shuning uchun bitta hujjatning TO'LIQ (detal) shaklini alohida so'raymiz.
   const [detail, setDetail] = useState(null)
+  const [detailFailed, setDetailFailed] = useState(false)
   useEffect(() => {
     if (!id) return undefined
     let cancelled = false
     setDetail(null)
+    setDetailFailed(false)
     recruitmentService
       .getRecruitmentDismissal(id)
       .then((raw) => {
         if (!cancelled) setDetail(mapRecruitment(raw))
       })
       .catch(() => {
-        if (!cancelled) setDetail(null)
+        if (!cancelled) setDetailFailed(true)
       })
     return () => {
       cancelled = true
@@ -78,6 +79,9 @@ export default function IshgaQabulQilishDetailPage() {
   // Ro'yxatdan kelgan `record` (tashkilot NOMI bor — organization_name) + detaldan kelgan
   // `detail` (ID'lar, karta, oylik bor, lekin tashkilot nomi umuman yo'q) birlashtiriladi.
   const full = record ? { ...record, ...(detail ?? {}), tashkilot: record.tashkilot } : detail
+  // Ro'yxat endi scroll pagination bilan Redux'siz yuklanadi — hujjat store'da bo'lmasa
+  // (to'g'ridan-to'g'ri havola, ro'yxatdan o'tish) sahifa detal javobining o'zi bilan ishlaydi.
+  const rec = full
 
   // Shu hujjat egasi bo'lgan xodimning haqiqiy ish holati — "Bekor qilish" endi shu hujjatning
   // o'z holatini emas, XODIMNING o'zini ishdan chiqaradi (terminateXodim), shuning uchun
@@ -86,23 +90,33 @@ export default function IshgaQabulQilishDetailPage() {
   const [historyVersion, setHistoryVersion] = useState(0)
 
   usePageHeader(
-    record
-      ? [{ label: "Ma'lumotnomalar" }, { label: 'Ishga qabul qilish', to: '/malumotnomalar/ishga-qabul-qilish' }, { label: record.employeeName }]
+    rec
+      ? [{ label: "Ma'lumotnomalar" }, { label: 'Ishga qabul qilish', to: '/malumotnomalar/ishga-qabul-qilish' }, { label: rec.employeeName }]
       : 'Ishga qabul qilish'
   )
 
   useEffect(() => {
-    if (!record) navigate('/malumotnomalar/ishga-qabul-qilish', { replace: true })
-  }, [record, navigate])
-
-  useEffect(() => {
-    if (branchesStatus === 'idle') dispatch(fetchBranches())
-  }, [branchesStatus, dispatch])
+    if (!record && detailFailed) navigate('/malumotnomalar/ishga-qabul-qilish', { replace: true })
+  }, [record, detailFailed, navigate])
 
   // Hujjatning o'zi tashkilotni saqlamaydi, faqat filialni — ro'yxat javobi tashkilot nomini
-  // to'g'ridan-to'g'ri beradi (full.tashkilot); topilmasa (masalan hali yuklanmagan) filiallar
-  // ro'yxatidan qidiramiz.
-  const tashkilot = full?.tashkilot || branches.find((b) => b.id === full?.branchId)?.tashkilot || ''
+  // to'g'ridan-to'g'ri beradi (full.tashkilot). Topilmasa barcha filiallarni emas, faqat shu
+  // bitta filialni so'raymiz (branches/{id}) va uning tashkilot nomini olamiz.
+  const [branchOrg, setBranchOrg] = useState('')
+  const needBranchOrg = !full?.tashkilot && !!full?.branchId && !branches.some((b) => b.id === full.branchId)
+  useEffect(() => {
+    if (!needBranchOrg) return undefined
+    let cancelled = false
+    getBranch(full.branchId)
+      .then((b) => {
+        if (!cancelled) setBranchOrg(b?.organization_info?.name ?? '')
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [needBranchOrg, full?.branchId])
+  const tashkilot = full?.tashkilot || branches.find((b) => b.id === full?.branchId)?.tashkilot || branchOrg
 
   // Xodim tarixi ham xuddi shu ro'yxat-endpoint muammosidan aziyat chekadi — `type` maydoni
   // ro'yxat javobida yo'q, shuning uchun ikkita alohida `type` bo'yicha filtrlangan so'rov
@@ -130,7 +144,7 @@ export default function IshgaQabulQilishDetailPage() {
     return () => clearTimeout(t)
   }, [toast])
 
-  if (!record) return null
+  if (!rec) return null
 
   const latestDoc = history[history.length - 1]
   const employeeTerminated = latestDoc?.type === 'dismissal'
@@ -147,9 +161,12 @@ export default function IshgaQabulQilishDetailPage() {
       : `Belgilangan summa — ${formatNumber(full?.fixSumma, 2)} UZS`
 
   function setStatus(status) {
-    dispatch(setRecruitmentStatus({ id: record.id, status }))
+    dispatch(setRecruitmentStatus({ id: rec.id, status }))
       .unwrap()
-      .then(() => setToast('Tasdiqlandi'))
+      .then(() => {
+        setDetail((d) => (d ? { ...d, status } : d))
+        setToast('Tasdiqlandi')
+      })
       .catch((err) => setToast(err || 'Xatolik yuz berdi'))
   }
 
@@ -161,8 +178,9 @@ export default function IshgaQabulQilishDetailPage() {
   function handleTerminate(reason, file) {
     dispatch(terminateXodim({ id: full.employeeId, reason, file }))
       .unwrap()
-      .then(() => dispatch(setRecruitmentStatus({ id: record.id, status: 'cancelled' })).unwrap())
+      .then(() => dispatch(setRecruitmentStatus({ id: rec.id, status: 'cancelled' })).unwrap())
       .then(() => {
+        setDetail((d) => (d ? { ...d, status: 'cancelled' } : d))
         setToast('Xodim ishdan chiqarildi')
         setHistoryVersion((v) => v + 1)
       })
@@ -203,21 +221,21 @@ export default function IshgaQabulQilishDetailPage() {
     <>
       <div className="flex h-full flex-col gap-3">
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className={cn('rounded-xl p-5 text-left', STATUS_CARD_CLS[record.status])}>
+          <div className={cn('rounded-xl p-5 text-left', STATUS_CARD_CLS[rec.status])}>
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">HOLATI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{STATUS_LABEL[record.status]}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight">{STATUS_LABEL[rec.status]}</p>
           </div>
           <div className="rounded-xl bg-[#CDE7FE] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">LAVOZIMI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{record.lavozim || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight">{rec.lavozim || '—'}</p>
           </div>
           <div className="rounded-xl bg-[#F8C3B3] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">FILIALI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{record.branch || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight">{rec.branch || '—'}</p>
           </div>
           <div className="rounded-xl bg-[#B3F8C5] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">ISHGA OLINGAN</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{record.sana || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight">{rec.sana || '—'}</p>
           </div>
         </div>
 
@@ -252,12 +270,12 @@ export default function IshgaQabulQilishDetailPage() {
                 <tbody>
                   <tr className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                     <td className="px-3 text-[13px] text-[#737373]">1</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{record.sana || '—'}</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{record.yaratilgan || '—'}</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{record.ozgartirilgan || '—'}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.sana || '—'}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.yaratilgan || '—'}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.ozgartirilgan || '—'}</td>
                     <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">Ishga olindi</td>
-                    <td className="px-3 text-[13px] text-[#0052D2] dark:text-[#60A5FA]">{record.lavozim || '—'}</td>
-                    <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{record.branch || '—'}</td>
+                    <td className="px-3 text-[13px] text-[#0052D2] dark:text-[#60A5FA]">{rec.lavozim || '—'}</td>
+                    <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.branch || '—'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -267,10 +285,10 @@ export default function IshgaQabulQilishDetailPage() {
           <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
             <Panel title="XODIM MA’LUMOTLARI" className="min-h-0 flex-1">
               <InfoRow label="Tashkiloti" value={tashkilot} />
-              <InfoRow label="Filiali" value={record.branch} />
-              <InfoRow label="Lavozimi" value={record.lavozim} />
+              <InfoRow label="Filiali" value={rec.branch} />
+              <InfoRow label="Lavozimi" value={rec.lavozim} />
               <InfoRow label="Karta raqami" value={full?.kartaRaqami} />
-              <InfoRow label="Ishga olingan sana" value={record.sana} />
+              <InfoRow label="Ishga olingan sana" value={rec.sana} />
               <InfoRow label="Ish haqi turi" value={ishHaqi} />
               <InfoRow label="Qo‘shimcha summa" value={`${formatNumber(full?.extraSumma, 2)} UZS`} />
               <InfoRow label="Qo‘shimcha foiz" value={`${formatNumber(full?.extraFoiz, 0)} %`} />
@@ -280,10 +298,10 @@ export default function IshgaQabulQilishDetailPage() {
                   <span
                     className={cn(
                       'inline-flex h-[22px] items-center rounded-full px-2 text-[11px] font-medium tracking-[0.3px]',
-                      STATUS_BADGE_CLS[record.status]
+                      STATUS_BADGE_CLS[rec.status]
                     )}
                   >
-                    {STATUS_LABEL[record.status]}
+                    {STATUS_LABEL[rec.status]}
                   </span>
                 }
               />
@@ -307,7 +325,7 @@ export default function IshgaQabulQilishDetailPage() {
             >
               <HugeiconsIcon icon={Edit02Icon} size={16} strokeWidth={2} /> Tahrirlash
             </Button>
-            {record.status === 'draft' && (
+            {rec.status === 'draft' && (
               <Button
                 onClick={() => setStatus('confirmed')}
                 className="h-9 gap-2 bg-[#00A25C] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#008C4F]"
@@ -324,7 +342,7 @@ export default function IshgaQabulQilishDetailPage() {
                 <Check className="h-4 w-4" /> Qayta ishga olish
               </Button>
             ) : (
-              record.status === 'confirmed' && (
+              rec.status === 'confirmed' && (
                 <Button
                   disabled={!full?.employeeId}
                   onClick={() => setTerminateOpen(true)}
@@ -343,24 +361,27 @@ export default function IshgaQabulQilishDetailPage() {
         onOpenChange={setEditOpen}
         record={full}
         onSave={({ status, draft }) => {
-          dispatch(updateRecruitment({ id: record.id, employeeId: full.employeeId, status, draft }))
+          dispatch(updateRecruitment({ id: rec.id, employeeId: full.employeeId, status, draft }))
             .unwrap()
-            .then(() => setToast('O‘zgarishlar saqlandi'))
+            .then((updated) => {
+              setDetail((d) => ({ ...(d ?? {}), ...updated, status }))
+              setToast('O‘zgarishlar saqlandi')
+            })
             .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
         }}
       />
       <TerminateEmployeeModal
         open={terminateOpen}
         onOpenChange={setTerminateOpen}
-        employee={{ name: record.employeeName, lavozim: record.lavozim, tashkilot, filial: record.branch }}
+        employee={{ name: rec.employeeName, lavozim: rec.lavozim, tashkilot, filial: rec.branch }}
         onConfirm={handleTerminate}
       />
       <RehireEmployeeModal
         open={rehireOpen}
         onOpenChange={setRehireOpen}
         employee={{
-          name: record.employeeName,
-          lavozim: record.lavozim,
+          name: rec.employeeName,
+          lavozim: rec.lavozim,
           termination: lastDismissal ? { reason: lastDismissal.dismissalReason, at: lastDismissal.yaratilgan } : null,
         }}
         onConfirm={handleRehire}

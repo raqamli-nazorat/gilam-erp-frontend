@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { Check, Filter, Loader2, Plus, Search, Trash2, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { countrySlice } from '@/features/malumotnomalar/referenceEntities'
-import { fetchRegions, fetchAllDistricts } from '@/features/geo/geoSlice'
+import { mapRecord } from '@/features/malumotnomalar/referenceSlices'
+import { countDistrictsOfCountry, countRegionsOfCountry } from '@/features/geo/geoCounts'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { useRowCounts } from '@/hooks/useRowCounts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,15 +23,17 @@ const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
+const fetchCountriesPage = (params) =>
+  countrySlice.api.page(params).then((res) => ({ ...res, results: res.results.map(mapRecord) }))
+
+// Jadval scroll pagination bilan (bitta-bitta sahifa) yuklanadi. "Viloyat"/"Tumanlar" sonlari
+// endi barcha viloyat/tumanlarni yuklab sanalmaydi — har bir ko'rinib turgan davlat uchun
+// alohida hisoblagich so'rovi (geoCounts.js) ketma-ket yuboriladi.
 export default function DavlatPage() {
   const dispatch = useDispatch()
-  const countries = useSelector((s) => s.davlatlar.list)
-  const countriesStatus = useSelector((s) => s.davlatlar.listStatus)
-  const countriesError = useSelector((s) => s.davlatlar.listError)
-  const regions = useSelector((s) => s.geo.regions)
-  const allDistricts = useSelector((s) => s.geo.allDistricts)
 
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_GEO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalRec, setModalRec] = useState(null) // record | 'new' | null
@@ -38,10 +43,25 @@ export default function DavlatPage() {
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Davlat' }])
 
   useEffect(() => {
-    if (countriesStatus === 'idle') dispatch(countrySlice.fetchItems())
-    dispatch(fetchRegions())
-    dispatch(fetchAllDistricts())
-  }, [countriesStatus, dispatch])
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const {
+    items: countries,
+    isLoading,
+    isLoadingMore,
+    error: countriesError,
+    hasMore,
+    containerRef,
+    sentinelRef,
+    handleScroll,
+    reload,
+  } = useServerPagedList(fetchCountriesPage, { search: debouncedSearch.trim() })
+
+  const countryIds = useMemo(() => countries.map((c) => c.id), [countries])
+  const regionCounts = useRowCounts(countryIds, countRegionsOfCountry)
+  const districtCounts = useRowCounts(countryIds, countDistrictsOfCountry)
 
   useEffect(() => {
     if (!toast) return undefined
@@ -49,41 +69,14 @@ export default function DavlatPage() {
     return () => clearTimeout(t)
   }, [toast])
 
-  const regionIdToCountryId = useMemo(() => {
-    const map = {}
-    regions.forEach((r) => {
-      map[r.id] = r.countryId
-    })
-    return map
-  }, [regions])
-
-  const counts = useMemo(() => {
-    const viloyat = {}
-    const tuman = {}
-    regions.forEach((r) => {
-      if (!r.countryId) return
-      viloyat[r.countryId] = (viloyat[r.countryId] ?? 0) + 1
-    })
-    allDistricts.forEach((d) => {
-      const countryId = regionIdToCountryId[d.regionId]
-      if (!countryId) return
-      tuman[countryId] = (tuman[countryId] ?? 0) + 1
-    })
-    return { viloyat, tuman }
-  }, [regions, allDistricts, regionIdToCountryId])
-
   const shown = useMemo(() => {
     let out = countries
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((c) => c.name.toLowerCase().includes(q))
-    }
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((c) => matchesDateRange(c.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     if (filters.ozgartirilganDan || filters.ozgartirilganGacha)
       out = out.filter((c) => matchesDateRange(c.ozgartirilgan, filters.ozgartirilganDan, filters.ozgartirilganGacha))
     return out
-  }, [countries, search, filters])
+  }, [countries, filters])
 
   function saveCountry(values) {
     const action =
@@ -92,14 +85,20 @@ export default function DavlatPage() {
         : countrySlice.updateItem({ id: modalRec.id, payload: values })
     dispatch(action)
       .unwrap()
-      .then(() => setToast('Saqlandi'))
+      .then(() => {
+        setToast('Saqlandi')
+        reload()
+      })
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
   }
 
   function confirmDelete() {
     dispatch(countrySlice.deleteItem(delRec.id))
       .unwrap()
-      .then(() => setToast('O‘chirildi'))
+      .then(() => {
+        setToast('O‘chirildi')
+        reload()
+      })
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
   }
 
@@ -138,7 +137,11 @@ export default function DavlatPage() {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -151,24 +154,24 @@ export default function DavlatPage() {
             </tr>
           </thead>
           <tbody>
-            {countriesStatus === 'loading' && shown.length === 0 ? (
+            {isLoading && shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
                   </div>
                 </td>
               </tr>
-            ) : countriesStatus === 'failed' && shown.length === 0 ? (
+            ) : countriesError && shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
-                  <p className="text-sm text-[#DC2626]">{countriesError || 'Xatolik yuz berdi'}</p>
+                <td colSpan={6} className="py-16 text-center">
+                  <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                 </td>
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Yozuv yo‘q
                 </td>
               </tr>
@@ -177,12 +180,27 @@ export default function DavlatPage() {
                 <tr key={c.id} onClick={() => setModalRec(c)} className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{c.name}</td>
-                  <td className={TD_MUTED}>{counts.viloyat[c.id] ?? 0} ta</td>
-                  <td className={TD_MUTED}>{counts.tuman[c.id] ?? 0} ta</td>
+                  <td className={TD_MUTED}>{regionCounts[c.id] ?? '…'} ta</td>
+                  <td className={TD_MUTED}>{districtCounts[c.id] ?? '…'} ta</td>
                   <td className={TD_MUTED}>{c.yaratilgan}</td>
                   <td className={TD_MUTED}>{c.ozgartirilgan}</td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && hasMore && !isLoading && (
+              <tr ref={sentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={6} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {isLoadingMore && (
+              <tr>
+                <td colSpan={6} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

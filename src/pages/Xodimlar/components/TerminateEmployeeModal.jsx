@@ -91,13 +91,14 @@ export default function TerminateEmployeeModal({ open, onOpenChange, employee, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-5 sm:max-w-[520px]">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[560px]">
+        <DialogHeader className="flex flex-row items-center justify-between px-6 pt-5">
           <DialogTitle className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             Xodimni ishdan chiqarish?
           </DialogTitle>
         </DialogHeader>
 
+        <div className="flex flex-col gap-4 px-6 pb-6 pt-4">
         <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[
             ['Xodim', employee.name],
@@ -122,7 +123,6 @@ export default function TerminateEmployeeModal({ open, onOpenChange, employee, o
             placeholder="Masalan: xodim ishdan bo‘shadi"
             className="h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white"
           />
-          <p className="mt-1.5 text-[12px] text-[#737373] dark:text-muted-foreground">Majburiy. Sabab audit jurnaliga yoziladi.</p>
         </div>
 
         <div>
@@ -184,7 +184,9 @@ export default function TerminateEmployeeModal({ open, onOpenChange, employee, o
           )}
         </div>
 
-        <DialogFooter className="mx-0 mb-0 mt-1 gap-2 border-0 bg-transparent p-0">
+        </div>
+
+        <DialogFooter className="mx-0 mb-0 mt-0 flex gap-2 border-0 bg-[#F5F5F5] px-6 py-4 dark:bg-white/5 sm:flex-row sm:justify-end">
           <Button
             type="button"
             variant="outline"

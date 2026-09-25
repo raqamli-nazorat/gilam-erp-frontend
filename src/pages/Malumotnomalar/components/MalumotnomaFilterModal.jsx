@@ -5,7 +5,6 @@ import { MALUMOTNOMA_MENU } from '@/features/malumotnomalar/malumotnomalarData'
 import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
 
 export const EMPTY_MALUMOTNOMA_FILTERS = {
-  holat: '',
   yaratilganDan: '',
   yaratilganGacha: '',
   tashkilot: '',
@@ -48,9 +47,6 @@ export default function MalumotnomaFilterModal({ open, onOpenChange, slug, filte
     >
       <FilterField label="Ma’lumotnoma">
         <FilterSelect value={malumotnoma} onChange={setMalumotnoma} options={MENU_NAMES} placeholder="Tanlang" />
-      </FilterField>
-      <FilterField label="Holat">
-        <FilterSelect value={draft.holat} onChange={(v) => set('holat', v)} placeholder="Barchasi" options={['Faol', 'Arxiv']} />
       </FilterField>
       <FilterDateRange
         label="Yaratilgan"

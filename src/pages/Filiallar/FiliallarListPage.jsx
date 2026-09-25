@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Briefcase, Filter, Loader2, Plus, Search } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -8,8 +8,9 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { useTabCounts } from '@/hooks/useTabCounts'
 import { holatLabel } from '@/features/filiallar/filiallarData'
-import { createBranch, fetchBranches, mapBranch } from '@/features/filiallar/filiallarSlice'
+import { createBranch, mapBranch } from '@/features/filiallar/filiallarSlice'
 import * as branchService from '@/services/branchService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,10 +32,6 @@ function fetchBranchesPage(params) {
 export default function FiliallarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  // To'liq ro'yxat — tab hisoblagichlari va boshqa sahifalardagi filial tanlagichlari shunga
-  // tayanadi, shuning uchun bunga tegilmaydi.
-  const branches = useSelector((s) => s.filiallar.list)
-  const listStatus = useSelector((s) => s.filiallar.listStatus)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -45,10 +42,6 @@ export default function FiliallarListPage() {
   const [toast, setToast] = useState('')
 
   usePageHeader([{ label: 'Platforma' }, { label: 'Filiallar' }])
-
-  useEffect(() => {
-    if (listStatus === 'idle') dispatch(fetchBranches())
-  }, [listStatus, dispatch])
 
   // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
   useEffect(() => {
@@ -68,14 +61,6 @@ export default function FiliallarListPage() {
     setToast('Telefon nusxalandi')
   }
 
-  const counts = useMemo(
-    () => ({
-      all: branches.length,
-      active: branches.filter((b) => b.status === 'active').length,
-      closed: branches.filter((b) => b.status === 'closed').length,
-    }),
-    [branches]
-  )
   const hasFilter = Object.values(filters).some(Boolean)
 
   // Tab ("Faol"/"Yopilgan") va "Holat" filtri bitta xil narsani bildiradi — ikkalasi ham
@@ -90,6 +75,7 @@ export default function FiliallarListPage() {
 
   const {
     items: pagedBranches,
+    totalCount,
     isLoading: branchesLoading,
     isLoadingMore: branchesLoadingMore,
     error: branchesError,
@@ -102,6 +88,18 @@ export default function FiliallarListPage() {
     search: debouncedSearch.trim(),
     is_closed: isClosedParam,
   })
+
+  // Tab hisoblagichlari — sahifaga kirganda hammasi ko'rinadi: ochiq tab jadvalning o'z `count`idan,
+  // qolganlari bittadan 1-sahifa so'rovi bilan (useTabCounts).
+  const countTab = isClosedParam === undefined ? 'all' : isClosedParam ? 'closed' : 'active'
+  const counts = useTabCounts(
+    branchService.getBranchesPage,
+    { search: debouncedSearch.trim() },
+    { active: { is_closed: false }, closed: { is_closed: true } },
+    countTab,
+    totalCount,
+    branchesLoading
+  )
 
   const shown = useMemo(() => {
     let out = pagedBranches
@@ -135,16 +133,18 @@ export default function FiliallarListPage() {
                 )}
               >
                 {label}
-                <span
-                  className={cn(
-                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
-                    active
-                      ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                      : 'text-[#A3A3A3] dark:text-muted-foreground'
-                  )}
-                >
-                  {n}
-                </span>
+                {n != null && (
+                  <span
+                    className={cn(
+                      'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
+                      active
+                        ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
+                        : 'text-[#A3A3A3] dark:text-muted-foreground'
+                    )}
+                  >
+                    {n}
+                  </span>
+                )}
               </button>
             )
           })}

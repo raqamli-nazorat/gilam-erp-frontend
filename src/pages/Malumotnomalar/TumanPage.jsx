@@ -8,6 +8,7 @@ import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { countrySlice } from '@/features/malumotnomalar/referenceEntities'
 import { createDistrict, deleteDistrict, fetchRegions, mapDistrict, updateDistrict } from '@/features/geo/geoSlice'
 import * as geoService from '@/services/geoService'
+import { clearGeoCounts } from '@/features/geo/geoCounts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -111,6 +112,7 @@ export default function TumanPage() {
       .unwrap()
       .then(() => {
         setToast('Saqlandi')
+        clearGeoCounts()
         reloadDistricts()
       })
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
@@ -121,6 +123,7 @@ export default function TumanPage() {
       .unwrap()
       .then(() => {
         setToast('O‘chirildi')
+        clearGeoCounts()
         reloadDistricts()
       })
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
@@ -180,7 +183,7 @@ export default function TumanPage() {
           <tbody>
             {districtsLoading && shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -189,7 +192,7 @@ export default function TumanPage() {
               </tr>
             ) : districtsError && shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -204,7 +207,7 @@ export default function TumanPage() {
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Yozuv yo‘q
                 </td>
               </tr>
@@ -222,12 +225,12 @@ export default function TumanPage() {
             )}
             {shown.length > 0 && districtsHasMore && !districtsLoading && (
               <tr ref={districtsSentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={7} className="h-1 border-0 p-0" />
+                <td colSpan={6} className="h-1 border-0 p-0" />
               </tr>
             )}
             {districtsLoadingMore && (
               <tr>
-                <td colSpan={7} className="py-4 text-center">
+                <td colSpan={6} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…

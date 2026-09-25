@@ -8,8 +8,7 @@ import { cn } from '@/lib/utils'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { formatDate } from '@/lib/format'
 import * as recruitmentService from '@/services/recruitmentService'
-import { deleteKadr, mapRecruitment, updateKadr } from '@/features/xodimlar/xodimlarSlice'
-import { fetchBranches } from '@/features/filiallar/filiallarSlice'
+import { deleteKadr, fetchXodimDetail, mapRecruitment, updateKadr } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import Toast from '@/components/Toast'
@@ -29,9 +28,13 @@ export default function XodimlarDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const xodim = useSelector((s) => s.xodimlar.list.find((x) => x.id === id))
+  // Ro'yxat endi scroll pagination bilan (Redux'siz) yuklanadi — xodim store ro'yxatida bo'lmasa,
+  // shu xodimning o'zi alohida so'raladi (fetchXodimDetail -> state.xodimlar.current).
+  const listItem = useSelector((s) => s.xodimlar.list.find((x) => x.id === id))
+  const current = useSelector((s) => (s.xodimlar.current?.id === id ? s.xodimlar.current : null))
+  const detailStatus = useSelector((s) => s.xodimlar.detailStatus)
+  const xodim = listItem ?? current
   const branches = useSelector((s) => s.filiallar.list)
-  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
 
   const [history, setHistory] = useState([])
   const [historyStatus, setHistoryStatus] = useState('idle')
@@ -42,12 +45,12 @@ export default function XodimlarDetailPage() {
   usePageHeader(xodim ? [{ label: 'Xodimlar', to: '/malumotnomalar/xodimlar' }, { label: xodim.name }] : 'Xodimlar')
 
   useEffect(() => {
-    if (!xodim) navigate('/malumotnomalar/xodimlar', { replace: true })
-  }, [xodim, navigate])
+    if (!listItem && id) dispatch(fetchXodimDetail(id))
+  }, [listItem, id, dispatch])
 
   useEffect(() => {
-    if (branchesStatus === 'idle') dispatch(fetchBranches())
-  }, [branchesStatus, dispatch])
+    if (!xodim && detailStatus === 'failed') navigate('/malumotnomalar/xodimlar', { replace: true })
+  }, [xodim, detailStatus, navigate])
 
   // Ish tarixi — bu xodimga tegishli barcha "Ishga olish" hujjatlari ("Ishga qabul qilish"
   // bo'limidan, agar bo'lsa). `type` maydoni ro'yxat javobida umuman yo'q (real OpenAPI

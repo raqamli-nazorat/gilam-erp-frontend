@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { matchesDateRange } from '@/lib/format'
-import { createKadr, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { getEmployeesPage } from '@/services/employeeService'
+import { createKadr, isEmployeeDismissed, mapEmployee } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -17,21 +18,34 @@ import XodimlarFilterModal, { EMPTY_XODIMLAR_FILTERS } from './components/Xodiml
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
+function dmyToIso(value) {
+  const m = String(value ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
+}
+
+function withHolat(e) {
+  return { ...e, holat: isEmployeeDismissed(e) ? 'boshagan' : 'faol' }
+}
+
+const fetchEmployeesPage = (params) =>
+  getEmployeesPage(params).then((res) => ({ ...res, results: res.results.map((e) => withHolat(mapEmployee(e))) }))
+
 // Xodim (Employee) shaxsiy profillari ro'yxati — to'g'ridan-to'g'ri yaratish/tahrirlash/
 // o'chirish, "Ishga olish" (Recruitment) siz. Lavozim biriktirish/ishga olish "Ishga qabul
-// qilish" bo'limida alohida boshqariladi. "Holat" (Faol/Nofaol, Figma) — Employee modelida
-// "active"/"status" maydoni umuman yo'q (Swagger tasdiqlagan), shuning uchun eng oxirgi
-// RecruitmentDismissal yozuvidan kelib chiqib hisoblanadi: 'boshagan' bo'lsa — Nofaol,
-// aks holda ('yangi'/'faol') — Faol (XodimlarDetailPage bilan bir xil qoida).
+// qilish" bo'limida alohida boshqariladi.
+//
+// Jadval scroll pagination bilan yuklanadi (bitta-bitta sahifa). Oldin barcha xodimlar va
+// barcha ishga olish/chiqarish hujjatlari (har biri sahifama-sahifa) birdaniga so'ralardi —
+// backend 429 (Too Many Requests) qaytarardi. Holat endi xodimning o'z `employment_status`
+// maydonidan olinadi. Qidiruv, viloyat/tuman/filial va sana serverga yuboriladi; Faol/Nofaol
+// yorliqlari yuklangan qatorlar ustida ishlaydi.
 export default function XodimlarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const xodimlar = useSelector((s) => s.xodimlar.list)
-  const listStatus = useSelector((s) => s.xodimlar.listStatus)
-  const listError = useSelector((s) => s.xodimlar.listError)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_XODIMLAR_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -40,8 +54,29 @@ export default function XodimlarListPage() {
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Xodimlar' }])
 
   useEffect(() => {
-    if (listStatus === 'idle') dispatch(fetchXodimlar())
-  }, [listStatus, dispatch])
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const {
+    items: xodimlar,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error: listError,
+    hasMore,
+    containerRef,
+    sentinelRef,
+    handleScroll,
+    reload,
+  } = useServerPagedList(fetchEmployeesPage, {
+    search: debouncedSearch.trim(),
+    region: filters.viloyatId,
+    district: filters.tumanId,
+    branch: filters.filialId,
+    start_date: dmyToIso(filters.sanaDan),
+    end_date: dmyToIso(filters.sanaGacha),
+  })
 
   useEffect(() => {
     if (!toast) return undefined
@@ -57,11 +92,11 @@ export default function XodimlarListPage() {
 
   const counts = useMemo(
     () => ({
-      all: xodimlar.length,
+      all: totalCount,
       faol: xodimlar.filter((x) => x.holat !== 'boshagan').length,
       nofaol: xodimlar.filter((x) => x.holat === 'boshagan').length,
     }),
-    [xodimlar]
+    [xodimlar, totalCount]
   )
   const hasFilter = Object.values(filters).some(Boolean)
 
@@ -69,24 +104,9 @@ export default function XodimlarListPage() {
     let out = xodimlar
     if (tab === 'faol') out = out.filter((x) => x.holat !== 'boshagan')
     if (tab === 'nofaol') out = out.filter((x) => x.holat === 'boshagan')
-    if (search) {
-      const q = search.trim().toLowerCase()
-      const qDigits = q.replace(/\D/g, '')
-      out = out.filter(
-        (x) =>
-          x.name.toLowerCase().includes(q) ||
-          (qDigits && x.phone.replace(/\D/g, '').includes(qDigits)) ||
-          x.jshshir.includes(q)
-      )
-    }
-    if (filters.viloyat) out = out.filter((x) => x.viloyat === filters.viloyat)
-    if (filters.tuman) out = out.filter((x) => x.tuman === filters.tuman)
-    if (filters.filial) out = out.filter((x) => x.filial === filters.filial)
     if (filters.holat) out = out.filter((x) => (x.holat === 'boshagan' ? 'Nofaol' : 'Faol') === filters.holat)
-    if (filters.sanaDan || filters.sanaGacha)
-      out = out.filter((x) => matchesDateRange(x.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [xodimlar, tab, search, filters])
+  }, [xodimlar, tab, filters])
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -155,7 +175,11 @@ export default function XodimlarListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -170,7 +194,7 @@ export default function XodimlarListPage() {
             </tr>
           </thead>
           <tbody>
-            {listStatus === 'loading' && shown.length === 0 ? (
+            {isLoading && shown.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -179,14 +203,14 @@ export default function XodimlarListPage() {
                   </div>
                 </td>
               </tr>
-            ) : listStatus === 'failed' && shown.length === 0 ? (
+            ) : listError && shown.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                    <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
                       variant="outline"
-                      onClick={() => dispatch(fetchXodimlar())}
+                      onClick={reload}
                       className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
                     >
                       Qayta urinish
@@ -235,6 +259,21 @@ export default function XodimlarListPage() {
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.filial || '—'}</td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && hasMore && !isLoading && (
+              <tr ref={sentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={9} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {isLoadingMore && (
+              <tr>
+                <td colSpan={9} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
