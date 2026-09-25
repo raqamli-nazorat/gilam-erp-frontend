@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 import {
   activateOrganization,
   fetchOrganizationDetail,
-  fetchOrgBranches,
   suspendOrganization,
   updateOrganization,
 } from '@/features/tashkilotlar/tashkilotlarSlice'
@@ -63,7 +62,6 @@ export default function TashkilotDetailPage() {
   const org = useSelector((s) => (s.tashkilotlar.current?.id === id ? s.tashkilotlar.current : null))
   const detailStatus = useSelector((s) => s.tashkilotlar.detailStatus)
   const detailError = useSelector((s) => s.tashkilotlar.detailError)
-  const branchesStatus = useSelector((s) => s.tashkilotlar.branchesStatus)
   const currentUser = useSelector((s) => s.auth.user)
 
   const [editOpen, setEditOpen] = useState(false)
@@ -79,7 +77,6 @@ export default function TashkilotDetailPage() {
 
   useEffect(() => {
     dispatch(fetchOrganizationDetail(id))
-    dispatch(fetchOrgBranches(id))
   }, [id, dispatch])
 
   useEffect(() => {
@@ -167,32 +164,50 @@ export default function TashkilotDetailPage() {
                   <tr>
                     <th className={cn(THb, 'w-10 text-left')}>#</th>
                     <th className={cn(THb, 'text-left')}>NOMI</th>
-                    <th className={cn(THb, 'text-left')}>VILOYAT</th>
-                    <th className={cn(THb, 'text-left')}>TUMAN</th>
+                    <th className={cn(THb, 'text-left')}>TELEFON</th>
                     <th className={cn(THb, 'text-left')}>MANZIL</th>
                     <th className={cn(THb, 'text-right')}>XODIM</th>
                     <th className={cn(THb, 'pr-4 text-right')}>OMBOR</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {branchesStatus === 'loading' && org.branches.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-14 text-center text-sm text-[#737373]">Yuklanmoqda…</td>
-                    </tr>
-                  ) : org.branches.length === 0 ? (
+                  {!org.branches || org.branches.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-14 text-center text-sm text-[#737373]">Filial yo‘q</td>
                     </tr>
                   ) : (
                     org.branches.map((b, i) => (
-                      <tr key={b.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr key={b.id || i} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
-                        <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{b.name}</td>
-                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{b.viloyat}</td>
-                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{b.tuman}</td>
-                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil}</td>
-                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.xodim ?? '—'}</td>
-                        <td className="px-3 pr-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor}</td>
+                        <td
+                          onClick={() => navigate(`/filiallar/${b.id}`)}
+                          className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA] cursor-pointer hover:underline"
+                        >
+                          {b.name || '—'}
+                        </td>
+                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">
+                          {b.phone ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              {b.phone}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  copy(b.phone, 'Telefon')
+                                }}
+                                className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
+                                aria-label="Nusxa olish"
+                              >
+                                <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
+                              </button>
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil || b.address || '—'}</td>
+                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.xodim != null ? `${b.xodim} ta` : '—'}</td>
+                        <td className="px-3 pr-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor != null ? `${b.ombor} ta` : '—'}</td>
                       </tr>
                     ))
                   )}

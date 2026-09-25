@@ -8,8 +8,7 @@ import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { fetchUserDetail } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import { holatBadgeCls as xodimHolatBadgeCls, holatLabel as xodimHolatLabel } from '@/features/xodimlar/xodimlarData'
-import { fetchXodimDetail, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
-import * as recruitmentService from '@/services/recruitmentService'
+import { fetchXodimDetail } from '@/features/xodimlar/xodimlarSlice'
 import { getAuditLogs } from '@/services/auditService'
 import { getActionInfo, formatAuditDateTime } from '@/features/audit/auditData'
 import { Button } from '@/components/ui/button'
@@ -66,7 +65,7 @@ export default function FoydalanuvchilarDetailPage() {
   // Bog'langan xodimning to'liq ish tarixi — faqat "hozir bloklanganmi" emas, "hozirgina
   // faollashtirildimi" (justRehired) degan savolga javob berish uchun kerak (XodimlarDetailPage
   // bilan bir xil naqsh).
-  const [history, setHistory] = useState([])
+  const history = xodim?.history || []
 
   // Foydalanuvchining audit jurnali — haqiqiy /audits/logs/?actor=<id> orqali
   const [audit, setAudit] = useState([])
@@ -79,25 +78,10 @@ export default function FoydalanuvchilarDetailPage() {
   }, [id, dispatch])
 
   useEffect(() => {
-    if (user?.employeeId) dispatch(fetchXodimDetail(user.employeeId))
-  }, [user?.employeeId, dispatch])
-
-  useEffect(() => {
-    if (!user?.employeeId) return undefined
-    let cancelled = false
-    recruitmentService
-      .getAllRecruitmentDismissalsTagged({ employee: user.employeeId })
-      .then((rows) => {
-        if (cancelled) return
-        setHistory(rows.map(mapRecruitment).sort((a, b) => (a.yaratilganAt < b.yaratilganAt ? -1 : 1)))
-      })
-      .catch(() => {
-        if (!cancelled) setHistory([])
-      })
-    return () => {
-      cancelled = true
+    if (user?.employeeId && xodim?.id !== user.employeeId) {
+      dispatch(fetchXodimDetail(user.employeeId))
     }
-  }, [user?.employeeId, xodim?.holat, xodim?.latestHireId])
+  }, [user?.employeeId, xodim?.id, dispatch])
 
   useEffect(() => {
     let cancelled = false
@@ -254,8 +238,8 @@ export default function FoydalanuvchilarDetailPage() {
           {/* O'ng panel */}
           <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
             <Panel title="FOYDALANUVCHI MA’LUMOTLARI" className="shrink-0">
-              <InfoRow label="Tashkiloti" value={user.tashkilot} />
-              <InfoRow label="Filiali" value={user.filial} />
+              <InfoRow label="Tashkiloti" value={user.tashkilot?.name} />
+              <InfoRow label="Filiali" value={user.filial?.name} />
               <InfoRow label="Roli" value={user.rol} />
               <InfoRow label="Telefoni" value={user.phone} onCopy={() => copy(user.phone, 'Telefon')} />
               <InfoRow label="Yaratilgan" value={user.yaratilgan} />

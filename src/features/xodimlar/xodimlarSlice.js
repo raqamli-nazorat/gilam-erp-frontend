@@ -143,6 +143,7 @@ export function combineXodim(employee, records) {
     // yo'q bo'lsa (hali umuman ishga olinmagan yoki hozir ishdan chiqarilgan) Tahrirlash yangi hujjat yaratadi.
     latestHireId: latestHire?.id ?? null,
     termination: latest?.type === 'dismissal' ? { reason: latest.dismissalReason, at: formatDate(latest.sana) } : null,
+    history: sorted,
   }
 }
 

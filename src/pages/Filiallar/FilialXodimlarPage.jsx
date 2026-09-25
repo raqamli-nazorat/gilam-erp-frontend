@@ -24,6 +24,7 @@ export default function FilialXodimlarPage() {
     handleScroll: handleStaffScroll,
     totalCount: staffTotal,
   } = useBranchStaff(id)
+
   if (!branch) return null
 
   const s = branch.detail.xodimlarStats
@@ -65,7 +66,7 @@ export default function FilialXodimlarPage() {
         staffRows.map((x, i) => {
           const working = x.holat === 'Faol'
           return (
-            <tr key={x.id} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+            <tr key={x.id || i} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
               <td className={TD_IDX}>{i + 1}</td>
               <td className={TD_LINK}>{x.name}</td>
               <td className={TD}>{x.lavozim || '—'}</td>

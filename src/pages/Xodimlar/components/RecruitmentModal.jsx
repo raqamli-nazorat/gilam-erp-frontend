@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { maskMoney } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import RecruitmentFieldsGrid, {
   EMPTY_HIRE_DRAFT,
   HireModalHeader,
@@ -74,7 +75,21 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
     } else if (isBulk) {
       const nextQueue = employees.map((e) => ({ id: e.id, name: e.name }))
       setQueue(nextQueue)
-      setDrafts(Object.fromEntries(nextQueue.map((item) => [item.id, EMPTY_HIRE_DRAFT])))
+      setDrafts(
+        Object.fromEntries(
+          nextQueue.map((item) => {
+            const emp = kadrlar.find((k) => k.id === item.id) || employees.find((e) => e.id === item.id)
+            return [
+              item.id,
+              {
+                ...EMPTY_HIRE_DRAFT,
+                tashkilot: emp?.tashkilotId ?? '',
+                filial: emp?.filialId ?? '',
+              },
+            ]
+          })
+        )
+      )
       setActiveIndex(0)
     } else {
       setQueue([{ id: '', name: '' }])
@@ -84,7 +99,7 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
     // `branches` deps'ga qo'shildi — modal ochilganda hali yuklanmagan bo'lishi mumkin
     // (useHireCatalogs asinxron so'raydi), yuklangach effekt qayta ishlab tashkilotni to'g'ri hosil qiladi.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, record, isBulk, branches])
+  }, [open, record, isBulk, branches, kadrlar])
 
   const current = queue[activeIndex]
   const keyFor = (item) => (isBulk ? item?.id : SINGLE_KEY)
@@ -114,7 +129,8 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
     queue.length > 0 && queue.every((item) => item.id && isHireDraftValid(drafts[keyFor(item)] ?? EMPTY_HIRE_DRAFT))
 
   function submitEdit() {
-    onSave({ employeeId: editEmployeeId, status: record.status, draft: buildHireValues(editDraft) })
+    const emp = kadrlar.find((k) => k.id === editEmployeeId)
+    onSave({ employeeId: editEmployeeId, status: record.status, draft: buildHireValues(editDraft, emp) })
     onOpenChange(false)
   }
 
@@ -126,13 +142,17 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
       // so'rov o'rniga. Bitta xodim (tanlab yoki navbatda bitta) — onSaveOne yetarli.
       if (isBulk && queue.length > 1 && onSaveBulk) {
         await onSaveBulk(
-          queue.map((item) => ({ employeeId: item.id, draft: buildHireValues(drafts[keyFor(item)]) })),
+          queue.map((item) => {
+            const emp = kadrlar.find((k) => k.id === item.id) || employees?.find((e) => e.id === item.id)
+            return { employeeId: item.id, draft: buildHireValues(drafts[keyFor(item)], emp) }
+          }),
           status
         )
       } else {
         for (const item of queue) {
+          const emp = kadrlar.find((k) => k.id === item.id) || employees?.find((e) => e.id === item.id)
           // eslint-disable-next-line no-await-in-loop
-          await onSaveOne({ employeeId: item.id, status, ...buildHireValues(drafts[keyFor(item)]) })
+          await onSaveOne({ employeeId: item.id, status, ...buildHireValues(drafts[keyFor(item)], emp) })
         }
       }
       onDone(queue.length)
@@ -156,6 +176,14 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
     const emp = kadrlar.find((k) => k.id === ids[0])
     if (!emp) return
     setQueue([{ id: emp.id, name: emp.name }])
+    setDrafts((d) => ({
+      ...d,
+      [SINGLE_KEY]: {
+        ...(d[SINGLE_KEY] ?? EMPTY_HIRE_DRAFT),
+        tashkilot: emp.tashkilotId ?? '',
+        filial: emp.filialId ?? '',
+      },
+    }))
   }
 
   return (
@@ -183,7 +211,7 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
         {isEdit ? (
           <div className="min-h-0 flex-1 overflow-auto px-6 pb-5 pt-2">
             <div className="mb-4">
-              <label className={compactLabelCls}>Xodim</label>
+              <Label className={compactLabelCls}>Xodim</Label>
               <div className={cn(compactFieldCls, 'flex items-center bg-[#F5F5F5] text-[#0A0A0A] dark:bg-white/5 dark:text-white')}>
                 {editEmployeeName}
               </div>
@@ -194,7 +222,7 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
           current && (
             <div className="min-h-0 flex-1 overflow-auto px-6 pb-5 pt-2">
               <div className="mb-4">
-                <label className={compactLabelCls}>Xodim</label>
+                <Label className={compactLabelCls}>Xodim</Label>
                 {isBulk ? (
                   <div className={cn(compactFieldCls, 'flex items-center bg-[#F5F5F5] text-[#0A0A0A] dark:bg-white/5 dark:text-white')}>
                     {current.name}

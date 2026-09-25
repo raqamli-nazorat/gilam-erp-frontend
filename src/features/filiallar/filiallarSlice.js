@@ -32,7 +32,8 @@ const emptyDetail = {
 // servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
 export function mapBranch(b) {
   const ombor = Number(b.warehouses_count) || 0
-  const xodim = Number(b.employees_count) || 0
+  const employees = Array.isArray(b.employees) ? b.employees : []
+  const xodim = Number(b.employees_count) || employees.length
   const closed = !!b.is_closed
   return {
     id: b.id,
@@ -49,9 +50,13 @@ export function mapBranch(b) {
     openedAt: b.created_at ? formatDateTime(new Date(b.created_at)) : '',
     status: closed ? 'closed' : 'active',
     ombor,
+    employees,
     stats: { xodimlar: xodim, omborlar: ombor, mijozlar: null, savdo: null },
     close: closed ? { reason: b.closing_reason ?? '' } : null,
-    detail: emptyDetail,
+    detail: {
+      ...emptyDetail,
+      xodimlar: employees,
+    },
   }
 }
 

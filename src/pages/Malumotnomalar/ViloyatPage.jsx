@@ -197,7 +197,7 @@ export default function ViloyatPage() {
               </tr>
             ) : (
               shown.map((r, i) => (
-                <tr key={r.id} onClick={() => setModalRec(r)} className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+                <tr key={r.id || i} onClick={() => setModalRec(r)} className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
                   <td className={TD_MUTED}>{r.countryName || '—'}</td>

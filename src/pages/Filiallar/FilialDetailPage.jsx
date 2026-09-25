@@ -76,7 +76,7 @@ export default function FilialDetailPage() {
 
   function copy(text, label) {
     navigator.clipboard?.writeText(String(text))
-    setToast(`${label} nusxalandi`)
+    setToasts(`${label} nusxalandi`)
   }
 
   return (
@@ -108,14 +108,22 @@ export default function FilialDetailPage() {
                     <th className={cn(THb, 'text-left')}>F.I.SH.</th>
                     <th className={cn(THb, 'text-left')}>LAVOZIM</th>
                     <th className={cn(THb, 'text-left')}>TELEFON</th>
-                    <th className={cn(THb, 'pr-4 text-left')}>HOLAT</th>
+                    <th className={cn(THb, 'text-left')}>HOLAT</th>
                   </tr>
                 </thead>
                 <tbody>
                   {staffLoading && staffRows.length === 0 ? (
-                    <tr><td colSpan={5} className="py-14 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-[#0052D2]" /></td></tr>
+                    <tr>
+                      <td colSpan={5} className="py-14 text-center">
+                        <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#0052D2]" />
+                      </td>
+                    </tr>
                   ) : staffRows.length === 0 ? (
-                    <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Bu ma’lumot hali mavjud emas</td></tr>
+                    <tr>
+                      <td colSpan={5} className="py-14 text-center text-sm text-[#737373]">
+                        Bu ma’lumot hali mavjud emas
+                      </td>
+                    </tr>
                   ) : (
                     staffRows.map((x, i) => (
                       <tr key={x.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
