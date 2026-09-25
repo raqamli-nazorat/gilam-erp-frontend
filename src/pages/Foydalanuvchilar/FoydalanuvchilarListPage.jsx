@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Filter, Loader2, Plus, Search, Users } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -8,8 +8,9 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { useTabCounts } from '@/hooks/useTabCounts'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
-import { createUser, fetchUsers, mapUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { createUser, mapUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import * as userService from '@/services/userService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,10 +21,11 @@ import UserFilterModal, { EMPTY_USER_FILTERS } from './components/UserFilterModa
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
-// Jadval endi "scroll pagination" bilan yuklanadi — qidiruv serverga so'rov parametri
-// sifatida yuboriladi. Tab/"Holat" (blok) esa faqat YUKLANGAN qatorlar ustida ishlaydi
-// (backendda is_blocked bo'yicha filter parametri hali tasdiqlanmagan); "Tashkilot"/
-// "Filial"/"Rol"/sana filtrlari ham xuddi shunday, faqat klient tomonda.
+// Jadval "scroll pagination" bilan yuklanadi — qidiruv va tab/"Holat" (backend `is_blocked`
+// filtri) serverga so'rov parametri sifatida yuboriladi. Tab hisoblagichlari endi barcha
+// foydalanuvchilarni yuklab sanalmaydi — "Barchasi" jadval so'rovining o'z `count`idan,
+// Faol/Bloklangan esa bittadan 1-sahifa so'rovidan olinadi (useTabCounts). "Tashkilot"/"Filial"/"Rol"/sana filtrlari
+// yuklangan qatorlar ustida ishlaydi.
 function fetchUsersPage(params) {
   return userService.getUsersPage(params).then((res) => ({ ...res, results: res.results.map(mapUser) }))
 }
@@ -31,11 +33,6 @@ function fetchUsersPage(params) {
 export default function FoydalanuvchilarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  // To'liq ro'yxat — tab hisoblagichlari va boshqa sahifalardagi foydalanuvchi tanlagichlari
-  // shunga tayanadi, shuning uchun bunga tegilmaydi.
-  const users = useSelector((s) => s.foydalanuvchilar.list)
-  const listStatus = useSelector((s) => s.foydalanuvchilar.listStatus)
-
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -46,9 +43,6 @@ export default function FoydalanuvchilarListPage() {
 
   usePageHeader('Platforma › Foydalanuvchilar')
 
-  useEffect(() => {
-    if (listStatus === 'idle') dispatch(fetchUsers())
-  }, [listStatus, dispatch])
 
   // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
   useEffect(() => {
@@ -68,18 +62,12 @@ export default function FoydalanuvchilarListPage() {
     setToast('Telefon nusxalandi')
   }
 
-  const counts = useMemo(
-    () => ({
-      all: users.length,
-      active: users.filter((u) => u.holat === 'active').length,
-      blocked: users.filter((u) => u.holat === 'blocked').length,
-    }),
-    [users]
-  )
   const hasFilter = Object.values(filters).some(Boolean)
+  const isBlockedParam = tab === 'all' ? undefined : tab === 'blocked'
 
   const {
     items: pagedUsers,
+    totalCount,
     isLoading: usersLoading,
     isLoadingMore: usersLoadingMore,
     error: usersError,
@@ -88,12 +76,25 @@ export default function FoydalanuvchilarListPage() {
     sentinelRef: usersSentinelRef,
     handleScroll: handleUsersScroll,
     reload: reloadUsers,
-  } = useServerPagedList(fetchUsersPage, { search: debouncedSearch.trim() })
+  } = useServerPagedList(fetchUsersPage, {
+    search: debouncedSearch.trim(),
+    is_blocked: isBlockedParam,
+  })
+
+  // Tab hisoblagichlari — sahifaga kirganda hammasi ko'rinadi: ochiq tab jadvalning o'z `count`idan,
+  // qolganlari bittadan 1-sahifa so'rovi bilan (useTabCounts).
+  const countTab = isBlockedParam === undefined ? 'all' : isBlockedParam ? 'blocked' : 'active'
+  const counts = useTabCounts(
+    userService.getUsersPage,
+    { search: debouncedSearch.trim() },
+    { active: { is_blocked: false }, blocked: { is_blocked: true } },
+    countTab,
+    totalCount,
+    usersLoading
+  )
 
   const shown = useMemo(() => {
     let out = pagedUsers
-    if (tab === 'active') out = out.filter((u) => u.holat === 'active')
-    if (tab === 'blocked') out = out.filter((u) => u.holat === 'blocked')
     if (filters.tashkilot) out = out.filter((u) => u.tashkilot === filters.tashkilot)
     if (filters.filial) out = out.filter((u) => u.filial === filters.filial)
     if (filters.rol) out = out.filter((u) => u.rol === filters.rol)
@@ -101,7 +102,7 @@ export default function FoydalanuvchilarListPage() {
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((u) => matchesDateRange(u.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [pagedUsers, tab, filters])
+  }, [pagedUsers, filters])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -126,16 +127,18 @@ export default function FoydalanuvchilarListPage() {
                 )}
               >
                 {label}
-                <span
-                  className={cn(
-                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
-                    active
-                      ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                      : 'text-[#A3A3A3] dark:text-muted-foreground'
-                  )}
-                >
-                  {n}
-                </span>
+                {n != null && (
+                  <span
+                    className={cn(
+                      'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
+                      active
+                        ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
+                        : 'text-[#A3A3A3] dark:text-muted-foreground'
+                    )}
+                  >
+                    {n}
+                  </span>
+                )}
               </button>
             )
           })}

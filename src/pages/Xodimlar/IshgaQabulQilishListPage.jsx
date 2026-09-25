@@ -6,9 +6,10 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { matchesDateRange } from '@/lib/format'
-import { fetchBranches } from '@/features/filiallar/filiallarSlice'
-import { bulkCreateRecruitments, createRecruitment, fetchRecruitments, fetchXodimlar } from '@/features/xodimlar/xodimlarSlice'
+import { formatDate } from '@/lib/format'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { getRecruitmentsPage } from '@/services/recruitmentService'
+import { bulkCreateRecruitments, createRecruitment, fetchXodimlar, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -20,29 +21,36 @@ import XodimFilterModal, { EMPTY_XODIM_FILTERS } from './components/XodimFilterM
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
-const STATUS_LABEL = { draft: 'Qoralama', confirmed: 'Tasdiqlangan', cancelled: 'Bekor qilingan' }
-const STATUS_CLS = {
-  draft: 'bg-[#0A0A0A] text-white dark:bg-white/20 dark:text-white',
-  confirmed: 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]',
-  cancelled: 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]',
+function dmyToIso(value) {
+  const m = String(value ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
 }
+
+const fetchRecruitmentsPage = (params) =>
+  getRecruitmentsPage(params).then((res) => ({
+    ...res,
+    results: res.results.map((r) => mapRecruitment({ ...r, type: 'recruitment' })),
+  }))
 
 // "Ishga qabul qilish" — RecruitmentDismissal hujjatlarining o'zi (Kadrlar/Xodimlardan farqli),
 // Qoralama/Tasdiqlangan/Bekor qilingan uch holatli ish jarayoni bilan. Backendda bu holat
 // maydoni tasdiqlanmagan — mapRecruitment eski/nomaʼlum qiymatlarni "confirmed" deb o'qiydi.
+//
+// Jadval "scroll pagination" bilan yuklanadi (bitta-bitta sahifa). Oldin sahifa ochilishida
+// fetchRecruitments (barcha sahifalar) + fetchXodimlar (barcha xodimlar va yana barcha
+// recruitment sahifalari) birga ishga tushib, har bir sahifa ikki marta so'ralardi. Xodimlar
+// ro'yxati endi faqat "Ishga olish" oynasi ochilganda (xodim tanlash uchun) yuklanadi.
+// Qidiruv va "Sana" oralig'i serverga yuboriladi; tashkilot/filial/lavozim filtrlari yuklangan
+// qatorlar ustida ishlaydi. Holat ustuni/tab'lari yo'q — RecruitmentDismissal'da holat maydoni yo'q.
 export default function IshgaQabulQilishListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const records = useSelector((s) => s.xodimlar.recruitments)
-  const listStatus = useSelector((s) => s.xodimlar.recruitmentsStatus)
-  const listError = useSelector((s) => s.xodimlar.recruitmentsError)
   const branches = useSelector((s) => s.filiallar.list)
-  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
   const kadrlar = useSelector((s) => s.xodimlar.list)
   const kadrStatus = useSelector((s) => s.xodimlar.listStatus)
 
-  const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_XODIM_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [toast, setToast] = useState('')
@@ -60,18 +68,33 @@ export default function IshgaQabulQilishListPage() {
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Ishga qabul qilish' }])
 
-  // Har uch dispatch ham o'zining "idle" holatiga qarab qo'riqlanadi (fetchXodimlar avvalgi
-  // qo'riqlanmagan chaqiruvi bo'yicha bitta so'rovga bir nechta marta ketayotgan edi — bu effekt
-  // `listStatus` (recruitmentsStatus) o'zgarganda qayta ishga tushadi, `fetchRecruitments` esa
-  // aynan shu maydonni idle→loading→succeeded qilib o'zgartiradi, shuning uchun effekt bir
-  // marta mount'da 3 marta qayta ishga tushadi; qo'riqlanmagan `dispatch(fetchXodimlar())` har
-  // safar qayta yuborilib, u o'zi ichida employees VA recruitment-dismissals'ni birga so'raydi —
-  // natijada bitta sahifa yuklanishida employees 3 marta, recruitment-dismissals 4 marta so'ralardi).
+  // Xodim tanlash oynasi uchun — faqat "Ishga olish" jarayoni boshlanganda, bir marta.
+  const hireFlowOpen = choiceOpen || bulkPickerOpen || hireOpen
   useEffect(() => {
-    if (listStatus === 'idle') dispatch(fetchRecruitments())
-    if (kadrStatus === 'idle') dispatch(fetchXodimlar())
-    if (branchesStatus === 'idle') dispatch(fetchBranches())
-  }, [listStatus, kadrStatus, branchesStatus, dispatch])
+    if (hireFlowOpen && kadrStatus === 'idle') dispatch(fetchXodimlar())
+  }, [hireFlowOpen, kadrStatus, dispatch])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const {
+    items: records,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error: listError,
+    hasMore,
+    containerRef,
+    sentinelRef,
+    handleScroll,
+    reload,
+  } = useServerPagedList(fetchRecruitmentsPage, {
+    search: debouncedSearch.trim(),
+    start_date: dmyToIso(filters.sanaDan),
+    end_date: dmyToIso(filters.sanaGacha),
+  })
 
   useEffect(() => {
     if (!toast) return undefined
@@ -85,6 +108,8 @@ export default function IshgaQabulQilishListPage() {
     setToast(`${label} nusxalandi`)
   }
 
+  // Filiallar ro'yxati bu sahifada ataylab yuklanmaydi (barcha sahifalarini so'rashning hojati yo'q) —
+  // store'da bo'lsa (boshqa sahifadan) zaxira sifatida ishlatiladi.
   // Ro'yxat javobi tashkilot nomini to'g'ridan-to'g'ri beradi (r.tashkilot, mapRecruitment
   // orqali organization_name'dan) — topilmasa (masalan detaldan kelgan bo'lsa) filiallar
   // ro'yxatidan qidiramiz.
@@ -93,69 +118,28 @@ export default function IshgaQabulQilishListPage() {
     [records, branches]
   )
 
-  const counts = useMemo(
-    () => ({
-      all: enriched.length,
-      draft: enriched.filter((r) => r.status === 'draft').length,
-      confirmed: enriched.filter((r) => r.status === 'confirmed').length,
-      cancelled: enriched.filter((r) => r.status === 'cancelled').length,
-    }),
-    [enriched]
-  )
   const hasFilter = Object.values(filters).some(Boolean)
 
   const shown = useMemo(() => {
     let out = enriched
-    if (tab !== 'all') out = out.filter((r) => r.status === tab)
-    if (search) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((r) => r.employeeName.toLowerCase().includes(q))
-    }
     if (filters.tashkilot) out = out.filter((r) => r.tashkilot === filters.tashkilot)
     if (filters.filial) out = out.filter((r) => r.branch === filters.filial)
     if (filters.lavozim) out = out.filter((r) => r.lavozim === filters.lavozim)
-    if (filters.sanaDan || filters.sanaGacha)
-      out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [enriched, tab, search, filters])
+  }, [enriched, filters])
 
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        {/* Holat (Tasdiqlangan/Qoralama/Bekor qilingan) tab'lari olib tashlandi — backendda bunday
+            maydon yo'q (faqat brauzer localStorage'ida edi). Faqat jami son (jadval so'rovining count'i). */}
         <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
-          {[
-            ['all', 'Barchasi', counts.all],
-            ['confirmed', 'Tasdiqlangan', counts.confirmed],
-            ['draft', 'Qoralama', counts.draft],
-            ['cancelled', 'Bekor qilingan', counts.cancelled],
-          ].map(([key, label, n]) => {
-            const active = tab === key
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={cn(
-                  'flex h-7 items-center gap-1.5 rounded-[7px] px-2 text-[13px] font-medium transition-colors',
-                  active
-                    ? 'bg-white text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white'
-                    : 'text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground dark:hover:text-white'
-                )}
-              >
-                {label}
-                <span
-                  className={cn(
-                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
-                    active
-                      ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                      : 'text-[#A3A3A3] dark:text-muted-foreground'
-                  )}
-                >
-                  {n}
-                </span>
-              </button>
-            )
-          })}
+          <span className="flex h-7 items-center gap-1.5 rounded-[7px] bg-white px-2 text-[13px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white">
+            Barchasi
+            <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#EAF1FE] px-1.5 text-[12px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
+              {totalCount}
+            </span>
+          </span>
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
@@ -187,7 +171,11 @@ export default function IshgaQabulQilishListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -199,27 +187,26 @@ export default function IshgaQabulQilishListPage() {
               <th className={cn(TH, 'text-left')}>ISHGA OLINGAN</th>
               <th className={cn(TH, 'text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'text-left')}>YANGILANGAN</th>
-              <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
-            {listStatus === 'loading' && shown.length === 0 ? (
+            {isLoading && shown.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-16 text-center">
+                <td colSpan={8} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
                   </div>
                 </td>
               </tr>
-            ) : listStatus === 'failed' && shown.length === 0 ? (
+            ) : listError && shown.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-16 text-center">
+                <td colSpan={8} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <p className="text-sm text-[#DC2626]">{listError || 'Xatolik yuz berdi'}</p>
+                    <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
                       variant="outline"
-                      onClick={() => dispatch(fetchRecruitments())}
+                      onClick={reload}
                       className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
                     >
                       Qayta urinish
@@ -229,7 +216,7 @@ export default function IshgaQabulQilishListPage() {
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-16 text-center">
+                <td colSpan={8} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
                       <UserPlus className="h-6 w-6 text-[#737373]" />
@@ -264,21 +251,26 @@ export default function IshgaQabulQilishListPage() {
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.tashkilot || '—'}</td>
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.branch || '—'}</td>
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.lavozim || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.sana || '—'}</td>
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.sana ? formatDate(r.sana) : '—'}</td>
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.yaratilgan || '—'}</td>
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.ozgartirilgan || '—'}</td>
-                  <td className="px-4">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        STATUS_CLS[r.status]
-                      )}
-                    >
-                      {STATUS_LABEL[r.status]}
-                    </span>
-                  </td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && hasMore && !isLoading && (
+              <tr ref={sentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={8} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {isLoadingMore && (
+              <tr>
+                <td colSpan={8} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -332,7 +324,10 @@ export default function IshgaQabulQilishListPage() {
             })
         }
         onDone={(count) => {
-          if (count > 1) setToast(`${count} ta xodim ishga olindi`)
+          if (count > 1) {
+            setToast(`${count} ta xodim ishga olindi`)
+            reload()
+          }
           else if (createdIdsRef.current[0]) navigate(`/malumotnomalar/ishga-qabul-qilish/${createdIdsRef.current[0]}`)
           createdIdsRef.current = []
         }}

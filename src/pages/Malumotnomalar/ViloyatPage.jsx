@@ -5,7 +5,11 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { countrySlice } from '@/features/malumotnomalar/referenceEntities'
-import { createRegion, deleteRegion, fetchAllDistricts, fetchRegions, updateRegion } from '@/features/geo/geoSlice'
+import { createRegion, deleteRegion, mapRegion, updateRegion } from '@/features/geo/geoSlice'
+import { clearGeoCounts, countDistrictsOfRegion } from '@/features/geo/geoCounts'
+import { getRegionsPage } from '@/services/geoService'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { useRowCounts } from '@/hooks/useRowCounts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,16 +34,19 @@ const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525
 // Viloyatlar ro'yxatida "YARATILGAN"/"YANGILANGAN" backend'dan kelmaydi (Region'da bu maydonlar
 // bor, lekin biz ularni geoSlice'da hozircha saqlamaymiz) — shu sabab formatDateTime bilan
 // hozirgi vaqtni ko'rsatamiz, faqat shu seans davomida (sahifa yangilansa API'dan kelgan qiymat yo'q).
+const fetchRegionsPage = (params) =>
+  getRegionsPage(params).then((res) => ({ ...res, results: res.results.map(mapRegion) }))
+
+// Jadval scroll pagination bilan yuklanadi; "Tumanlar" soni har bir ko'rinib turgan viloyat uchun
+// alohida hisoblagich so'rovi (geoCounts.js) bilan olinadi — barcha tumanlar endi yuklanmaydi.
 export default function ViloyatPage() {
   const dispatch = useDispatch()
-  const regions = useSelector((s) => s.geo.regions)
-  const regionsStatus = useSelector((s) => s.geo.regionsStatus)
-  const regionsError = useSelector((s) => s.geo.regionsError)
-  const allDistricts = useSelector((s) => s.geo.allDistricts)
   const countries = useSelector((s) => s.davlatlar.list)
   const countriesStatus = useSelector((s) => s.davlatlar.listStatus)
 
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [countsVersion, setCountsVersion] = useState(0)
   const [filters, setFilters] = useState(EMPTY_GEO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [modalRec, setModalRec] = useState(null)
@@ -48,11 +55,30 @@ export default function ViloyatPage() {
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Viloyat' }])
 
+  // Davlatlar ro'yxati faqat forma (Davlat tanlagichi) ochilganda kerak.
   useEffect(() => {
-    dispatch(fetchRegions())
-    dispatch(fetchAllDistricts())
-    if (countriesStatus === 'idle') dispatch(countrySlice.fetchItems())
-  }, [dispatch, countriesStatus])
+    if (modalRec && countriesStatus === 'idle') dispatch(countrySlice.fetchItems())
+  }, [modalRec, dispatch, countriesStatus])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const {
+    items: regions,
+    isLoading,
+    isLoadingMore,
+    error: regionsError,
+    hasMore,
+    containerRef,
+    sentinelRef,
+    handleScroll,
+    reload,
+  } = useServerPagedList(fetchRegionsPage, { search: debouncedSearch.trim() })
+
+  const regionIds = useMemo(() => regions.map((r) => r.id), [regions])
+  const tumanCountByRegion = useRowCounts(regionIds, countDistrictsOfRegion, countsVersion)
 
   useEffect(() => {
     if (!toast) return undefined
@@ -60,26 +86,14 @@ export default function ViloyatPage() {
     return () => clearTimeout(t)
   }, [toast])
 
-  const tumanCountByRegion = useMemo(() => {
-    const map = {}
-    allDistricts.forEach((d) => {
-      map[d.regionId] = (map[d.regionId] ?? 0) + 1
-    })
-    return map
-  }, [allDistricts])
-
   const shown = useMemo(() => {
     let out = regions
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      out = out.filter((r) => r.name.toLowerCase().includes(q))
-    }
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     if (filters.ozgartirilganDan || filters.ozgartirilganGacha)
       out = out.filter((r) => matchesDateRange(r.ozgartirilgan, filters.ozgartirilganDan, filters.ozgartirilganGacha))
     return out
-  }, [regions, search, filters])
+  }, [regions, filters])
 
   function saveRegion(values) {
     const action =
@@ -88,14 +102,23 @@ export default function ViloyatPage() {
         : updateRegion({ id: modalRec.id, ...values })
     dispatch(action)
       .unwrap()
-      .then(() => setToast('Saqlandi'))
+      .then(() => {
+        setToast('Saqlandi')
+        clearGeoCounts()
+        reload()
+      })
       .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
   }
 
   function confirmDelete() {
     dispatch(deleteRegion(delRec.id))
       .unwrap()
-      .then(() => setToast('O‘chirildi'))
+      .then(() => {
+        setToast('O‘chirildi')
+        clearGeoCounts()
+        setCountsVersion((v) => v + 1)
+        reload()
+      })
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
   }
 
@@ -134,7 +157,11 @@ export default function ViloyatPage() {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card"
+      >
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -144,28 +171,27 @@ export default function ViloyatPage() {
               <th className={cn(TH, 'text-left')}>TUMANLAR</th>
               <th className={cn(TH, 'text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'text-left')}>YANGILANGAN</th>
-              <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
-            {regionsStatus === 'loading' && shown.length === 0 ? (
+            {isLoading && shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
                   </div>
                 </td>
               </tr>
-            ) : regionsStatus === 'failed' && shown.length === 0 ? (
+            ) : regionsError && shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
-                  <p className="text-sm text-[#DC2626]">{regionsError || 'Xatolik yuz berdi'}</p>
+                <td colSpan={6} className="py-16 text-center">
+                  <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                 </td>
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Yozuv yo‘q
                 </td>
               </tr>
@@ -175,16 +201,26 @@ export default function ViloyatPage() {
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
                   <td className={TD_MUTED}>{r.countryName || '—'}</td>
-                  <td className={TD_MUTED}>{tumanCountByRegion[r.id] ?? 0} ta</td>
+                  <td className={TD_MUTED}>{tumanCountByRegion[r.id] ?? '…'} ta</td>
                   <td className={TD_MUTED}>{r.yaratilgan || '—'}</td>
                   <td className={TD_MUTED}>{r.ozgartirilgan || '—'}</td>
-                  <td className="px-4">
-                    <span className="inline-flex h-[22px] items-center rounded-full bg-[#E6FAF1] px-2.5 text-[11px] font-medium tracking-[0.3px] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]">
-                      Faol
-                    </span>
-                  </td>
                 </tr>
               ))
+            )}
+            {shown.length > 0 && hasMore && !isLoading && (
+              <tr ref={sentinelRef} className="h-1 border-0 p-0">
+                <td colSpan={6} className="h-1 border-0 p-0" />
+              </tr>
+            )}
+            {isLoadingMore && (
+              <tr>
+                <td colSpan={6} className="py-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
+                    Ko‘proq ma’lumotlar yuklanmoqda…
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

@@ -4,9 +4,9 @@ import { extractErrorMessage } from '@/services/apiHelpers'
 import { workScheduleApi } from '@/services/workScheduleService'
 
 // Backend "WorkSchedule" (hr/work-schedules/) — Swagger (/api/schema/) shakli:
-// name, description, from_hour/to_hour, days ([0..6] — 0=Dushanba ... 6=Yakshanba), status.
-// Filial (branch) hozircha backend sxemasida yo'q — backend qo'shgach ishlashi uchun
-// branch_info / branch (obyekt yoki id) ikkalasi ham qo'llab-quvvatlanadi.
+// name, description, from_hour/to_hour, work_days ([0..6] — 0=Dushanba ... 6=Yakshanba), branch_info.
+// Backend ish kunlari maydonini "days" dan "work_days" ga o'zgartirgan — shu sababli jadvalda
+// "Ish kunlari" doim "—" chiqardi va saqlashda kunlar yuborilmasdi. Eski nom zaxira sifatida o'qiladi.
 export function mapWorkSchedule(raw) {
   const branchObj = raw.branch_info ?? (raw.branch && typeof raw.branch === 'object' ? raw.branch : null)
   return {
@@ -17,7 +17,9 @@ export function mapWorkSchedule(raw) {
     filial: branchObj?.name ?? '',
     fromHour: (raw.from_hour ?? '').slice(0, 5),
     toHour: (raw.to_hour ?? '').slice(0, 5),
-    days: Array.isArray(raw.days) ? [...raw.days].sort((a, b) => a - b) : [],
+    days: (Array.isArray(raw.work_days) ? raw.work_days : Array.isArray(raw.days) ? raw.days : [])
+      .map(Number)
+      .sort((a, b) => a - b),
     status: raw.status ?? '',
     yaratilgan: raw.created_at ? formatDateTime(new Date(raw.created_at)) : '',
     ozgartirilgan: raw.updated_at ? formatDateTime(new Date(raw.updated_at)) : '',
@@ -31,7 +33,7 @@ export function buildWorkSchedulePayload(draft) {
     description: draft.tavsif ?? '',
     from_hour: draft.fromHour ? `${draft.fromHour}:00` : undefined,
     to_hour: draft.toHour ? `${draft.toHour}:00` : undefined,
-    days: [...(draft.days ?? [])].sort((a, b) => a - b),
+    work_days: [...(draft.days ?? [])].sort((a, b) => a - b),
   }
 }
 

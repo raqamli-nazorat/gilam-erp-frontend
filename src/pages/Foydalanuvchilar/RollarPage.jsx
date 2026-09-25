@@ -134,13 +134,12 @@ export default function RollarPage() {
               <th className={cn(TH, 'h-10 text-right')}>FOYDALANUVCHILAR</th>
               <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
             {rolesLoading && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center">
+                <td colSpan={5} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -149,7 +148,7 @@ export default function RollarPage() {
               </tr>
             ) : rolesError && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center">
+                <td colSpan={5} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -164,7 +163,7 @@ export default function RollarPage() {
               </tr>
             ) : shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={5} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Rol topilmadi
                 </td>
               </tr>
@@ -180,29 +179,17 @@ export default function RollarPage() {
                   <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.usersCount}</td>
                   <td className={TD_MUTED}>{r.yaratilgan}</td>
                   <td className={TD_MUTED}>{r.ozgartirilgan}</td>
-                  <td className="px-4">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.holat === 'active'
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]'
-                      )}
-                    >
-                      {r.holat === 'active' ? 'Faol' : 'Nofaol'}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}
             {shownRoles.length > 0 && rolesHasMore && !rolesLoading && (
               <tr ref={rolesSentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={6} className="h-1 border-0 p-0" />
+                <td colSpan={5} className="h-1 border-0 p-0" />
               </tr>
             )}
             {rolesLoadingMore && (
               <tr>
-                <td colSpan={6} className="py-4 text-center">
+                <td colSpan={5} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…

@@ -106,7 +106,8 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
       return next
     })
 
-  const editEmployeeName = kadrlar.find((k) => k.id === editEmployeeId)?.name
+  // Xodimlar ro'yxati (kadrlar) hali yuklanmagan bo'lishi mumkin — hujjatdagi ism zaxira sifatida.
+  const editEmployeeName = kadrlar.find((k) => k.id === editEmployeeId)?.name ?? record?.employeeName
 
   const editCanSave = isHireDraftValid(editDraft) && isDraftDirty(editDraft, editInitial)
   const createCanSave =

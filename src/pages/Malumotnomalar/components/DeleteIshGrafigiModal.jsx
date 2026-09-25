@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button'
 import CopyButton from '@/components/ui/copy-button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
-// DeleteRecordModal'dan atayin alohida — u har doim "Holat: Faol/Arxiv" qatorini qo'shadi,
-// lekin WorkSchedule'da (Swagger tasdiqlagan) umuman shunday maydon yo'q.
+// Ish grafigi uchun alohida o'chirish oynasi (WorkSchedule'ning o'z maydonlari bilan).
 export default function DeleteIshGrafigiModal({ open, onOpenChange, record, onDelete }) {
   if (!record) return null
 

@@ -49,11 +49,11 @@ export default function MalumotnomaDetailPage({ slug: slugProp }) {
 // Jadval endi "scroll pagination" bilan (bitta-bitta sahifa) yuklanadi — qidiruv serverga
 // so'rov parametri sifatida yuboriladi. Redux'dagi to'liq ro'yxat (`state[apiEntry.stateKey].list`)
 // ga tegilmadi — masalan Lavozimlar shu ro'yxatga Xodim ishga olish oynasidagi "Lavozim"
-// tanlagichida ham tayanadi. "Holat" (Faol/Arxiv) va sana oralig'i filtrlari uchun mos
-// backend parametri tasdiqlanmagan — shular hozircha faqat YUKLANGAN qatorlar ustida ishlaydi.
+// tanlagichida ham tayanadi. Sana oralig'i filtri uchun mos backend parametri tasdiqlanmagan —
+// u faqat YUKLANGAN qatorlar ustida ishlaydi. Holat ustuni/filtri yo'q — bu modellarda holat
+// (status) maydoni yo'q.
 function ApiListDetail({ slug, name, config, apiEntry }) {
   const dispatch = useDispatch()
-  const state = useSelector((s) => s[apiEntry.stateKey])
   const [modalRec, setModalRec] = useState(null) // record | 'new' | null
   const [delRec, setDelRec] = useState(null)
   const [search, setSearch] = useState('')
@@ -66,16 +66,13 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: name }])
 
-  useEffect(() => {
-    if (state.listStatus === 'idle') dispatch(apiEntry.slice.fetchItems())
-  }, [state.listStatus, dispatch, apiEntry])
-
   // Dizayn kabi bir FK'ga ("Sifat") bog'liq ma'lumotnomalar uchun tanlagich ro'yxatini
   // ham yuklab, modal maydonining `options`'ini dinamik to'ldiramiz.
+  // Faqat forma ochilganda — sahifa ochilishida barcha sahifalarni yuklamaslik uchun.
   const qualityState = useSelector((s) => s.sifatlar)
   useEffect(() => {
-    if (apiEntry.hasQuality && qualityState.listStatus === 'idle') dispatch(qualitySlice.fetchItems())
-  }, [apiEntry.hasQuality, qualityState.listStatus, dispatch])
+    if (modalRec && apiEntry.hasQuality && qualityState.listStatus === 'idle') dispatch(qualitySlice.fetchItems())
+  }, [modalRec, apiEntry.hasQuality, qualityState.listStatus, dispatch])
 
   const modalFields = useMemo(() => {
     if (!apiEntry.hasQuality) return config.modalFields
@@ -113,7 +110,6 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
 
   const shown = useMemo(() => {
     let out = rows
-    if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.active : !r.active))
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     return out
@@ -144,7 +140,7 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
       .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
   }
 
-  const totalCols = config.columns.length + 4
+  const totalCols = config.columns.length + 3
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -207,7 +203,6 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
               ))}
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -284,18 +279,6 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
                   ))}
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>
-                  <td className="px-4 whitespace-nowrap">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.active
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
-                      )}
-                    >
-                      {r.active ? 'Faol' : 'Arxiv'}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}
@@ -370,7 +353,6 @@ function ListDetail({ slug, name, config }) {
       const q = search.trim().toLowerCase()
       out = out.filter((r) => searchKeys.some((k) => String(r[k] ?? '').toLowerCase().includes(q)))
     }
-    if (filters.holat) out = out.filter((r) => (filters.holat === 'Faol' ? r.active : !r.active))
     if (filters.yaratilganDan || filters.yaratilganGacha)
       out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.yaratilganDan, filters.yaratilganGacha))
     if (filters.tashkilot) out = out.filter((r) => !r.tashkilot || r.tashkilot === filters.tashkilot)
@@ -387,7 +369,7 @@ function ListDetail({ slug, name, config }) {
     }
   }
 
-  const totalCols = config.columns.length + 4
+  const totalCols = config.columns.length + 3
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -446,7 +428,6 @@ function ListDetail({ slug, name, config }) {
               ))}
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>O‘ZGARTIRILGAN</th>
-              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
@@ -499,18 +480,6 @@ function ListDetail({ slug, name, config }) {
                   ))}
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>
-                  <td className="px-4 whitespace-nowrap">
-                    <span
-                      className={cn(
-                        'inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-medium tracking-[0.3px]',
-                        r.active
-                          ? 'bg-[#E6FAF1] text-[#047A47] dark:bg-[#047A47]/20 dark:text-[#34D399]'
-                          : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
-                      )}
-                    >
-                      {r.active ? 'Faol' : 'Arxiv'}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}

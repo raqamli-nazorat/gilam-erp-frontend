@@ -40,6 +40,7 @@ const NAV_ITEMS = [
   // mustaqil (bosh) menyu bandi — sahifaning o'zi va yo'nalishi ("Ma'lumotnomalar >
   // Ishga qabul qilish" breadcrumb) o'zgarmagan, faqat sidebar joylashuvi ko'chirildi.
   { to: '/malumotnomalar/ishga-qabul-qilish', label: 'Ishga qabul qilish', icon: IshgaQabulQilishIcon },
+  { to: '/malumotnomalar/ishdan-chiqarish', label: 'Ishdan chiqarish', icon: IshgaQabulQilishIcon },
   {
     to: '/malumotnomalar',
     label: "Ma'lumotnomalar",
@@ -56,6 +57,12 @@ const NAV_ITEMS = [
       { to: '/malumotnomalar/olchov-birliklari', label: "O'lchov birliklari" },
       { to: '/malumotnomalar/lavozimlar', label: 'Lavozimlar' },
       { to: '/malumotnomalar/kontragent-turlari', label: 'Kontragent turlari' },
+      { to: '/malumotnomalar/partiyalar', label: 'Partiyalar' },
+      { to: '/malumotnomalar/hisoblash-ushlab-qolish', label: 'Hisoblash va ushlab qolish turlari' },
+      { to: '/malumotnomalar/valyutalar', label: 'Valyutalar' },
+      { to: '/malumotnomalar/kontragentlar', label: 'Kontragentlar' },
+      { to: '/malumotnomalar/dizaynlar', label: 'Dizaynlar' },
+      { to: '/malumotnomalar/omborlar', label: 'Omborlar' },
     ],
   },
   { divider: true },
@@ -251,10 +258,11 @@ export default function Sidebar() {
                       key={child.label}
                       to={child.to}
                       end={child.end}
+                      title={child.label}
                       onClick={(e) => e.stopPropagation()}
                       className={({ isActive: childActive }) =>
                         cn(
-                          'block rounded-md px-3 py-1.5 text-[13px] font-normal text-white/55 transition-colors hover:bg-white/10 hover:text-white',
+                          'block truncate rounded-md px-3 py-1.5 text-[13px] font-normal text-white/55 transition-colors hover:bg-white/10 hover:text-white',
                           childActive && 'bg-white/10 font-medium text-white'
                         )
                       }

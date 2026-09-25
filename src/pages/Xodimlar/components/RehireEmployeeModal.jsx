@@ -13,14 +13,14 @@ export default function RehireEmployeeModal({ open, onOpenChange, employee, onCo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-5 sm:max-w-[520px]">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[520px]">
+        <DialogHeader className="flex flex-row items-center justify-between px-5 pt-5">
           <DialogTitle className="text-[17px] font-semibold leading-6 tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             Xodimni qayta ishga olish?
           </DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
+        <div className="mx-5 my-4 rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5">
           {[
             ['Xodim', employee.name],
             ['Lavozimi', employee.lavozim],
@@ -34,7 +34,7 @@ export default function RehireEmployeeModal({ open, onOpenChange, employee, onCo
           ))}
         </div>
 
-        <DialogFooter className="mx-0 mb-0 mt-1 gap-2 border-0 bg-transparent p-0">
+        <DialogFooter className="mx-0 mb-0 mt-0 flex gap-2 border-0 bg-[#F5F5F5] px-5 py-4 dark:bg-white/5 sm:flex-row sm:justify-end">
           <Button
             type="button"
             variant="outline"

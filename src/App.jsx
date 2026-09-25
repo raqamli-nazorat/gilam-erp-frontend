@@ -30,9 +30,17 @@ import DavlatPage from '@/pages/Malumotnomalar/DavlatPage'
 import ViloyatPage from '@/pages/Malumotnomalar/ViloyatPage'
 import TumanPage from '@/pages/Malumotnomalar/TumanPage'
 import IshGrafigiListPage from '@/pages/Malumotnomalar/IshGrafigiListPage'
+import PartiyalarPage from '@/pages/Malumotnomalar/PartiyalarPage'
+import HisoblashUshlabPage from '@/pages/Malumotnomalar/HisoblashUshlabPage'
+import ValyutalarPage from '@/pages/Malumotnomalar/ValyutalarPage'
+import KontragentlarPage from '@/pages/Malumotnomalar/KontragentlarPage'
+import DizaynlarPage from '@/pages/Malumotnomalar/DizaynlarPage'
+import OmborlarPage from '@/pages/Malumotnomalar/OmborlarPage'
 import XodimlarListPage from '@/pages/Xodimlar/XodimlarListPage'
 import XodimlarDetailPage from '@/pages/Xodimlar/XodimlarDetailPage'
 import IshgaQabulQilishListPage from '@/pages/Xodimlar/IshgaQabulQilishListPage'
+import IshdanChiqarishListPage from '@/pages/Xodimlar/IshdanChiqarishListPage'
+import IshdanChiqarishDetailPage from '@/pages/Xodimlar/IshdanChiqarishDetailPage'
 import IshgaQabulQilishDetailPage from '@/pages/Xodimlar/IshgaQabulQilishDetailPage'
 import TashkilotlarListPage from '@/pages/Tashkilotlar/TashkilotlarListPage'
 import TashkilotDetailPage from '@/pages/Tashkilotlar/TashkilotDetailPage'
@@ -108,12 +116,20 @@ function App() {
           <Route path="/malumotnomalar/kadrlar/:id" element={<KadrlarRedirect />} />
           <Route path="/malumotnomalar/ishga-qabul-qilish" element={<IshgaQabulQilishListPage />} />
           <Route path="/malumotnomalar/ishga-qabul-qilish/:id" element={<IshgaQabulQilishDetailPage />} />
+          <Route path="/malumotnomalar/ishdan-chiqarish" element={<IshdanChiqarishListPage />} />
+          <Route path="/malumotnomalar/ishdan-chiqarish/:id" element={<IshdanChiqarishDetailPage />} />
           <Route path="/malumotnomalar/rollar" element={<RollarPage />} />
           <Route path="/malumotnomalar/sifatlar" element={<MalumotnomaDetailPage slug="sifatlar" />} />
           <Route path="/malumotnomalar/ranglar" element={<MalumotnomaDetailPage slug="ranglar" />} />
           <Route path="/malumotnomalar/olchov-birliklari" element={<MalumotnomaDetailPage slug="olchov-birliklari" />} />
           <Route path="/malumotnomalar/lavozimlar" element={<MalumotnomaDetailPage slug="lavozimlar" />} />
           <Route path="/malumotnomalar/kontragent-turlari" element={<MalumotnomaDetailPage slug="kontragent-turlari" />} />
+          <Route path="/malumotnomalar/partiyalar" element={<PartiyalarPage />} />
+          <Route path="/malumotnomalar/hisoblash-ushlab-qolish" element={<HisoblashUshlabPage />} />
+          <Route path="/malumotnomalar/valyutalar" element={<ValyutalarPage />} />
+          <Route path="/malumotnomalar/kontragentlar" element={<KontragentlarPage />} />
+          <Route path="/malumotnomalar/dizaynlar" element={<DizaynlarPage />} />
+          <Route path="/malumotnomalar/omborlar" element={<OmborlarPage />} />
           <Route path="/malumotnomalar/:slug" element={<MalumotnomaDetailPage />} />
           <Route path="/tashkilotlar" element={<TashkilotlarListPage />} />
           <Route path="/tashkilotlar/:id" element={<TashkilotDetailPage />} />

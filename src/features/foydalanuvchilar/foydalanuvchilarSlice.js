@@ -14,6 +14,19 @@ import * as roleService from '@/services/roleService'
 // whichever Employee (`employee`) the user is linked to, if any.
 // Eksport qilingan — FoydalanuvchilarListPage.jsx jadval qatorlarini "scroll pagination"
 // bilan servisdan to'g'ridan-to'g'ri (Redux thunk'siz) olib kelib shu bilan xaritalaydi.
+// Sxemada organization/branch/blocked_by "string" deb yozilgan, lekin backend ularni
+// {id, name} (yoki {id, full_name}) obyekt sifatida qaytaradi — ikkala ko'rinishni ham qabul qilamiz.
+// Aks holda obyekt to'g'ridan-to'g'ri JSX'ga tushib, sahifa qulardi ("Objects are not valid as a React child").
+function nameOf(v) {
+  if (v == null) return ''
+  if (typeof v === 'object') return v.name ?? v.full_name ?? ''
+  return String(v)
+}
+
+function idOf(v) {
+  return v && typeof v === 'object' ? (v.id ?? '') : ''
+}
+
 export function mapUser(u) {
   // Schema is_blocked'ni string deb belgilagan (auto-generated, ehtimol SerializerMethodField
   // annotatsiyasiz) — shuning uchun bool va "true" string ko'rinishlarini ham hisobga olamiz.
@@ -22,8 +35,10 @@ export function mapUser(u) {
     id: u.id,
     name: u.full_name ?? '',
     phone: u.phone_number ?? '',
-    tashkilot: u.organization ?? '',
-    filial: u.branch ?? '',
+    tashkilot: nameOf(u.organization),
+    tashkilotId: idOf(u.organization),
+    filial: nameOf(u.branch),
+    filialId: idOf(u.branch),
     rol: u.role_info?.name ?? '',
     rolId: u.role_info?.id ?? '',
     // Ushbu foydalanuvchiga bog'langan Xodim (Employee) profili — bo'lsa, "Tahrirlash"/
@@ -36,8 +51,8 @@ export function mapUser(u) {
     block: isBlocked
       ? {
           at: u.blocked_at ? formatDateTime(new Date(u.blocked_at)) : '—',
-          reason: u.blocked_reason ?? '',
-          by: u.blocked_by ?? '',
+          reason: nameOf(u.blocked_reason),
+          by: nameOf(u.blocked_by),
         }
       : null,
     activation: null,
@@ -192,7 +207,10 @@ export const fetchRoles = createAsyncThunk('foydalanuvchilar/fetchRoles', async 
   } catch (error) {
     return rejectWithValue(extractErrorMessage(error, 'Rollarni yuklab bo‘lmadi'))
   }
-})
+},
+  // Allaqachon yuklanayotgan bo'lsa — ikkinchi marta barcha sahifalarni so'ramaymiz.
+  { condition: (_, { getState }) => getState().foydalanuvchilar.rolesStatus !== 'loading' }
+)
 
 export const createRole = createAsyncThunk(
   'foydalanuvchilar/createRole',

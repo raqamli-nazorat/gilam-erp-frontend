@@ -86,7 +86,10 @@ export const fetchBranches = createAsyncThunk('filiallar/fetchBranches', async (
   } catch (error) {
     return rejectWithValue(extractErrorMessage(error, 'Filiallarni yuklab bo‘lmadi'))
   }
-})
+},
+  // Allaqachon yuklanayotgan bo'lsa — ikkinchi marta barcha sahifalarni so'ramaymiz.
+  { condition: (_, { getState }) => getState().filiallar.listStatus !== 'loading' }
+)
 
 export const fetchBranchDetail = createAsyncThunk(
   'filiallar/fetchBranchDetail',

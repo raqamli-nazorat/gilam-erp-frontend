@@ -18,7 +18,6 @@ export default function DeleteRecordModal({ open, onOpenChange, entity, record, 
     ...fields
       .filter((f) => record[f.displayKey ?? f.key])
       .map((f) => ({ label: f.label, value: record[f.displayKey ?? f.key], copyable: Boolean(f.copyable) })),
-    { label: 'Holat', value: record.active ? 'Faol' : 'Arxiv', copyable: false },
   ]
 
   return (

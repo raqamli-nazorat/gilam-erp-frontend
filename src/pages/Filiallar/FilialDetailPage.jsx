@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { Loader2 } from 'lucide-react'
@@ -11,6 +11,7 @@ import { holatLabel } from '@/features/filiallar/filiallarData'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import { useBranch } from './useBranch'
+import { useBranchStaff } from './useBranchStaff'
 import StatCards from './components/StatCards'
 import FilialFooter from './components/FilialFooter'
 import { Panel, InfoRow, headBg, surface } from './components/InfoPanel'
@@ -20,7 +21,17 @@ const THb =
 
 export default function FilialDetailPage() {
   const navigate = useNavigate()
+  const { id } = useParams()
   const branch = useBranch()
+  const {
+    rows: staffRows,
+    isLoading: staffLoading,
+    isLoadingMore: staffLoadingMore,
+    hasMore: staffHasMore,
+    containerRef: staffScrollRef,
+    sentinelRef: staffSentinelRef,
+    handleScroll: handleStaffScroll,
+  } = useBranchStaff(id)
   const detailStatus = useSelector((s) => s.filiallar.detailStatus)
   const detailError = useSelector((s) => s.filiallar.detailError)
   const [toast, setToast] = useState('')
@@ -89,7 +100,7 @@ export default function FilialDetailPage() {
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           {/* Xodimlar jadvali */}
           <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div ref={staffScrollRef} onScroll={handleStaffScroll} className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
                   <tr>
@@ -101,14 +112,16 @@ export default function FilialDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {d.xodimlar.length === 0 ? (
+                  {staffLoading && staffRows.length === 0 ? (
+                    <tr><td colSpan={5} className="py-14 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-[#0052D2]" /></td></tr>
+                  ) : staffRows.length === 0 ? (
                     <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Bu ma’lumot hali mavjud emas</td></tr>
                   ) : (
-                    d.xodimlar.map((x, i) => (
+                    staffRows.map((x, i) => (
                       <tr key={x.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
-                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim}</td>
+                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim || '—'}</td>
                         <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5">
                             {x.phone}
@@ -125,6 +138,18 @@ export default function FilialDetailPage() {
                         <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{x.holat}</td>
                       </tr>
                     ))
+                  )}
+                  {staffRows.length > 0 && staffHasMore && !staffLoading && (
+                    <tr ref={staffSentinelRef} className="h-1">
+                      <td colSpan={5} className="h-1 p-0" />
+                    </tr>
+                  )}
+                  {staffLoadingMore && (
+                    <tr>
+                      <td colSpan={5} className="py-3 text-center">
+                        <Loader2 className="mx-auto h-4 w-4 animate-spin text-[#0052D2]" />
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>

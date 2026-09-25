@@ -188,10 +188,10 @@ export default function IshGrafigiListPage() {
                 >
                   <td className={cn(TD_MUTED, 'w-12 whitespace-nowrap')}>{i + 1}</td>
                   <td className="max-w-[200px] px-4 text-[14px] font-medium whitespace-nowrap text-[#0052D2] dark:text-[#60A5FA]">
-                    <span className="truncate">{r.name || '—'}</span>
+                    <div className="truncate" title={r.name}>{r.name || '—'}</div>
                   </td>
                   <td className="max-w-[200px] px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
-                    <span className="truncate">{r.filial || '—'}</span>
+                    <div className="truncate" title={r.filial}>{r.filial || '—'}</div>
                   </td>
                   <td className="px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
                     {r.fromHour && r.toHour ? `${r.fromHour} – ${r.toHour}` : '—'}
@@ -200,7 +200,7 @@ export default function IshGrafigiListPage() {
                     {formatDaysPart(r.days) || '—'}
                   </td>
                   <td className="max-w-[320px] px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground 2xl:max-w-[480px]">
-                    <span className="truncate">{r.tavsif || '—'}</span>
+                    <div className="truncate" title={r.tavsif}>{r.tavsif || '—'}</div>
                   </td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>

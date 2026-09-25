@@ -17,13 +17,15 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
   const dispatch = useDispatch()
   const orgs = useSelector((s) => s.tashkilotlar.list)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
   const regions = useSelector((s) => s.geo.regions)
 
   useEffect(() => {
     if (!open) return
-    dispatch(fetchOrganizations())
+    // Faqat hali yuklanmagan bo'lsa — har ochilishda barcha sahifalarni qayta so'ramaslik uchun.
+    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
     dispatch(fetchRegions())
-  }, [open, dispatch])
+  }, [open, orgsStatus, dispatch])
 
   return (
     <FilterModal
