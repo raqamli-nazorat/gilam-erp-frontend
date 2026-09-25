@@ -23,6 +23,12 @@ function writeStored(key, value) {
   }
 }
 
+// Backend ba'zi maydonlarni matn, ba'zan {id, name} obyekt ko'rinishida qaytaradi
+function toName(value) {
+  if (value && typeof value === 'object') return value.name || value.title || ''
+  return value || ''
+}
+
 function formatUser(rawUser) {
   if (!rawUser) return null
   const fullName = rawUser.full_name || rawUser.fullName || ''
@@ -37,15 +43,15 @@ function formatUser(rawUser) {
   }
 
   const roleName =
-    rawUser.role_info?.name ||
-    rawUser.role ||
+    toName(rawUser.role_info) ||
+    toName(rawUser.role) ||
     (rawUser.is_staff ? 'Platforma admini' : 'Hodim')
 
   // Swagger tasdiqlagan haqiqiy shakl: User.organization/User.branch — nested "_info" obyekt
   // emas, o'zi tayyor matn qatori (o'qish uchungina, tahrirlanmaydi — UserRequest'da bunday
   // maydon umuman yo'q).
-  const branchName = rawUser.branch || rawUser.filial || '—'
-  const orgName = rawUser.organization || rawUser.tashkilot || '—'
+  const branchName = toName(rawUser.branch) || toName(rawUser.filial) || '—'
+  const orgName = toName(rawUser.organization) || toName(rawUser.tashkilot) || '—'
 
   return {
     ...rawUser,
@@ -63,7 +69,7 @@ const storedBlockedUntil = readStored('gilam-auth-blockedUntil', null)
 const isStillBlocked = storedBlockedUntil && storedBlockedUntil > Date.now()
 
 const initialState = {
-  user: readStored('gilam-auth-user', null),
+  user: formatUser(readStored('gilam-auth-user', null)),
   token: (() => {
     try {
       return localStorage.getItem('access_token') || localStorage.getItem('gilam-auth-token')

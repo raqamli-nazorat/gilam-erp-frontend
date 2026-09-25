@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import DeleteIshGrafigiModal from './components/DeleteIshGrafigiModal'
-import IshGrafigiModal from './components/IshGrafigiModal'
+import IshGrafigiModal, { formatDaysPart } from './components/IshGrafigiModal'
 import IshGrafigiFilterModal, { EMPTY_ISH_GRAFIGI_FILTERS } from './components/IshGrafigiFilterModal'
 
 const TH =
@@ -141,6 +141,8 @@ export default function IshGrafigiListPage() {
               <th className={cn(TH, 'h-10 w-12 text-left whitespace-nowrap')}>#</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>NOMI</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>FILIALI</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>ISH VAQTI</th>
+              <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>ISH KUNLARI</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>TAVSIF</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left whitespace-nowrap')}>O‘ZGARTIRILGAN</th>
@@ -149,7 +151,7 @@ export default function IshGrafigiListPage() {
           <tbody>
             {rowsLoading && shown.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center">
+                <td colSpan={8} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -158,7 +160,7 @@ export default function IshGrafigiListPage() {
               </tr>
             ) : rowsError && shown.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center">
+                <td colSpan={8} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -173,7 +175,7 @@ export default function IshGrafigiListPage() {
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={8} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Yozuv yo‘q
                 </td>
               </tr>
@@ -191,6 +193,12 @@ export default function IshGrafigiListPage() {
                   <td className="max-w-[200px] px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
                     <span className="truncate">{r.filial || '—'}</span>
                   </td>
+                  <td className="px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
+                    {r.fromHour && r.toHour ? `${r.fromHour} – ${r.toHour}` : '—'}
+                  </td>
+                  <td className="px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
+                    {formatDaysPart(r.days) || '—'}
+                  </td>
                   <td className="max-w-[320px] px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground 2xl:max-w-[480px]">
                     <span className="truncate">{r.tavsif || '—'}</span>
                   </td>
@@ -201,12 +209,12 @@ export default function IshGrafigiListPage() {
             )}
             {shown.length > 0 && rowsHasMore && !rowsLoading && (
               <tr ref={rowsSentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={6} className="h-1 border-0 p-0" />
+                <td colSpan={8} className="h-1 border-0 p-0" />
               </tr>
             )}
             {rowsLoadingMore && (
               <tr>
-                <td colSpan={6} className="py-4 text-center">
+                <td colSpan={8} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…
