@@ -3,26 +3,22 @@ import { formatDateTime } from '@/lib/format'
 import { extractErrorMessage } from '@/services/apiHelpers'
 import { workScheduleApi } from '@/services/workScheduleService'
 
-// Backend "WorkSchedule" (hr/work-schedules/) — Swagger (/api/schema/) tasdiqlagan haqiqiy
-// shakl: filialga bog'langan sana oralig'i (from_date/to_date) + standart ish vaqti
-// (from_hour/to_hour), ixtiyoriy "items" (WorkScheduleItem — muayyan kun uchun istisno:
-// to'liq bayram/qisman ish kuni/to'liq ish kuni). Hech qanday "holat" (Faol/Arxiv) yoki
-// hafta kunlari (Du/Se/Ch...) maydoni yo'q — avvalgi versiya buni Figma skrinshotiga qarab
-// noto'g'ri taxmin qilgan edi. `items` hozircha UI'da tahrirlanmaydi (Figma yo'q) — faqat
-// o'qish uchun xaritalanadi, saqlashda tegilmaydi (PATCH bo'lgani uchun serverdagi items
-// o'zgarishsiz qoladi).
+// Backend "WorkSchedule" (hr/work-schedules/) — Swagger (/api/schema/) shakli:
+// name, description, from_hour/to_hour, days ([0..6] — 0=Dushanba ... 6=Yakshanba), status.
+// Filial (branch) hozircha backend sxemasida yo'q — backend qo'shgach ishlashi uchun
+// branch_info / branch (obyekt yoki id) ikkalasi ham qo'llab-quvvatlanadi.
 export function mapWorkSchedule(raw) {
+  const branchObj = raw.branch_info ?? (raw.branch && typeof raw.branch === 'object' ? raw.branch : null)
   return {
     id: raw.id,
     name: raw.name ?? '',
     tavsif: raw.description ?? '',
-    filialId: raw.branch_info?.id ?? '',
-    filial: raw.branch_info?.name ?? '',
-    fromDate: raw.from_date ?? '',
-    toDate: raw.to_date ?? '',
+    filialId: branchObj?.id ?? (typeof raw.branch === 'string' ? raw.branch : ''),
+    filial: branchObj?.name ?? '',
     fromHour: (raw.from_hour ?? '').slice(0, 5),
     toHour: (raw.to_hour ?? '').slice(0, 5),
-    items: raw.items ?? [],
+    days: Array.isArray(raw.days) ? [...raw.days].sort((a, b) => a - b) : [],
+    status: raw.status ?? '',
     yaratilgan: raw.created_at ? formatDateTime(new Date(raw.created_at)) : '',
     ozgartirilgan: raw.updated_at ? formatDateTime(new Date(raw.updated_at)) : '',
   }
@@ -33,10 +29,9 @@ export function buildWorkSchedulePayload(draft) {
     branch: draft.filialId || undefined,
     name: (draft.name ?? '').trim(),
     description: draft.tavsif ?? '',
-    from_date: draft.fromDate || undefined,
-    to_date: draft.toDate || undefined,
     from_hour: draft.fromHour ? `${draft.fromHour}:00` : undefined,
     to_hour: draft.toHour ? `${draft.toHour}:00` : undefined,
+    days: [...(draft.days ?? [])].sort((a, b) => a - b),
   }
 }
 
