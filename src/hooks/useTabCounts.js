@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 // Ro'yxat sahifalaridagi tab hisoblagichlari (Barchasi / Faol / Bloklangan ...) — sahifaga
 // kirgan zahoti hammasi ko'rinadi.
+
 //
 // - Ochiq tabning soni jadvalning O'Z so'rovidagi `count`dan olinadi (qo'shimcha so'rovsiz —
 //   oldin "Barchasi" uchun jadval so'rovining aynan takrori ketardi).
