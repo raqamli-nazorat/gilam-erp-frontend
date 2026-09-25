@@ -5,7 +5,8 @@ import { extractErrorMessage } from '@/services/apiHelpers'
 
 // Tashkilot/filial shakllaridagi "Viloyat"/"Tuman" selectlari va "Ma'lumotnomalar >
 // Davlat/Viloyat/Tuman" boshqaruv sahifalari uchun — Region/District APIsi shu yerda saqlanadi.
-function mapRegion(r) {
+// Eksport qilingan — ViloyatPage.jsx scroll pagination bilan servisdan kelgan xom obyektlarni xaritalaydi.
+export function mapRegion(r) {
   return {
     id: r.id,
     name: r.name ?? '',
@@ -53,7 +54,9 @@ export const fetchRegions = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Viloyatlarni yuklab bo‘lmadi'))
     }
-  }
+  },
+  // Allaqachon yuklanayotgan bo'lsa — ikkinchi marta barcha sahifalarni so'ramaymiz.
+  { condition: (_, { getState }) => getState().geo.regionsStatus !== 'loading' }
 )
 
 export const fetchDistricts = createAsyncThunk(

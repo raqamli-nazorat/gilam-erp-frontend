@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchAllDistricts, fetchRegions } from '@/features/geo/geoSlice'
+import { fetchDistricts, fetchRegions } from '@/features/geo/geoSlice'
 import { fetchBranches } from '@/features/filiallar/filiallarSlice'
 import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
 
@@ -14,21 +14,31 @@ export const EMPTY_XODIMLAR_FILTERS = {
   holat: '',
   sanaDan: '',
   sanaGacha: '',
+  // Serverga yuboriladigan ID'lar — Qo'llash paytida nomlardan aniqlanadi.
+  viloyatId: '',
+  tumanId: '',
+  filialId: '',
 }
 
 export default function XodimlarFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
   const dispatch = useDispatch()
   const regions = useSelector((s) => s.geo.regions)
-  const allDistricts = useSelector((s) => s.geo.allDistricts)
+  const districtsByRegion = useSelector((s) => s.geo.districtsByRegion)
   const branches = useSelector((s) => s.filiallar.list)
+  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
 
   useEffect(() => {
     if (!open) return
     dispatch(fetchRegions())
-    dispatch(fetchAllDistricts())
-    dispatch(fetchBranches())
-  }, [open, dispatch])
+    if (branchesStatus === 'idle') dispatch(fetchBranches())
+  }, [open, branchesStatus, dispatch])
+
+  // Tumanlar faqat tanlangan viloyat uchun yuklanadi (oldin barcha tumanlarning barcha sahifalari so'ralardi).
+  const regionId = regions.find((r) => r.name === draft.viloyat)?.id ?? ''
+  useEffect(() => {
+    if (open && regionId) dispatch(fetchDistricts(regionId))
+  }, [open, regionId, dispatch])
 
   const set = (k, v) =>
     setDraft((d) => {
@@ -37,10 +47,8 @@ export default function XodimlarFilterModal({ open, onOpenChange, filters, onApp
       return next
     })
 
-  const tumanOptions = useMemo(
-    () => (draft.viloyat ? allDistricts.filter((d) => d.regionName === draft.viloyat).map((d) => d.name) : []),
-    [allDistricts, draft.viloyat]
-  )
+  const districts = useMemo(() => districtsByRegion[regionId] ?? [], [districtsByRegion, regionId])
+  const tumanOptions = useMemo(() => districts.map((d) => d.name), [districts])
 
   return (
     <FilterModal
@@ -51,7 +59,12 @@ export default function XodimlarFilterModal({ open, onOpenChange, filters, onApp
       }}
       onReset={() => setDraft(EMPTY_XODIMLAR_FILTERS)}
       onApply={() => {
-        onApply(draft)
+        onApply({
+          ...draft,
+          viloyatId: regionId,
+          tumanId: districts.find((d) => d.name === draft.tuman)?.id ?? '',
+          filialId: branches.find((b) => b.name === draft.filial)?.id ?? '',
+        })
         onOpenChange(false)
       }}
     >

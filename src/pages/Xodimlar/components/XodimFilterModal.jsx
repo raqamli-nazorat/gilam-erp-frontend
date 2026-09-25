@@ -21,13 +21,17 @@ export default function XodimFilterModal({ open, onOpenChange, filters, onApply 
   const orgs = useSelector((s) => s.tashkilotlar.list)
   const branches = useSelector((s) => s.filiallar.list)
   const positions = useSelector((s) => s.lavozimlar.list)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
+  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
+  const positionsStatus = useSelector((s) => s.lavozimlar.listStatus)
 
   useEffect(() => {
     if (!open) return
-    dispatch(fetchOrganizations())
-    dispatch(fetchBranches())
-    dispatch(positionSlice.fetchItems())
-  }, [open, dispatch])
+    // Faqat hali yuklanmagan bo'lsa — har ochilishda barcha sahifalarni qayta so'ramaslik uchun.
+    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
+    if (branchesStatus === 'idle') dispatch(fetchBranches())
+    if (positionsStatus === 'idle') dispatch(positionSlice.fetchItems())
+  }, [open, orgsStatus, branchesStatus, positionsStatus, dispatch])
 
   const set = (k, v) =>
     setDraft((d) => {

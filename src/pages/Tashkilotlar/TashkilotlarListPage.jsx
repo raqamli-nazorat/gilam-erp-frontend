@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Building2, Filter, Loader2, Plus, Search } from 'lucide-react'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -8,7 +8,8 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { createOrganization, fetchOrganizations, mapOrg } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { useTabCounts } from '@/hooks/useTabCounts'
+import { createOrganization, mapOrg } from '@/features/tashkilotlar/tashkilotlarSlice'
 import * as organizationService from '@/services/organizationService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,12 +38,6 @@ function fetchOrgsPage(params) {
 export default function TashkilotlarListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  // To'liq ro'yxat — tab hisoblagichlari (Barchasi/Faol/To'xtatilgan sonlari) va boshqa
-  // sahifalardagi tashkilot tanlagichlari (Boshqaruv paneli, Filial/Foydalanuvchi/Xodim
-  // formalari) shunga tayanadi, shuning uchun bunga tegilmaydi.
-  const orgs = useSelector((s) => s.tashkilotlar.list)
-  const listStatus = useSelector((s) => s.tashkilotlar.listStatus)
-
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -52,10 +47,6 @@ export default function TashkilotlarListPage() {
   const [toast, setToast] = useState('')
 
   usePageHeader('Tashkilotlar')
-
-  useEffect(() => {
-    if (listStatus === 'idle') dispatch(fetchOrganizations())
-  }, [listStatus, dispatch])
 
   // Qidiruvni 250ms kechiktirib yuboramiz — har bosilgan harfda so'rov jo'natmaslik uchun.
   useEffect(() => {
@@ -75,14 +66,6 @@ export default function TashkilotlarListPage() {
     setToast(`${label} nusxalandi`)
   }
 
-  const counts = useMemo(
-    () => ({
-      all: orgs.length,
-      active: orgs.filter((o) => o.status === 'active').length,
-      suspended: orgs.filter((o) => o.status === 'suspended').length,
-    }),
-    [orgs]
-  )
   const hasFilter = Object.values(filters).some(Boolean)
 
   // Tab ("Faol"/"To'xtatilgan") va "Holat" filtri bitta xil narsani bildiradi — ikkalasi
@@ -97,6 +80,7 @@ export default function TashkilotlarListPage() {
 
   const {
     items: pagedOrgs,
+    totalCount,
     isLoading: orgsLoading,
     isLoadingMore: orgsLoadingMore,
     error: orgsError,
@@ -109,6 +93,18 @@ export default function TashkilotlarListPage() {
     search: debouncedSearch.trim(),
     is_suspended: isSuspendedParam,
   })
+
+  // Tab hisoblagichlari — sahifaga kirganda hammasi ko'rinadi: ochiq tab jadvalning o'z `count`idan,
+  // qolganlari bittadan 1-sahifa so'rovi bilan (useTabCounts).
+  const countTab = isSuspendedParam === undefined ? 'all' : isSuspendedParam ? 'suspended' : 'active'
+  const counts = useTabCounts(
+    organizationService.getOrganizationsPage,
+    { search: debouncedSearch.trim() },
+    { active: { is_suspended: false }, suspended: { is_suspended: true } },
+    countTab,
+    totalCount,
+    orgsLoading
+  )
 
   const shown = useMemo(() => {
     let out = pagedOrgs
@@ -143,16 +139,18 @@ export default function TashkilotlarListPage() {
                 )}
               >
                 {label}
-                <span
-                  className={cn(
-                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
-                    active
-                      ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                      : 'text-[#A3A3A3] dark:text-muted-foreground'
-                  )}
-                >
-                  {n}
-                </span>
+                {n != null && (
+                  <span
+                    className={cn(
+                      'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
+                      active
+                        ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
+                        : 'text-[#A3A3A3] dark:text-muted-foreground'
+                    )}
+                  >
+                    {n}
+                  </span>
+                )}
               </button>
             )
           })}

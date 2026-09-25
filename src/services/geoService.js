@@ -51,3 +51,9 @@ export async function updateDistrict(id, payload) {
 export async function deleteDistrict(id) {
   await axiosAPI.delete(`organization/districts/${id}/`)
 }
+
+// "Viloyatlar" boshqaruv jadvali uchun — bitta sahifani so'raydi (scroll pagination).
+// `params`: { page, search, country }.
+export async function getRegionsPage(params) {
+  return fetchPage('organization/regions/', params)
+}

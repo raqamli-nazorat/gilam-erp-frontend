@@ -99,7 +99,9 @@ export const fetchOrganizations = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Tashkilotlarni yuklab bo‘lmadi'))
     }
-  }
+  },
+  // Allaqachon yuklanayotgan bo'lsa — ikkinchi marta barcha sahifalarni so'ramaymiz.
+  { condition: (_, { getState }) => getState().tashkilotlar.listStatus !== 'loading' }
 )
 
 export const fetchOrganizationDetail = createAsyncThunk(

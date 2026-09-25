@@ -19,10 +19,12 @@ export default function RoleFilterModal({ open, onOpenChange, filters, onApply }
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
   const dispatch = useDispatch()
   const orgs = useSelector((s) => s.tashkilotlar.list)
+  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
 
   useEffect(() => {
-    if (open) dispatch(fetchOrganizations())
-  }, [open, dispatch])
+    // Faqat hali yuklanmagan bo'lsa — har ochilishda barcha sahifalarni qayta so'ramaslik uchun.
+    if (open && orgsStatus === 'idle') dispatch(fetchOrganizations())
+  }, [open, orgsStatus, dispatch])
 
   return (
     <FilterModal

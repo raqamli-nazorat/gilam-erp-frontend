@@ -1,5 +1,19 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
+
+// "Ishga qabul qilish" ro'yxati — faqat `type=recruitment` hujjatlarning bitta sahifasi (scroll pagination).
+export async function getRecruitmentsPage(params) {
+  return fetchPage('hr/recruitment-dismissals/', { ...params, type: 'recruitment' })
+}
+
+// "Ishdan chiqarish" ro'yxati — faqat `type=dismissal` hujjatlarning bitta sahifasi (scroll
+// pagination). Har sahifa uchun FAQAT BITTA so'rov — oldin `dismissal_reason` uchun har bir
+// qatorga alohida detal so'rovi (recruitment-dismissals/{id}/) yuborilardi. Ro'yxat serializeri
+// (RecruitmentDismissalList) sababni qaytarmasa, jadvalda "—" ko'rinadi (backend ro'yxatga
+// `dismissal_reason` qo'shishi kerak); to'liq sabab tafsilot sahifasida ko'rinadi.
+export async function getDismissalsPage(params) {
+  return fetchPage('hr/recruitment-dismissals/', { ...params, type: 'dismissal' })
+}
 
 // "Ishga olish/Ishdan chiqarish" hujjatlari (RecruitmentDismissal) — har biri bitta xodimning
 // bitta filialga ishga olinishi yoki ishdan chiqarilishini bildiradi (type: recruitment|dismissal).

@@ -73,6 +73,12 @@ export const MALUMOTNOMA_MENU = [
   { slug: 'olchov-birliklari', name: "O'lchov birliklari" },
   { slug: 'lavozimlar', name: 'Lavozimlar' },
   { slug: 'kontragent-turlari', name: 'Kontragent turlari' },
+  { slug: 'partiyalar', name: 'Partiyalar' },
+  { slug: 'hisoblash-ushlab-qolish', name: 'Hisoblash va ushlab qolish turlari' },
+  { slug: 'valyutalar', name: 'Valyutalar' },
+  { slug: 'kontragentlar', name: 'Kontragentlar' },
+  { slug: 'dizaynlar', name: 'Dizaynlar' },
+  { slug: 'omborlar', name: 'Omborlar' },
 ]
 
 // Mock uchun "o'zgartirilgan" sanalar (Figma bo'yicha, kamayish tartibida)

@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { Check, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { fetchBranches } from '@/features/filiallar/filiallarSlice'
+import { branchOptions } from '@/services/optionSources'
+import { PagedSelect } from '@/components/ui/paged-select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
-// Backend "WorkSchedule.days": 0=Dushanba ... 6=Yakshanba — key shu raqamning o'zi.
+// Backend "WorkSchedule.work_days": 0=Dushanba ... 6=Yakshanba — key shu raqamning o'zi.
 export const WEEKDAYS = [
   { key: 0, label: 'Du' },
   { key: 1, label: 'Se' },
@@ -42,17 +41,10 @@ const EMPTY = { filialId: '', name: '', tavsif: '', fromHour: '', toHour: '', da
 
 export default function IshGrafigiModal({ open, onOpenChange, record, onSave, onDelete }) {
   const isEdit = !!record
-  const dispatch = useDispatch()
-  const branches = useSelector((s) => s.filiallar.list)
-  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
   const [draft, setDraft] = useState(EMPTY)
   // Tavsif qo'lda o'zgartirilgan bo'lsa, Ish kunlari/vaqti o'zgarganda uni endi avtomatik
   // qayta yozib qo'ymaymiz (foydalanuvchi matnini bosib o'tmaslik uchun).
   const [tavsifTouched, setTavsifTouched] = useState(false)
-
-  useEffect(() => {
-    if (branchesStatus === 'idle') dispatch(fetchBranches())
-  }, [branchesStatus, dispatch])
 
   useEffect(() => {
     if (!open) return
@@ -106,20 +98,14 @@ export default function IshGrafigiModal({ open, onOpenChange, record, onSave, on
         <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-5 py-4">
           <div>
             <Label className={labelCls}>Filiali</Label>
-            <Select value={draft.filialId || '__none'} onValueChange={(v) => set('filialId', v === '__none' ? '' : v)}>
-              <SelectTrigger className={fieldCls}>
-                <SelectValue>
-                  {(v) => (v === '__none' ? <span className="text-[#737373]">Filialni tanlang</span> : branches.find((b) => b.id === v)?.name ?? '')}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filiallar sahifalab (scroll pagination) — faqat dropdown ochilganda so'raladi. */}
+            <PagedSelect
+              value={draft.filialId}
+              onChange={(v) => set('filialId', v)}
+              fetchPage={branchOptions}
+              selectedLabel={record?.filialId === draft.filialId ? record?.filial : ''}
+              placeholder="Filialni tanlang"
+            />
           </div>
 
           <div>

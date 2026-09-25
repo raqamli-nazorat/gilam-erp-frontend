@@ -25,6 +25,9 @@ export default function FilialSubShell({
   belowTable,
   noFooter,
   tableFill = true,
+  // Scroll pagination uchun (ixtiyoriy) — jadval konteynerining ref'i va onScroll'i.
+  scrollRef,
+  onScroll,
 }) {
   usePageHeader([{ label: branch.name, to: `/filiallar/${branch.id}` }, { label: crumbTail }])
 
@@ -37,7 +40,7 @@ export default function FilialSubShell({
           tableFill ? 'min-h-0 flex-1' : 'shrink-0'
         )}
       >
-        <div className={cn('overflow-auto', tableFill && 'min-h-0 flex-1')}>
+        <div ref={scrollRef} onScroll={onScroll} className={cn('overflow-auto', tableFill && 'min-h-0 flex-1')}>
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>

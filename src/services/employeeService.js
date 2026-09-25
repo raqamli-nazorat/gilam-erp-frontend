@@ -1,5 +1,5 @@
 import { axiosAPI } from './axiosAPI'
-import { fetchAllPages, unwrapData } from './apiHelpers'
+import { fetchAllPages, fetchPage, unwrapData } from './apiHelpers'
 
 // Barcha xodimlarni (shaxs profillari) qaytaradi.
 export async function getAllEmployees() {
@@ -23,4 +23,10 @@ export async function updateEmployee(id, payload) {
 
 export async function deleteEmployee(id) {
   await axiosAPI.delete(`hr/employees/${id}/`)
+}
+
+// "Xodimlar" ro'yxati uchun — bitta sahifa (scroll pagination).
+// `params`: { page, search, region, district, branch, start_date, end_date }.
+export async function getEmployeesPage(params) {
+  return fetchPage('hr/employees/', params)
 }

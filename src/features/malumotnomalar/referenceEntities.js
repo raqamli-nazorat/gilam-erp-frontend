@@ -9,6 +9,8 @@ export const counterpartyTypeSlice = createReferenceSlice('kontragentTurlari', '
 export const countrySlice = createReferenceSlice('davlatlar', 'organization/countries/')
 // Dizayn (gilam dizayni) — Sifatlar kabi CRUD, lekin majburiy "Sifat" FK'siga ega (quality).
 export const designSlice = createReferenceSlice('dizaynlar', 'catalog/designs/')
+// Valyutalar — Hisoblash/ushlab qolish turlaridagi "Valyuta" tanlagichi shu ro'yxatga tayanadi.
+export const currencySlice = createReferenceSlice('valyutalar', 'finance/currencies/')
 
 // MalumotnomaDetailPage: slug -> qaysi slice bilan ishlashi va so'rov qanday qurilishi kerakligi.
 // hasDescription/hasColorHex/hasQuality — backend so'rov shaklida shu maydonlar yuborilishi kerakmi.

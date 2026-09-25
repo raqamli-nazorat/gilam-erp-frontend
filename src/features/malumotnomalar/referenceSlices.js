@@ -11,6 +11,8 @@ export function mapRecord(raw) {
   return {
     id: raw.id,
     name: raw.name ?? '',
+    // Faqat Currency'da bor (USD, UZS, ...).
+    shortName: raw.short_name ?? '',
     tavsif: raw.description ?? '',
     hex: raw.color_hex ?? undefined,
     // Faqat Design'da bor — sifat FK'si nested obyekt sifatida qaytadi (quality_info: {id, name}).
@@ -35,7 +37,10 @@ export function createReferenceSlice(name, basePath) {
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Ma’lumotlarni yuklab bo‘lmadi'))
     }
-  })
+  },
+  // Allaqachon yuklanayotgan bo'lsa — ikkinchi marta barcha sahifalarni so'ramaymiz.
+  { condition: (_, { getState }) => getState()[name]?.listStatus !== 'loading' }
+)
 
   const createItem = createAsyncThunk(`${name}/createItem`, async (payload, { rejectWithValue }) => {
     try {
