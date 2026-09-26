@@ -47,3 +47,9 @@ export async function activateOrganization(id) {
 export async function getBranchesByOrganization(organizationId) {
   return fetchAllPages('organization/branches/', { organization: organizationId })
 }
+
+export async function getOrganizationCounts() {
+  const response = await axiosAPI.get('organization/organizations/counts/')
+  return unwrapData(response)
+}
+

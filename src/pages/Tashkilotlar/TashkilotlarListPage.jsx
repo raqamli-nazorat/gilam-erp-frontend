@@ -6,9 +6,9 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { useTabCounts } from '@/hooks/useTabCounts'
+
+
 import { createOrganization, mapOrg } from '@/features/tashkilotlar/tashkilotlarSlice'
 import * as organizationService from '@/services/organizationService'
 import { Button } from '@/components/ui/button'
@@ -20,17 +20,6 @@ import OrgFilterModal, { EMPTY_ORG_FILTERS } from './components/OrgFilterModal'
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
-function matchesCountBucket(n, bucket) {
-  if (!bucket) return true
-  if (bucket.endsWith('+ ta')) return n >= Number.parseInt(bucket, 10)
-  const [lo, hi] = bucket.replace(' ta', '').split('–').map((s) => Number.parseInt(s, 10))
-  return hi == null ? n === lo : n >= lo && n <= hi
-}
-
-// Jadval endi "scroll pagination" bilan (bitta-bitta sahifa) yuklanadi — qidiruv va
-// holat (tab/"Holat" filtri) serverga so'rov parametri sifatida yuboriladi. Filiallar soni/
-// foydalanuvchilar soni "bucket"lari va sana oralig'i uchun mos backend parametri
-// tasdiqlanmagan — shular hozircha faqat YUKLANGAN qatorlar ustida ishlaydi.
 function fetchOrgsPage(params) {
   return organizationService.getOrganizationsPage(params).then((res) => ({ ...res, results: res.results.map(mapOrg) }))
 }
@@ -78,6 +67,21 @@ export default function TashkilotlarListPage() {
     return undefined
   }, [tab, filters.holat])
 
+  const queryParams = useMemo(() => {
+    const p = {
+      search: debouncedSearch.trim() || undefined,
+      is_suspended: isSuspendedParam,
+    }
+    if (filters.region) p.region = filters.region
+    if (filters.district) p.district = filters.district
+    if (filters.inn) p.inn = filters.inn
+    if (filters.branches_count_min) p.branches_count_min = filters.branches_count_min
+    if (filters.branches_count_max) p.branches_count_max = filters.branches_count_max
+    if (filters.start_date) p.start_date = filters.start_date
+    if (filters.end_date) p.end_date = filters.end_date
+    return p
+  }, [debouncedSearch, isSuspendedParam, filters])
+
   const {
     items: pagedOrgs,
     totalCount,
@@ -89,33 +93,36 @@ export default function TashkilotlarListPage() {
     sentinelRef: orgsSentinelRef,
     handleScroll: handleOrgsScroll,
     reload: reloadOrgs,
-  } = useServerPagedList(fetchOrgsPage, {
-    search: debouncedSearch.trim(),
-    is_suspended: isSuspendedParam,
-  })
+  } = useServerPagedList(fetchOrgsPage, queryParams)
 
-  // Tab hisoblagichlari — sahifaga kirganda hammasi ko'rinadi: ochiq tab jadvalning o'z `count`idan,
-  // qolganlari bittadan 1-sahifa so'rovi bilan (useTabCounts).
-  const countTab = isSuspendedParam === undefined ? 'all' : isSuspendedParam ? 'suspended' : 'active'
-  const counts = useTabCounts(
-    organizationService.getOrganizationsPage,
-    { search: debouncedSearch.trim() },
-    { active: { is_suspended: false }, suspended: { is_suspended: true } },
-    countTab,
-    totalCount,
-    orgsLoading
-  )
+  // Tab hisoblagichlari — /api/v1/organization/organizations/counts/ orqali yuklanadi
+  const [countsData, setCountsData] = useState({ active: null, suspended: null })
+  const loadCounts = () => {
+    organizationService.getOrganizationCounts()
+      .then((data) => {
+        if (data) {
+          setCountsData({
+            active: data.active ?? 0,
+            suspended: data.suspended ?? 0,
+          })
+        }
+      })
+      .catch((err) => console.error('Tashkilot hisoblagichlarini yuklab bo‘lmadi:', err))
+  }
 
-  const shown = useMemo(() => {
-    let out = pagedOrgs
-    if (filters.hudud) out = out.filter((o) => o.viloyat === filters.hudud)
-    if (filters.filiallarSoni) out = out.filter((o) => matchesCountBucket(o.branchCount, filters.filiallarSoni))
-    if (filters.foydalanuvchilar) out = out.filter((o) => matchesCountBucket(o.stats?.foydalanuvchilar ?? 0, filters.foydalanuvchilar))
-    if (filters.sanaDan || filters.sanaGacha)
-      out = out.filter((o) => matchesDateRange(o.registeredAt, filters.sanaDan, filters.sanaGacha))
-    return out
-  }, [pagedOrgs, filters])
+  useEffect(() => {
+    loadCounts()
+  }, [])
 
+
+  const counts = useMemo(() => {
+    const active = countsData.active
+    const suspended = countsData.suspended
+    const all = active != null && suspended != null ? active + suspended : null
+    return { all, active, suspended }
+  }, [countsData])
+
+  const shown = pagedOrgs
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -175,7 +182,9 @@ export default function TashkilotlarListPage() {
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
-            <Filter className="h-4 w-4" /> Filtr
+            <Filter className="h-4 w-4" />
+            <span>Filtr</span>
+            {hasFilter && <span className="size-1.5 rounded-full bg-[#0052D2] dark:bg-[#60A5FA]" />}
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
@@ -183,6 +192,7 @@ export default function TashkilotlarListPage() {
           >
             <Plus className="h-4 w-4" /> Qo'shish
           </Button>
+
         </div>
       </div>
 
