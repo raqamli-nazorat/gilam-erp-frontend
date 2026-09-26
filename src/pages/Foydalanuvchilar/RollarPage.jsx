@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux'
 import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
+import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { createRole, mapRole, updateRole } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import * as roleService from '@/services/roleService'
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
 import RoleModal from './components/RoleModal'
-import RoleFilterModal, { EMPTY_ROLE_FILTERS } from './components/RoleFilterModal'
+import RoleFilterModal, { EMPTY_ROLE_FILTERS, GLOBAL_ROLES } from './components/RoleFilterModal'
 
 const TH =
   'sticky top-0 z-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#525252] dark:bg-white/5 dark:text-muted-foreground'
@@ -60,16 +61,20 @@ export default function RollarPage() {
     sentinelRef: rolesSentinelRef,
     handleScroll: handleRolesScroll,
     reload: reloadRoles,
-  } = useServerPagedList(fetchRolesPage, { search: debouncedSearch.trim() })
+  } = useServerPagedList(fetchRolesPage, {
+    search: debouncedSearch.trim(),
+    // Tashkilot va turi backendda filtrlanadi (organization, is_system) — to'liq natija.
+    organization: filters.tashkilot && filters.tashkilot !== GLOBAL_ROLES ? filters.tashkilot : undefined,
+    is_system: filters.holat === 'Tizim roli' ? true : filters.holat === 'Odatiy rol' ? false : undefined,
+  })
 
   const hasFilter = Object.values(filters).some(Boolean)
 
   const shownRoles = useMemo(() => {
     let out = roles
-    if (filters.tashkilot) {
-      out = out.filter((r) => (filters.tashkilot === 'Barcha tashkilotlar' ? !r.tashkilotId : r.tashkilot === filters.tashkilot))
-    }
-    if (filters.holat) out = out.filter((r) => (filters.holat === 'Tizim roli' ? r.isSystem : !r.isSystem))
+    // "Barcha tashkilotlar" (tashkilotsiz umumiy rollar) uchun backendda filtr yo'q.
+    if (filters.tashkilot === GLOBAL_ROLES) out = out.filter((r) => !r.tashkilotId)
+    if (filters.sanaDan || filters.sanaGacha) out = out.filter((r) => matchesDateRange(r.yaratilgan, filters.sanaDan, filters.sanaGacha))
     const dan = Number(filters.foydalanuvchiDan) || 0
     const gacha = Number(filters.foydalanuvchiGacha) || 0
     if (dan) out = out.filter((r) => r.usersCount >= dan)
@@ -131,6 +136,7 @@ export default function RollarPage() {
             <tr>
               <th className={cn(TH, 'h-10 w-12 text-left')}>#</th>
               <th className={cn(TH, 'h-10 text-left')}>NOMI</th>
+              <th className={cn(TH, 'h-10 text-left')}>TASHKILOT</th>
               <th className={cn(TH, 'h-10 text-right')}>FOYDALANUVCHILAR</th>
               <th className={cn(TH, 'h-10 text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'h-10 text-left')}>O‘ZGARTIRILGAN</th>
@@ -139,7 +145,7 @@ export default function RollarPage() {
           <tbody>
             {rolesLoading && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -148,7 +154,7 @@ export default function RollarPage() {
               </tr>
             ) : rolesError && shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -163,7 +169,7 @@ export default function RollarPage() {
               </tr>
             ) : shownRoles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Rol topilmadi
                 </td>
               </tr>
@@ -176,6 +182,7 @@ export default function RollarPage() {
                 >
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
+                  <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-muted-foreground">{r.tashkilot}</td>
                   <td className="px-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.usersCount}</td>
                   <td className={TD_MUTED}>{r.yaratilgan}</td>
                   <td className={TD_MUTED}>{r.ozgartirilgan}</td>
@@ -184,12 +191,12 @@ export default function RollarPage() {
             )}
             {shownRoles.length > 0 && rolesHasMore && !rolesLoading && (
               <tr ref={rolesSentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={5} className="h-1 border-0 p-0" />
+                <td colSpan={6} className="h-1 border-0 p-0" />
               </tr>
             )}
             {rolesLoadingMore && (
               <tr>
-                <td colSpan={5} className="py-4 text-center">
+                <td colSpan={6} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…

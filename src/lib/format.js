@@ -49,11 +49,12 @@ export function matchesDateRange(value, danStr, gachaStr) {
   return true
 }
 
+// Sana -> "DD.MM.YYYY" (KK.OO.YYYY). "YYYY-MM-DD" va "YYYY-MM-DDTHH:mm..." (ISO) qabul qilinadi;
+// allaqachon formatlangan yoki tanib bo'lmaydigan qiymat o'zgarishsiz qaytadi.
 export function formatDate(isoDate) {
   if (!isoDate) return ''
-  const [y, m, d] = isoDate.split('-')
-  if (!y || !m || !d) return isoDate
-  return `${d}.${m}.${y}`
+  const m = String(isoDate).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : String(isoDate)
 }
 
 // Faqat raqamlarni oladi va "+998 90 123-45-67" ko'rinishiga keltiradi.

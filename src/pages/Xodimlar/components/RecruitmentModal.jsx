@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Check, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { maskMoney } from '@/lib/format'
+import { formatDate, maskMoney } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -65,7 +65,7 @@ export default function RecruitmentModal({ open, onOpenChange, record, employees
         ishHaqiTuri: record.ishHaqiTuri ?? 'fixed_amount',
         ishHaqiSummasi: record.fixSumma ? maskMoney(String(record.fixSumma)) : '',
         ishHaqiFoizi: record.fixFoiz ? String(record.fixFoiz) : '',
-        ishgaOlinganSana: record.sana ?? '',
+        ishgaOlinganSana: formatDate(record.sana),
         qoshimchaSumma: record.extraSumma ? maskMoney(String(record.extraSumma)) : '',
         qoshimchaFoizi: record.extraFoiz ? String(record.extraFoiz) : '',
       }

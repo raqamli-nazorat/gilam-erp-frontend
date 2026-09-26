@@ -6,7 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Edit02Icon } from '@hugeicons/core-free-icons/index'
 import { cn } from '@/lib/utils'
 import { usePageHeader } from '@/hooks/usePageHeader'
-import { formatNumber } from '@/lib/format'
+import { formatDate, formatNumber } from '@/lib/format'
 import * as recruitmentService from '@/services/recruitmentService'
 import {
   mapRecruitment,
@@ -237,7 +237,7 @@ export default function IshgaQabulQilishDetailPage() {
           </div>
           <div className="rounded-xl bg-[#B3F8C5] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">ISHGA OLINGAN</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{rec.sana || ''}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{formatDate(rec.sana)}</p>
           </div>
         </div>
 
@@ -272,7 +272,7 @@ export default function IshgaQabulQilishDetailPage() {
                 <tbody>
                   <tr className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                     <td className="px-3 text-[13px] text-[#737373]">1</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.sana || ''}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{formatDate(rec.sana)}</td>
                     <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.yaratilgan || ''}</td>
                     <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.ozgartirilgan || ''}</td>
                     <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">Ishga olindi</td>
@@ -290,7 +290,7 @@ export default function IshgaQabulQilishDetailPage() {
               <InfoRow label="Filiali" value={rec.branch} />
               <InfoRow label="Lavozimi" value={rec.lavozim} />
               <InfoRow label="Karta raqami" value={full?.kartaRaqami} />
-              <InfoRow label="Ishga olingan sana" value={rec.sana} />
+              <InfoRow label="Ishga olingan sana" value={formatDate(rec.sana)} />
               <InfoRow label="Ish haqi turi" value={ishHaqi} />
               <InfoRow label="Qo‘shimcha summa" value={`${formatNumber(full?.extraSumma, 2)} UZS`} />
               <InfoRow label="Qo‘shimcha foiz" value={`${formatNumber(full?.extraFoiz, 0)} %`} />
