@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePicker, fromISODate, toISODate } from '@/components/ui/date-picker'
 
 const METHODS = [
   {
@@ -79,10 +80,9 @@ export default function SupplierMethodStep({
             </div>
             <div>
               <Label className="mb-1.5">Yetkazilgan sana</Label>
-              <Input
-                type="date"
-                value={supplier.date}
-                onChange={(e) => onSupplierChange({ ...supplier, date: e.target.value })}
+              <DatePicker
+                value={fromISODate(supplier.date)}
+                onChange={(d) => onSupplierChange({ ...supplier, date: toISODate(d) })}
               />
             </div>
           </div>
