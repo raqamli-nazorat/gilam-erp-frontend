@@ -44,11 +44,11 @@ export function exportAuditToExcel(logs) {
   const rows = logs.map((r, index) => {
     const dt = formatAuditDateTime(r.timestamp)
     const actionInfo = getActionInfo(r.action)
-    const user = r.actor_name || r.actor || r.object_repr || '—'
-    const org = r.organization_name || r.tashkilot || '—'
-    const table = r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '—')
-    const record = r.object_pk || r.object_id || '—'
-    const ip = r.remote_addr || '—'
+    const user = r.actor_name || r.actor || r.object_repr || ''
+    const org = r.organization_name || r.tashkilot || ''
+    const table = r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '')
+    const record = r.object_pk || r.object_id || ''
+    const ip = r.remote_addr || ''
 
     return {
       index: index + 1,
@@ -259,11 +259,11 @@ export function exportAuditToPdf(logs) {
   const body = logs.map((r, index) => {
     const dt = formatAuditDateTime(r.timestamp)
     const actionInfo = getActionInfo(r.action)
-    const user = r.actor_name || r.actor || r.object_repr || '—'
-    const org = r.organization_name || r.tashkilot || '—'
-    const table = r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '—')
-    const record = r.object_pk || r.object_id || '—'
-    const ip = r.remote_addr || '—'
+    const user = r.actor_name || r.actor || r.object_repr || ''
+    const org = r.organization_name || r.tashkilot || ''
+    const table = r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '')
+    const record = r.object_pk || r.object_id || ''
+    const ip = r.remote_addr || ''
 
     return [
       index + 1,

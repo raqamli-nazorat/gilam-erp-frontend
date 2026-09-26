@@ -178,7 +178,7 @@ export default function AdvancesPage() {
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{formatDate(a.date)}</td>
                   <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{a.empName}</td>
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{a.type}</td>
-                  <td className="max-w-[220px] truncate px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{a.note || '—'}</td>
+                  <td className="max-w-[220px] truncate px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{a.note || ''}</td>
                   <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(a.amountUsd)}</td>
                   <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(a.amountUzs, 0)}</td>
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{a.author}</td>

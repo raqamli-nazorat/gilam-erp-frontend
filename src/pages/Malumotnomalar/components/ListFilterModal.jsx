@@ -10,13 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-card dark:text-white'
@@ -57,15 +51,7 @@ export default function ListFilterModal({ open, onOpenChange, fields, filters, o
           {all.map((f) => (
             <div key={f.key}>
               <Label className={labelCls}>{f.label}</Label>
-              <Select value={draft[f.key] || '__all'} onValueChange={(v) => set(f.key, v === '__all' ? '' : v)}>
-                <SelectTrigger className={fieldCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {f.options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft[f.key]} onChange={(v) => set(f.key, v)} options={f.options} className={fieldCls} />
             </div>
           ))}
         </div>

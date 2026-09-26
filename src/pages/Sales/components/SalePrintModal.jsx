@@ -82,7 +82,7 @@ export default function SalePrintModal({ open, onOpenChange, doc }) {
             </div>
             <div>
               <p className="font-semibold uppercase text-[#737373]">Qabul qiluvchi</p>
-              <p className="font-medium">{doc.counterparty || '—'}</p>
+              <p className="font-medium">{doc.counterparty || ''}</p>
               <p className="text-[#737373]">Shartnoma: {doc.contract} · Transport: {doc.transport}</p>
             </div>
           </div>

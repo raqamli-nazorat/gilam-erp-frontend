@@ -15,13 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_SALES_FILTERS = {
   from: '',
@@ -78,31 +72,11 @@ export default function SalesFilterModal({ open, onOpenChange, filters, onApply 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Kontragent</Label>
-              <Select value={draft.counterparty || '__all'} onValueChange={(v) => set('counterparty', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {SALE_COUNTERPARTIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.counterparty} onChange={(v) => set('counterparty', v)} options={SALE_COUNTERPARTIES} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Agent</Label>
-              <Select value={draft.agent || '__all'} onValueChange={(v) => set('agent', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {SALE_AGENTS.map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.agent} onChange={(v) => set('agent', v)} options={SALE_AGENTS} className={inputCls} />
             </div>
           </div>
 

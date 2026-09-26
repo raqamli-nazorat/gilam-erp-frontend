@@ -166,26 +166,26 @@ export default function FoydalanuvchilarDetailPage() {
             kirish yopilgani), garchi tagida bir xil TerminateEmployeeModal ishlatilsa ham. */}
         {xodim?.holat === 'boshagan' && lastDismissal && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Foydalanuvchi bloklangan, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || '—'}. Kirish yopildi.
-            Blokladi: {currentUser?.fullName || '—'}.
+            Foydalanuvchi bloklangan, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}. Kirish yopildi.
+            Blokladi: {currentUser?.fullName || ''}.
           </div>
         )}
         {xodim && justRehired && lastRecord && (
           <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-            Foydalanuvchi faollashtirilgan, {lastRecord.yaratilgan}. Faollashtirdi: {currentUser?.fullName || '—'}. Avvalgi
+            Foydalanuvchi faollashtirilgan, {lastRecord.yaratilgan}. Faollashtirdi: {currentUser?.fullName || ''}. Avvalgi
             bloklash sababi audit jurnalida saqlangan.
           </div>
         )}
         {blocked && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Foydalanuvchi bloklangan, {(statusMeta?.type === 'block' && statusMeta.at) || user.block?.at || '—'}. Sabab:{' '}
-            {(statusMeta?.type === 'block' && statusMeta.reason) || user.block?.reason || '—'}. Blokladi:{' '}
-            {(statusMeta?.type === 'block' && statusMeta.by) || user.block?.by || '—'}.
+            Foydalanuvchi bloklangan, {(statusMeta?.type === 'block' && statusMeta.at) || user.block?.at || ''}. Sabab:{' '}
+            {(statusMeta?.type === 'block' && statusMeta.reason) || user.block?.reason || ''}. Blokladi:{' '}
+            {(statusMeta?.type === 'block' && statusMeta.by) || user.block?.by || ''}.
           </div>
         )}
         {!blocked && !xodim && statusMeta?.type === 'activate' && (
           <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-            Foydalanuvchi faollashtirilgan, {statusMeta.at}. Faollashtirdi: {statusMeta.by || '—'}. Avvalgi bloklash sababi audit
+            Foydalanuvchi faollashtirilgan, {statusMeta.at}. Faollashtirdi: {statusMeta.by || ''}. Avvalgi bloklash sababi audit
             jurnalida saqlangan.
           </div>
         )}
@@ -214,7 +214,7 @@ export default function FoydalanuvchilarDetailPage() {
                   ) : (
                     audit.map((row, i) => {
                       const info = getActionInfo(row.action)
-                      const obyekt = row.object_repr || row.content_type_name || '–'
+                      const obyekt = row.object_repr || row.content_type_name || ''
                       return (
                         <tr key={row.id ?? i} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                           <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
@@ -223,9 +223,9 @@ export default function FoydalanuvchilarDetailPage() {
                           </td>
                           <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">{info.label}</td>
                           <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">
-                            {obyekt === '–' ? <span className="font-normal text-[#737373] dark:text-muted-foreground">–</span> : obyekt}
+                            {obyekt}
                           </td>
-                          <td className="px-3 pr-4 text-[13px] text-[#737373] dark:text-muted-foreground">{row.remote_addr || '–'}</td>
+                          <td className="px-3 pr-4 text-[13px] text-[#737373] dark:text-muted-foreground">{row.remote_addr || ''}</td>
                         </tr>
                       )
                     })

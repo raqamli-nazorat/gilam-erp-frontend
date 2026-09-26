@@ -24,8 +24,8 @@ export default function RehireEmployeeModal({ open, onOpenChange, employee, onCo
           {[
             ['Xodim', employee.name],
             ['Lavozimi', employee.lavozim],
-            ['Ishdan chiqarilgan', employee.termination?.at ?? '—'],
-            ['Sababi', employee.termination?.reason ?? '—'],
+            ['Ishdan chiqarilgan', employee.termination?.at ?? ''],
+            ['Sababi', employee.termination?.reason ?? ''],
           ].map(([k, v]) => (
             <div key={k} className="flex items-center justify-between gap-4 py-1">
               <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{k}</span>

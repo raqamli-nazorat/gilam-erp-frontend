@@ -179,7 +179,7 @@ export default function BookingsListPage() {
                   <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{i + 1}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{b.number}</TableCell>
                   <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{formatDate(b.date)}</TableCell>
-                  <TableCell className="max-w-[170px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{b.customer || '—'}</TableCell>
+                  <TableCell className="max-w-[170px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{b.customer || ''}</TableCell>
                   <TableCell className="max-w-[150px] truncate px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{b.agent}</TableCell>
                   <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{b.warehouse}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{formatNumber(b.bronM2)}</TableCell>

@@ -13,13 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_OP_FILTERS = { from: '', to: '', kassa: '', type: '', cashier: '' }
 
@@ -65,27 +59,11 @@ export default function KassaOpFilterModal({ open, onOpenChange, filters, onAppl
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Kassa</Label>
-              <Select value={draft.kassa || '__all'} onValueChange={(v) => set('kassa', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {[...KASSAS, 'HUMO', 'UZCARD'].map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.kassa} onChange={(v) => set('kassa', v)} options={[...KASSAS, 'HUMO', 'UZCARD']} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Kassir</Label>
-              <Select value={draft.cashier || '__all'} onValueChange={(v) => set('cashier', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {CASHIERS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.cashier} onChange={(v) => set('cashier', v)} options={CASHIERS} className={inputCls} />
             </div>
           </div>
 

@@ -66,15 +66,19 @@ export default function FilialXodimlarPage() {
         staffRows.map((x, i) => {
           const working = x.holat === 'Faol'
           return (
-            <tr key={x.id || i} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
+            <tr
+              key={x.id || i}
+              onClick={() => x.id && window.open(`/malumotnomalar/xodimlar/${x.id}`, '_blank', 'noopener')}
+              className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+            >
               <td className={TD_IDX}>{i + 1}</td>
               <td className={TD_LINK}>{x.name}</td>
-              <td className={TD}>{x.lavozim || '—'}</td>
+              <td className={TD}>{x.lavozim || ''}</td>
               <td className={cn(TD, 'text-[#737373]')}>
-                {x.phone || '—'}
                 {x.phone && <CopyBtn value={x.phone} />}
+                {x.phone || ''}
               </td>
-              <td className={cn(TD, 'text-[#737373]')}>{x.ishgaKirgan || '—'}</td>
+              <td className={cn(TD, 'text-[#737373]')}>{x.ishgaKirgan || ''}</td>
               <td className="px-4">
                 <span
                   className={cn(

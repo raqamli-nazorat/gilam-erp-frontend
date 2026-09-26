@@ -111,7 +111,7 @@ export default function XodimlarListPage() {
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
+        <div className="inline-flex w-[400px] items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
           {[
             ['all', 'Barchasi', counts.all],
             ['faol', 'Faol', counts.faol],
@@ -124,7 +124,7 @@ export default function XodimlarListPage() {
                 type="button"
                 onClick={() => setTab(key)}
                 className={cn(
-                  'flex h-7 items-center gap-1.5 rounded-[7px] px-2 text-[13px] font-medium transition-colors',
+                  'flex h-7 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 text-[13px] font-medium transition-colors',
                   active
                     ? 'bg-white text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white'
                     : 'text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground dark:hover:text-white'
@@ -236,7 +236,6 @@ export default function XodimlarListPage() {
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
                     {x.phone ? (
                       <span className="inline-flex items-center gap-1.5">
-                        {x.phone}
                         <button
                           type="button"
                           onClick={(e) => copy(e, x.phone, 'Telefon')}
@@ -245,18 +244,19 @@ export default function XodimlarListPage() {
                         >
                           <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                         </button>
+                        {x.phone}
                       </span>
                     ) : (
-                      '—'
+                      ''
                     )}
                   </td>
                   <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
-                    {[x.passportSeria, x.passportNumber].filter(Boolean).join(' ') || '—'}
+                    {[x.passportSeria, x.passportNumber].filter(Boolean).join(' ') || ''}
                   </td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.jshshir || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.viloyat || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.tuman || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.filial || '—'}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.jshshir || ''}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.viloyat || ''}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.tuman || ''}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.filial || ''}</td>
                 </tr>
               ))
             )}
@@ -287,7 +287,7 @@ export default function XodimlarListPage() {
           dispatch(createKadr(values))
             .unwrap()
             .then((created) => navigate(`/malumotnomalar/xodimlar/${created.id}`))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <XodimlarFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />

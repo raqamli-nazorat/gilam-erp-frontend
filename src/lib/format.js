@@ -50,7 +50,7 @@ export function matchesDateRange(value, danStr, gachaStr) {
 }
 
 export function formatDate(isoDate) {
-  if (!isoDate) return '—'
+  if (!isoDate) return ''
   const [y, m, d] = isoDate.split('-')
   if (!y || !m || !d) return isoDate
   return `${d}.${m}.${y}`

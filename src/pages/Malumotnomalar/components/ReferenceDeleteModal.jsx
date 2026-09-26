@@ -23,7 +23,7 @@ export default function ReferenceDeleteModal({ open, onOpenChange, title, summar
               <div className="flex items-center justify-between gap-4 py-1">
                 <span className="min-w-0 truncate text-[#737373] dark:text-muted-foreground">{summary.label}</span>
                 <span className="shrink-0 truncate text-right font-medium text-[#0A0A0A] dark:text-white">
-                  {summary.value || '—'}
+                  {summary.value || ''}
                 </span>
               </div>
             )}

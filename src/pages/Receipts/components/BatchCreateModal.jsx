@@ -78,7 +78,7 @@ export default function BatchCreateModal({ open, onOpenChange, rows, warehouse, 
                   {row.quality} {row.design} {formatNumber(row.m2, 0)} {row.shape}
                 </span>
                 <span className="flex items-center gap-3">
-                  <span className="text-[#737373]">{row.partiya || '—'}</span>
+                  <span className="text-[#737373]">{row.partiya || ''}</span>
                   <span className="text-[#0A0A0A] dark:text-white">{formatNumber(row.m2)} m²</span>
                 </span>
               </div>

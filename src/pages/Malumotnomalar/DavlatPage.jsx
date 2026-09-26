@@ -89,7 +89,7 @@ export default function DavlatPage() {
         setToast('Saqlandi')
         reload()
       })
-      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
   }
 
   function confirmDelete() {
@@ -99,7 +99,7 @@ export default function DavlatPage() {
         setToast('O‘chirildi')
         reload()
       })
-      .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'O‘chirishda xatolik yuz berdi' }))
   }
 
   const hasFilter = Object.values(filters).some(Boolean)

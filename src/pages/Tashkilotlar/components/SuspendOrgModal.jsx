@@ -35,13 +35,12 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
           {[
             ['Tashkilot', org.name, false],
             ['INN', org.inn, true],
-            ['Filiallar', `${org.stats.filiallar ?? '—'} ta`, false],
-            ['Foydalanuvchilar', org.stats.foydalanuvchilar == null ? '—' : `${org.stats.foydalanuvchilar} ta`, false],
+            ['Filiallar', `${org.stats.filiallar ?? 0} ta`, false],
+            ['Foydalanuvchilar', `${org.stats.foydalanuvchilar ?? 0} ta`, false],
           ].map(([k, v, copyable]) => (
             <div key={k} className="flex items-center justify-between py-1">
               <span className="text-[#737373] dark:text-muted-foreground">{k}</span>
               <span className="flex items-center gap-1.5 font-medium text-[#0A0A0A] dark:text-white">
-                {v}
                 {copyable && (
                   <button
                     type="button"
@@ -52,6 +51,7 @@ export default function SuspendOrgModal({ open, onOpenChange, org, onConfirm }) 
                     <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                   </button>
                 )}
+                {v}
               </span>
             </div>
           ))}

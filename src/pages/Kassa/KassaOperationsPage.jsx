@@ -157,8 +157,8 @@ export default function KassaOperationsPage() {
                 <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{o.type}</td>
                 <td className="max-w-[260px] truncate px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{o.note}</td>
                 <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{o.kassa}</td>
-                <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.cashIn != null ? formatNumber(o.cashIn) : '—'}</td>
-                <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.cashOut != null ? formatNumber(o.cashOut) : '—'}</td>
+                <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(o.cashIn ?? 0)}</td>
+                <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(o.cashOut ?? 0)}</td>
                 <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{o.cashier}</td>
               </tr>
             ))}
@@ -168,8 +168,8 @@ export default function KassaOperationsPage() {
               <tr className="h-11">
                 <td className="px-3" />
                 <td className="px-3 text-[13px] font-semibold text-[#0A0A0A] dark:text-white" colSpan={5}>JAMI</td>
-                <td className="px-3 text-right text-[13px] font-semibold text-[#0A0A0A] dark:text-white">{totalIn ? formatNumber(totalIn) : '—'}</td>
-                <td className="px-3 text-right text-[13px] font-semibold text-[#0A0A0A] dark:text-white">{totalOut ? formatNumber(totalOut) : '—'}</td>
+                <td className="px-3 text-right text-[13px] font-semibold text-[#0A0A0A] dark:text-white">{formatNumber(totalIn || 0)}</td>
+                <td className="px-3 text-right text-[13px] font-semibold text-[#0A0A0A] dark:text-white">{formatNumber(totalOut || 0)}</td>
                 <td className="px-3" />
               </tr>
             </tfoot>

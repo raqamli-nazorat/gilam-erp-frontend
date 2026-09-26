@@ -3,19 +3,11 @@ import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 // Figma: modal 560px, radius 12, shadow 0px 12px 24px -6px #01091C24, ring yo'q.
 // Header 60px (pl 24 / pr 16), body px 24 / pt 8 / pb 24 / gap 16, footer 72px #F5F5F5.
 // Maydonlar: 36px (h-9), "control" radius (8px), 1px #E5E5E5, shadow 0px 1px 2px #0000001A.
-const FIELD_CLS =
-  'h-9 w-full rounded-[8px] border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] dark:border-white/10 dark:bg-card dark:text-white'
 
 export function FilterModal({ open, onOpenChange, onReset, onApply, children }) {
   return (
@@ -74,25 +66,19 @@ export function FilterField({ label, className, children }) {
   )
 }
 
-export function FilterSelect({ value, onChange, placeholder = 'Barchasi', options, disabled }) {
+// Filtr oynalaridagi barcha tanlovlar — qidiruvli (SearchSelect).
+// options: ['A', 'B'] yoki [{ value, label }]; allowAll={false} — "Barchasi" variantisiz.
+export function FilterSelect({ value, onChange, placeholder = 'Barchasi', options, disabled, allowAll = true, searchPlaceholder }) {
   return (
-    <Select
-      value={value || '__all'}
-      onValueChange={(v) => onChange(v === '__all' ? '' : v)}
+    <SearchSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      allowAll={allowAll}
+      searchPlaceholder={searchPlaceholder}
       disabled={disabled}
-    >
-      <SelectTrigger className={cn(FIELD_CLS, disabled && 'opacity-60')}>
-        <SelectValue>{(v) => (v === '__all' ? <span className="text-[#737373]">{placeholder}</span> : v)}</SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__all">{placeholder}</SelectItem>
-        {options.map((o) => (
-          <SelectItem key={o} value={o}>
-            {o}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    />
   )
 }
 

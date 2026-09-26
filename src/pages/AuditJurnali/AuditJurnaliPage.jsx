@@ -174,7 +174,7 @@ export default function AuditJurnaliPage() {
 
   const handleExportCsv = () => {
     if (!logs.length) {
-      setToast("Yuklash uchun ma'lumot yo'q")
+      setToast({ variant: 'warning', message: "Yuklash uchun ma'lumot yo'q" })
       return
     }
     const headers = [
@@ -190,11 +190,11 @@ export default function AuditJurnaliPage() {
     const rows = logs.map((r) => {
       const dt = formatAuditDateTime(r.timestamp)
       const actionInfo = getActionInfo(r.action)
-      const user = r.actor_name || r.actor || r.object_repr || '—'
-      const org = r.organization_name || r.tashkilot || '—'
-      const table = r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '—')
-      const record = r.object_pk || r.object_id || '—'
-      const ip = r.remote_addr || '—'
+      const user = r.actor_name || r.actor || r.object_repr || ''
+      const org = r.organization_name || r.tashkilot || ''
+      const table = r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '')
+      const record = r.object_pk || r.object_id || ''
+      const ip = r.remote_addr || ''
 
       return [
         `"${dt.date}"`,
@@ -223,7 +223,7 @@ export default function AuditJurnaliPage() {
 
   const handleExportExcel = () => {
     if (!logs.length) {
-      setToast("Yuklash uchun ma'lumot yo'q")
+      setToast({ variant: 'warning', message: "Yuklash uchun ma'lumot yo'q" })
       return
     }
     try {
@@ -231,13 +231,13 @@ export default function AuditJurnaliPage() {
       setToast('Audit jurnali Excel (.xlsx) formatida yuklab olindi')
     } catch (err) {
       console.error('Excel eksportda xatolik:', err)
-      setToast('Excel faylini yuklashda xatolik yuz berdi')
+      setToast({ variant: 'error', message: 'Excel faylini yuklashda xatolik yuz berdi' })
     }
   }
 
   const handleExportPdf = () => {
     if (!logs.length) {
-      setToast("Yuklash uchun ma'lumot yo'q")
+      setToast({ variant: 'warning', message: "Yuklash uchun ma'lumot yo'q" })
       return
     }
     try {
@@ -245,13 +245,13 @@ export default function AuditJurnaliPage() {
       setToast('Audit jurnali PDF (.pdf) formatida yuklab olindi')
     } catch (err) {
       console.error('PDF eksportda xatolik:', err)
-      setToast('PDF faylini yuklashda xatolik yuz berdi')
+      setToast({ variant: 'error', message: 'PDF faylini yuklashda xatolik yuz berdi' })
     }
   }
 
   const handleCopy = (text, key, label, e) => {
     e.stopPropagation()
-    if (!text || text === '—') return
+    if (!text || text === '') return
     navigator.clipboard?.writeText(String(text))
     setCopiedKey(key)
     setToast(`${label} nusxalandi: ${text}`)
@@ -381,12 +381,12 @@ export default function AuditJurnaliPage() {
                 logs.map((r, index) => {
                   const dt = formatAuditDateTime(r.timestamp)
                   const actionInfo = getActionInfo(r.action)
-                  const userDisplay = r.actor_name || r.actor || r.object_repr || '—'
-                  const orgDisplay = r.organization_name || r.tashkilot || '—'
+                  const userDisplay = r.actor_name || r.actor || r.object_repr || ''
+                  const orgDisplay = r.organization_name || r.tashkilot || ''
                   const tableDisplay =
-                    r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '—')
-                  const recordDisplay = r.object_pk || r.object_id || '—'
-                  const ipDisplay = r.remote_addr || '—'
+                    r.content_type_name || (r.content_type ? `ID: ${r.content_type}` : '')
+                  const recordDisplay = r.object_pk || r.object_id || ''
+                  const ipDisplay = r.remote_addr || ''
 
                   return (
                     <tr
@@ -437,7 +437,7 @@ export default function AuditJurnaliPage() {
                           >
                             {String(recordDisplay)}
                           </span>
-                          {recordDisplay !== '—' && (
+                          {recordDisplay !== '' && (
                             <button
                               type="button"
                               onClick={(e) =>
@@ -460,7 +460,7 @@ export default function AuditJurnaliPage() {
                           <span className="text-[#737373] dark:text-muted-foreground">
                             {ipDisplay}
                           </span>
-                          {ipDisplay !== '—' && (
+                          {ipDisplay !== '' && (
                             <button
                               type="button"
                               onClick={(e) =>

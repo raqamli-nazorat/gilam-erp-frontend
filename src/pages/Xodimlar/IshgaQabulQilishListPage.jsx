@@ -235,7 +235,6 @@ export default function IshgaQabulQilishListPage() {
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{i + 1}</td>
                   <td className="px-4 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">
                     <span className="inline-flex items-center gap-1.5">
-                      {r.employeeName || '—'}
                       {r.employeeName && (
                         <button
                           type="button"
@@ -246,14 +245,15 @@ export default function IshgaQabulQilishListPage() {
                           <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                         </button>
                       )}
+                      {r.employeeName || ''}
                     </span>
                   </td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.tashkilot || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.branch || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.lavozim || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.sana ? formatDate(r.sana) : '—'}</td>
-                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.yaratilgan || '—'}</td>
-                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.ozgartirilgan || '—'}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.tashkilot || ''}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.branch || ''}</td>
+                  <td className="px-4 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{r.lavozim || ''}</td>
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.sana ? formatDate(r.sana) : ''}</td>
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.yaratilgan || ''}</td>
+                  <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.ozgartirilgan || ''}</td>
                 </tr>
               ))
             )}
@@ -308,7 +308,7 @@ export default function IshgaQabulQilishListPage() {
               createdIdsRef.current.push(created.id)
             })
             .catch((err) => {
-              setToast(err || 'Saqlashda xatolik yuz berdi')
+              setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' })
               throw err
             })
         }
@@ -319,7 +319,7 @@ export default function IshgaQabulQilishListPage() {
               created.forEach((r) => createdIdsRef.current.push(r.id))
             })
             .catch((err) => {
-              setToast(err || 'Saqlashda xatolik yuz berdi')
+              setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' })
               throw err
             })
         }

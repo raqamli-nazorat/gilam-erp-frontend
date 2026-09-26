@@ -39,7 +39,7 @@ export default function ConfirmDeleteModal({ open, onOpenChange, receipt, onConf
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Kontragent</span>
-            <span className="font-medium">{receipt.counterparty || '—'}</span>
+            <span className="font-medium">{receipt.counterparty || ''}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Bog'langan sotuvlar</span>

@@ -15,13 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_BOOKING_FILTERS = {
   from: '',
@@ -90,34 +84,14 @@ export default function BookingFilterModal({ open, onOpenChange, filters, onAppl
             </div>
             <div>
               <Label className={labelCls}>Agent</Label>
-              <Select value={draft.agent || '__all'} onValueChange={(v) => set('agent', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {BOOKING_AGENTS.map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.agent} onChange={(v) => set('agent', v)} options={BOOKING_AGENTS} className={inputCls} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Ombor</Label>
-              <Select value={draft.warehouse || '__all'} onValueChange={(v) => set('warehouse', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {BOOKING_WAREHOUSES.map((w) => (
-                    <SelectItem key={w} value={w}>{w}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.warehouse} onChange={(v) => set('warehouse', v)} options={BOOKING_WAREHOUSES} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Holat</Label>

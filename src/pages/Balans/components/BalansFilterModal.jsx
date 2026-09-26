@@ -13,13 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_BALANS_FILTERS = {
   date: '2026-08-13',
@@ -68,39 +62,18 @@ export default function BalansFilterModal({ open, onOpenChange, filters, onApply
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Ombor</Label>
-              <Select value={draft.warehouse || '__all'} onValueChange={(v) => set('warehouse', v === '__all' ? '' : v)}>
-                <SelectTrigger className={fieldCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {BALANS_WAREHOUSES.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.warehouse} onChange={(v) => set('warehouse', v)} options={BALANS_WAREHOUSES} className={fieldCls} />
             </div>
             <div>
               <Label className={labelCls}>Valyuta</Label>
-              <Select value={draft.currency} onValueChange={(v) => set('currency', v)}>
-                <SelectTrigger className={fieldCls}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {['USD', 'UZS'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.currency} onChange={(v) => set('currency', v)} options={['USD', 'UZS']} allowAll={false} className={fieldCls} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Kontragent turi</Label>
-              <Select value={draft.cpKind || '__all'} onValueChange={(v) => set('cpKind', v === '__all' ? '' : v)}>
-                <SelectTrigger className={fieldCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {COUNTERPARTY_KINDS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.cpKind} onChange={(v) => set('cpKind', v)} options={COUNTERPARTY_KINDS} className={fieldCls} />
             </div>
             <div>
               <Label className={labelCls}>Qo'shimcha</Label>

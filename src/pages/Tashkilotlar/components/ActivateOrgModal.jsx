@@ -26,15 +26,14 @@ export default function ActivateOrgModal({ open, onOpenChange, org, onConfirm })
           {[
             ['Tashkilot', org.name, false],
             ['INN', org.inn, true],
-            ['Filiallar', `${org.stats.filiallar ?? '—'} ta`, false],
-            ['Foydalanuvchilar', org.stats.foydalanuvchilar == null ? '—' : `${org.stats.foydalanuvchilar} ta`, false],
-            ['To‘xtatilgan', org.suspend?.at ?? '—', false],
-            ['Sababi', org.suspend?.reason ?? '—', false],
+            ['Filiallar', `${org.stats.filiallar ?? 0} ta`, false],
+            ['Foydalanuvchilar', `${org.stats.foydalanuvchilar ?? 0} ta`, false],
+            ['To‘xtatilgan', org.suspend?.at ?? '', false],
+            ['Sababi', org.suspend?.reason ?? '', false],
           ].map(([k, v, copyable]) => (
             <div key={k} className="flex items-center justify-between gap-3 py-1">
               <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{k}</span>
               <span className="flex min-w-0 items-center gap-1.5 text-right font-medium text-[#0A0A0A] dark:text-white">
-                <span className="truncate">{v}</span>
                 {copyable && (
                   <button
                     type="button"
@@ -45,6 +44,7 @@ export default function ActivateOrgModal({ open, onOpenChange, org, onConfirm })
                     <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                   </button>
                 )}
+                <span className="truncate">{v}</span>
               </span>
             </div>
           ))}

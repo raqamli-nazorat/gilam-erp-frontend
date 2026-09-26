@@ -60,20 +60,19 @@ export function HireModalHeader({ title, onClose, right }) {
   )
 }
 
-// Navbat pageri — "N-Xodim" (bitta) yoki "N-Xodim (N/JAMI)" (bir nechta) pill + oldingi/keyingi
-// o'qlar + navbatdan olib tashlash (qizil). O'q va olib-tashlash faqat navbatda 2+ xodim
-// bo'lganda faollashadi/ko'rinadi — bitta xodim tanlanganda pill statik "1-Xodim" bo'lib qoladi.
+// Navbat pageri — "N-Xodim (N/JAMI)" pill + oldingi/keyingi o'qlar + navbatdan olib tashlash
+// (qizil). Faqat navbatda 2+ xodim bo'lganda ko'rinadi — bitta xodimda umuman chiqmaydi.
 export const pagerPillCls =
   'flex h-7 items-center justify-center rounded-lg bg-[#F5F5F5] px-1.5 text-[13px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] dark:bg-white/10 dark:text-white'
 
 export function HireQueuePager({ index, total, onPrev, onNext, onRemove }) {
-  const showQueueControls = total > 1
+  if (total <= 1) return null
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex items-center gap-1">
         <button
           type="button"
-          disabled={!showQueueControls || index === 0}
+          disabled={index === 0}
           onClick={onPrev}
           className={cn(pagerPillCls, 'w-6 px-0 disabled:opacity-30')}
           aria-label="Oldingi xodim"
@@ -81,11 +80,11 @@ export function HireQueuePager({ index, total, onPrev, onNext, onRemove }) {
           <ChevronLeft className="size-4" />
         </button>
         <span className={pagerPillCls}>
-          {showQueueControls ? `${index + 1}-Xodim (${index + 1}/${total})` : '1-Xodim'}
+          {`${index + 1}-Xodim (${index + 1}/${total})`}
         </span>
         <button
           type="button"
-          disabled={!showQueueControls || index === total - 1}
+          disabled={index === total - 1}
           onClick={onNext}
           className={cn(pagerPillCls, 'w-6 px-0 disabled:opacity-30')}
           aria-label="Keyingi xodim"
@@ -93,16 +92,14 @@ export function HireQueuePager({ index, total, onPrev, onNext, onRemove }) {
           <ChevronRight className="size-4" />
         </button>
       </div>
-      {showQueueControls && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="Navbatdan olib tashlash"
-          className="flex size-7 items-center justify-center rounded-lg bg-[#FEECEC] text-[#DC2626] shadow-[0px_1px_2px_0px_#0000001A] transition-colors hover:bg-[#FDD7D7] dark:bg-[#DC2626]/15"
-        >
-          <X className="size-4" />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Navbatdan olib tashlash"
+        className="flex size-7 items-center justify-center rounded-lg bg-[#FEECEC] text-[#DC2626] shadow-[0px_1px_2px_0px_#0000001A] transition-colors hover:bg-[#FDD7D7] dark:bg-[#DC2626]/15"
+      >
+        <X className="size-4" />
+      </button>
     </div>
   )
 }
