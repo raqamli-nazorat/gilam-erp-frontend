@@ -7,6 +7,7 @@ function source(url, toOption = (r) => ({ id: r.id, name: r.name ?? '' })) {
 }
 
 export const branchOptions = source('organization/branches/')
+export const positionOptions = source('hr/positions/')
 export const qualityOptions = source('catalog/qualities/')
 export const colorOptions = source('catalog/colors/')
 export const unitOptions = source('catalog/units/')
