@@ -20,7 +20,9 @@ import {
   IshgaQabulQilishIcon,
   Logout01Icon,
   MalumotnomalarIcon,
+  MoneyBag02Icon,
   PackageReceive01Icon,
+  QoshimchaUshlanmaIcon,
   Settings01Icon,
   ShoppingCartCheckIn01Icon,
   ShoppingCartCheckOut01Icon,
@@ -43,6 +45,8 @@ const NAV_ITEMS = [
   { to: '/malumotnomalar/ishga-qabul-qilish', label: 'Ishga qabul qilish', icon: IshgaQabulQilishIcon },
   { to: '/malumotnomalar/ishdan-chiqarish', label: 'Ishdan chiqarish', icon: IshgaQabulQilishIcon },
   { to: '/tabel', label: 'Tabel', icon: TabelIcon },
+  { to: '/qoshimcha-va-ushlanma', label: "Qo'shimcha va ushlanma", icon: QoshimchaUshlanmaIcon },
+  { to: '/oylik-hisoblash', label: 'Oylik hisoblash', icon: MoneyBag02Icon },
   {
     to: '/malumotnomalar',
     label: "Ma'lumotnomalar",

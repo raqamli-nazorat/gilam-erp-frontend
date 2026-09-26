@@ -92,7 +92,7 @@ export function DatePicker({
       <div
         onClick={() => document.getElementById(fieldId)?.focus()}
         className={cn(
-          "relative flex h-11 flex-col justify-end rounded-xl border bg-white px-3 pb-1 pt-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 cursor-text focus-within:border-[#0052D2] focus-within:ring-2 focus-within:ring-[#0052D2]/20 dark:bg-card",
+          "relative flex h-10 flex-col justify-end rounded-[10px] border bg-white px-3 pb-1 pt-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 cursor-text focus-within:border-[#0052D2] focus-within:ring-2 focus-within:ring-[#0052D2]/20 dark:bg-card",
           error ? "border-destructive" : "border-[#E5E5E5] dark:border-white/10",
           disabled && "cursor-not-allowed opacity-50",
           className
@@ -188,7 +188,7 @@ export function DatePicker({
           }
         }}
         className={cn(
-          "h-9 w-full rounded-md border bg-white px-3 pr-10 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] outline-none transition-colors placeholder:text-[#737373] focus-visible:border-[#0052D2] focus-visible:ring-2 focus-visible:ring-[#0052D2]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-card dark:text-white",
+          "h-10 w-full rounded-[10px] border bg-white px-3 pr-10 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline-none transition-colors placeholder:text-[#737373] focus-visible:border-[#0052D2] focus-visible:ring-2 focus-visible:ring-[#0052D2]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-card dark:text-white",
           error ? "border-destructive" : "border-[#E5E5E5] dark:border-white/10",
           inputClassName
         )}

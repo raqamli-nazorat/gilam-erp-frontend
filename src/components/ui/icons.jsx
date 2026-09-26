@@ -16,6 +16,7 @@ import {
   FilterResetIcon as FilterResetRaw,
   Invoice01Icon as Invoice01Raw,
   Logout01Icon as Logout01Raw,
+  MoneyBag02Icon as MoneyBag02Raw,
   PackageReceive01Icon as PackageReceive01Raw,
   Search01Icon as Search01Raw,
   Settings01Icon as Settings01Raw,
@@ -27,6 +28,10 @@ import {
   UserGroupIcon as UserGroupRaw,
   UserMultipleIcon as UserMultipleRaw,
 } from '@hugeicons/core-free-icons'
+
+export function MoneyBag02Icon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={MoneyBag02Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
 
 export function FilterResetIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={FilterResetRaw} size={size} className={className} strokeWidth={2} {...props} />
@@ -221,3 +226,17 @@ export function IshgaQabulQilishIcon({ className, size = 18, ...props }) {
 export function TabelIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Calendar03Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
+
+// Figma: "Qo'shimcha va ushlanma" ikonkasi
+export function QoshimchaUshlanmaIcon({ className, size = 18, ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" className={className} {...props}>
+      <rect x="2" y="2.5" width="14" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="6.5" cy="9" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M11 6.75H13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M11 9H13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M11 11.25H13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+

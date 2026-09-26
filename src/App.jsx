@@ -64,8 +64,12 @@ import AuditJurnaliPage from '@/pages/AuditJurnali/AuditJurnaliPage'
 import TabelListPage from '@/pages/Tabel/TabelListPage'
 import TabelDetailPage from '@/pages/Tabel/TabelDetailPage'
 import TabelXodimPage from '@/pages/Tabel/TabelXodimPage'
+import QoshimchaUshlanmaListPage from '@/pages/QoshimchaUshlanma/QoshimchaUshlanmaListPage'
+import QoshimchaUshlanmaDetailPage from '@/pages/QoshimchaUshlanma/QoshimchaUshlanmaDetailPage'
+import OylikHisoblashListPage from '@/pages/OylikHisoblash/OylikHisoblashListPage'
+import OylikHisoblashDetailPage from '@/pages/OylikHisoblash/OylikHisoblashDetailPage'
 import { TooltipProvider } from '@/components/ui/tooltip'
-
+  
 function App() {
   const theme = useSelector((state) => state.ui.theme)
 
@@ -159,6 +163,10 @@ function App() {
           <Route path="/tabel" element={<TabelListPage />} />
           <Route path="/tabel/:id" element={<TabelDetailPage />} />
           <Route path="/tabel/:id/xodim/:employeeId" element={<TabelXodimPage />} />
+          <Route path="/qoshimcha-va-ushlanma" element={<QoshimchaUshlanmaListPage />} />
+          <Route path="/qoshimcha-va-ushlanma/:id" element={<QoshimchaUshlanmaDetailPage />} />
+          <Route path="/oylik-hisoblash" element={<OylikHisoblashListPage />} />
+          <Route path="/oylik-hisoblash/:id" element={<OylikHisoblashDetailPage />} />
           <Route path="/audit-jurnali" element={<AuditJurnaliPage />} />
         </Route>
 

@@ -23,6 +23,8 @@ export function PagedSelect({
   params,
   selectedLabel,
   placeholder = 'Tanlang',
+  allowAll = false,
+  allLabel = 'Barchasi',
   disabled,
   className,
 }) {
@@ -69,6 +71,14 @@ export function PagedSelect({
     },
     [fetchPage, paramsKey, debounced]
   )
+
+  // Parametrlar (masalan organization) o'zgarganda ro'yxatni darhol tozalaymiz
+  useEffect(() => {
+    setItems([])
+    setPage(0)
+    setHasMore(true)
+    loadedKey.current = null
+  }, [paramsKey])
 
   // Faqat dropdown ochiq bo'lganda — va parametrlar/qidiruv o'zgarganda — 1-sahifadan yuklaymiz.
   // Yopib-ochganda (kalit o'zgarmagan bo'lsa) qayta so'ralmaydi.
@@ -125,6 +135,24 @@ export function PagedSelect({
           />
         </div>
         <div onScroll={handleScroll} className="max-h-60 overflow-y-auto p-1">
+          {allowAll && !search && (
+            <button
+              type="button"
+              onClick={() => {
+                setPicked(null)
+                onChange('', { id: '', name: allLabel })
+                setOpen(false)
+                setSearch('')
+              }}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-[#0A0A0A] hover:bg-[#F5F5F5] dark:text-white dark:hover:bg-white/10',
+                !value && 'font-medium'
+              )}
+            >
+              <span className="truncate">{allLabel}</span>
+              {!value && <Check className="h-4 w-4 shrink-0 text-[#0052D2]" />}
+            </button>
+          )}
           {items.map((it) => (
             <button
               key={it.id}
