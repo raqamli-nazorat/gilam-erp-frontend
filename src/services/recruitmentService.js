@@ -64,6 +64,18 @@ export async function updateRecruitmentDismissal(id, payload) {
   return unwrapData(response)
 }
 
+// Hujjat holatini o'zgartirish — backend `status` maydoni faqat o'qiladi (draft/approved/cancelled),
+// uni faqat shu ikki endpoint o'zgartiradi. So'rov tanasi kerak emas.
+export async function approveRecruitmentDismissal(id) {
+  const response = await axiosAPI.post(`hr/recruitment-dismissals/${id}/approve/`, {})
+  return unwrapData(response)
+}
+
+export async function cancelRecruitmentDismissal(id) {
+  const response = await axiosAPI.post(`hr/recruitment-dismissals/${id}/cancel/`, {})
+  return unwrapData(response)
+}
+
 // Xodim daftari (EmployeeLedger) — har bir xodim bo'yicha voqealar jurnali, faqat o'qish uchun.
 export async function getEmployeeLedger(employeeId) {
   return fetchAllPages('hr/employee-ledgers/', { employee: employeeId })

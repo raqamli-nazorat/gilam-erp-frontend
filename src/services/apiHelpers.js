@@ -27,6 +27,7 @@ export async function fetchAllPages(url, params = {}) {
 // Bitta sahifani so'raydi va DRF pagination meta'sini {results, count, next, previous}
 // qaytaradi — "scroll pagination" uchun (fetchAllPages'dan farqli, HAR SAHIFANI emas,
 // faqat kerakli bittasini so'raydi). Bo'sh/undefined parametrlarni so'rovga qo'shmaydi.
+// Ba'zi endpointlar qo'shimcha `counts` (masalan holatlar bo'yicha sonlar) qaytaradi — u ham uzatiladi.
 export async function fetchPage(url, params = {}) {
   const cleanParams = {}
   for (const [k, v] of Object.entries(params)) {
@@ -34,12 +35,15 @@ export async function fetchPage(url, params = {}) {
   }
   const response = await axiosAPI.get(url, { params: cleanParams })
   const payload = unwrapData(response)
-  if (Array.isArray(payload)) return { results: payload, count: payload.length, next: null, previous: null }
+  // `counts` o'ralgan (data ichida) yoki tashqi javobda (data yonida) kelishi mumkin.
+  const counts = (!Array.isArray(payload) && payload?.counts) || response?.data?.counts || null
+  if (Array.isArray(payload)) return { results: payload, count: payload.length, next: null, previous: null, counts }
   return {
     results: payload?.results ?? [],
     count: payload?.count ?? payload?.results?.length ?? 0,
     next: payload?.next ?? null,
     previous: payload?.previous ?? null,
+    counts,
   }
 }
 

@@ -8,8 +8,15 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { useTabCounts } from '@/hooks/useTabCounts'
 import { getRecruitmentsPage } from '@/services/recruitmentService'
-import { bulkCreateRecruitments, createRecruitment, fetchXodimlar, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
+import {
+  RECRUITMENT_STATUS_PARAM,
+  bulkCreateRecruitments,
+  createRecruitment,
+  fetchXodimlar,
+  mapRecruitment,
+} from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -26,6 +33,52 @@ function dmyToIso(value) {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
 }
 
+const TABS = [
+  ['all', 'Barchasi'],
+  ['confirmed', 'Tasdiqlangan'],
+  ['draft', 'Qoralama'],
+  ['cancelled', 'Bekor qilingan'],
+]
+const STATUS_LABEL = { draft: 'Qoralama', confirmed: 'Tasdiqlangan', cancelled: 'Bekor qilingan' }
+const STATUS_BADGE_CLS = {
+  draft: 'bg-[#0A0A0A] text-white dark:bg-white/20',
+  confirmed: 'bg-[#16A34A] text-white',
+  cancelled: 'bg-[#DC2626] text-white',
+}
+// Backend ro'yxat javobida holatlar bo'yicha sonlarni (`counts`) qaytaradi — tab hisoblagichlari
+// shundan olinadi (qo'shimcha so'rovsiz). Shakli hujjatlashtirilmagan, shuning uchun ikkala
+// ko'rinish qabul qilinadi: { draft: 11, approved: 1, cancelled: 1, all?/total? } yoki
+// [{ status, count }]. Natija: { all, confirmed, draft, cancelled } (frontend kalitlari).
+// Backend `counts` bermasa — har bir holat backend `status` filtri bilan alohida so'raladi.
+const STATUS_VARIANTS = Object.fromEntries(
+  Object.entries(RECRUITMENT_STATUS_PARAM).map(([k, v]) => [k, { status: v }])
+)
+const NO_VARIANTS = {}
+
+function normalizeStatusCounts(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const byStatus = {}
+  if (Array.isArray(raw)) {
+    raw.forEach((it) => {
+      const k = it?.status ?? it?.key ?? it?.value
+      if (k != null) byStatus[k] = Number(it.count ?? it.total ?? 0)
+    })
+  } else {
+    Object.entries(raw).forEach(([k, v]) => {
+      byStatus[k] = Number(typeof v === 'object' && v !== null ? v.count ?? v.total ?? 0 : v)
+    })
+  }
+  const out = {}
+  Object.entries(RECRUITMENT_STATUS_PARAM).forEach(([front, back]) => {
+    if (Number.isFinite(byStatus[back])) out[front] = byStatus[back]
+  })
+  const all = byStatus.all ?? byStatus.total ?? byStatus.barchasi
+  if (Number.isFinite(all)) out.all = all
+  else if (['confirmed', 'draft', 'cancelled'].every((k) => Number.isFinite(out[k])))
+    out.all = out.confirmed + out.draft + out.cancelled
+  return out
+}
+
 const fetchRecruitmentsPage = (params) =>
   getRecruitmentsPage(params).then((res) => ({
     ...res,
@@ -40,8 +93,8 @@ const fetchRecruitmentsPage = (params) =>
 // fetchRecruitments (barcha sahifalar) + fetchXodimlar (barcha xodimlar va yana barcha
 // recruitment sahifalari) birga ishga tushib, har bir sahifa ikki marta so'ralardi. Xodimlar
 // ro'yxati endi faqat "Ishga olish" oynasi ochilganda (xodim tanlash uchun) yuklanadi.
-// Qidiruv va "Sana" oralig'i serverga yuboriladi; tashkilot/filial/lavozim filtrlari yuklangan
-// qatorlar ustida ishlaydi. Holat ustuni/tab'lari yo'q — RecruitmentDismissal'da holat maydoni yo'q.
+// Qidiruv, "Sana" oralig'i va holat tab'i (backend `status`) serverga yuboriladi;
+// tashkilot/filial/lavozim filtrlari yuklangan qatorlar ustida ishlaydi.
 export default function IshgaQabulQilishListPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
@@ -49,6 +102,7 @@ export default function IshgaQabulQilishListPage() {
   const kadrlar = useSelector((s) => s.xodimlar.list)
   const kadrStatus = useSelector((s) => s.xodimlar.listStatus)
 
+  const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_XODIM_FILTERS)
@@ -82,6 +136,7 @@ export default function IshgaQabulQilishListPage() {
   const {
     items: records,
     totalCount,
+    counts: statusCounts,
     isLoading,
     isLoadingMore,
     error: listError,
@@ -94,7 +149,33 @@ export default function IshgaQabulQilishListPage() {
     search: debouncedSearch.trim(),
     start_date: dmyToIso(filters.sanaDan),
     end_date: dmyToIso(filters.sanaGacha),
+    status: tab === 'all' ? undefined : RECRUITMENT_STATUS_PARAM[tab],
   })
+
+  // Tab hisoblagichlari — sahifaga kirgan zahoti hammasi ko'rinadi:
+  // - backend javobida `counts` bo'lsa — shundan (qo'shimcha so'rovsiz);
+  // - bo'lmasa (birinchi yuklanishdan keyin bir marta aniqlanadi) — har bir holat uchun bittadan
+  //   1-sahifa so'rovi bilan (useTabCounts), "Barchasi" esa yig'indidan.
+  const backendCounts = useMemo(() => normalizeStatusCounts(statusCounts), [statusCounts])
+  const hasBackendCounts = !!backendCounts && ['confirmed', 'draft', 'cancelled'].every((k) => Number.isFinite(backendCounts[k]))
+  const [countsMode, setCountsMode] = useState(null) // null | 'backend' | 'fallback'
+  useEffect(() => {
+    if (countsMode === null && !isLoading && !listError) setCountsMode(hasBackendCounts ? 'backend' : 'fallback')
+  }, [countsMode, isLoading, listError, hasBackendCounts])
+  const fallbackCounts = useTabCounts(
+    getRecruitmentsPage,
+    { search: debouncedSearch.trim(), start_date: dmyToIso(filters.sanaDan), end_date: dmyToIso(filters.sanaGacha) },
+    countsMode === 'fallback' ? STATUS_VARIANTS : NO_VARIANTS,
+    tab,
+    totalCount,
+    isLoading
+  )
+  const counts = useMemo(() => {
+    if (!hasBackendCounts) return fallbackCounts
+    const out = { ...backendCounts }
+    if (out.all === undefined) out.all = out.confirmed + out.draft + out.cancelled
+    return out
+  }, [hasBackendCounts, backendCounts, fallbackCounts])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -131,15 +212,38 @@ export default function IshgaQabulQilishListPage() {
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        {/* Holat (Tasdiqlangan/Qoralama/Bekor qilingan) tab'lari olib tashlandi — backendda bunday
-            maydon yo'q (faqat brauzer localStorage'ida edi). Faqat jami son (jadval so'rovining count'i). */}
         <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
-          <span className="flex h-7 items-center gap-1.5 rounded-[7px] bg-white px-2 text-[13px] font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white">
-            Barchasi
-            <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#EAF1FE] px-1.5 text-[12px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
-              {totalCount}
-            </span>
-          </span>
+          {TABS.map(([key, label]) => {
+            const active = tab === key
+            const n = counts[key]
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={cn(
+                  'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2.5 text-[13px] font-medium transition-colors',
+                  active
+                    ? 'bg-white text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white'
+                    : 'text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground dark:hover:text-white'
+                )}
+              >
+                {label}
+                {n != null && (
+                  <span
+                    className={cn(
+                      'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
+                      active
+                        ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
+                        : 'text-[#A3A3A3] dark:text-muted-foreground'
+                    )}
+                  >
+                    {n}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
@@ -187,12 +291,13 @@ export default function IshgaQabulQilishListPage() {
               <th className={cn(TH, 'text-left')}>ISHGA OLINGAN</th>
               <th className={cn(TH, 'text-left')}>YARATILGAN</th>
               <th className={cn(TH, 'text-left')}>YANGILANGAN</th>
+              <th className={cn(TH, 'text-left')}>HOLAT</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && shown.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
                     <p className="text-sm text-[#737373]">Yuklanmoqda…</p>
@@ -201,7 +306,7 @@ export default function IshgaQabulQilishListPage() {
               </tr>
             ) : listError && shown.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm text-[#DC2626]">Xatolik yuz berdi</p>
                     <Button
@@ -216,7 +321,7 @@ export default function IshgaQabulQilishListPage() {
               </tr>
             ) : shown.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center">
+                <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F5F5] dark:bg-white/5">
                       <UserPlus className="h-6 w-6 text-[#737373]" />
@@ -254,17 +359,29 @@ export default function IshgaQabulQilishListPage() {
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.sana ? formatDate(r.sana) : ''}</td>
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.yaratilgan || ''}</td>
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.ozgartirilgan || ''}</td>
+                  <td className="px-4">
+                    {STATUS_LABEL[r.status] && (
+                      <span
+                        className={cn(
+                          'inline-flex h-[22px] items-center whitespace-nowrap rounded-full px-2.5 text-[12px] font-medium',
+                          STATUS_BADGE_CLS[r.status]
+                        )}
+                      >
+                        {STATUS_LABEL[r.status]}
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
             {shown.length > 0 && hasMore && !isLoading && (
               <tr ref={sentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={8} className="h-1 border-0 p-0" />
+                <td colSpan={9} className="h-1 border-0 p-0" />
               </tr>
             )}
             {isLoadingMore && (
               <tr>
-                <td colSpan={8} className="py-4 text-center">
+                <td colSpan={9} className="py-4 text-center">
                   <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
                     Ko‘proq ma’lumotlar yuklanmoqda…
