@@ -15,7 +15,6 @@ import {
   terminateXodim,
   updateRecruitment,
 } from '@/features/xodimlar/xodimlarSlice'
-import { getBranch } from '@/services/branchService'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import { Panel, InfoRow, surface } from './components/InfoPanel'
@@ -43,7 +42,6 @@ export default function IshgaQabulQilishDetailPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const record = useSelector((s) => s.xodimlar.recruitments.find((r) => r.id === id))
-  const branches = useSelector((s) => s.filiallar.list)
   const currentUser = useSelector((s) => s.auth.user)
   const [editOpen, setEditOpen] = useState(false)
   const [terminateOpen, setTerminateOpen] = useState(false)
@@ -99,24 +97,8 @@ export default function IshgaQabulQilishDetailPage() {
     if (!record && detailFailed) navigate('/malumotnomalar/ishga-qabul-qilish', { replace: true })
   }, [record, detailFailed, navigate])
 
-  // Hujjatning o'zi tashkilotni saqlamaydi, faqat filialni — ro'yxat javobi tashkilot nomini
-  // to'g'ridan-to'g'ri beradi (full.tashkilot). Topilmasa barcha filiallarni emas, faqat shu
-  // bitta filialni so'raymiz (branches/{id}) va uning tashkilot nomini olamiz.
-  const [branchOrg, setBranchOrg] = useState('')
-  const needBranchOrg = !full?.tashkilot && !!full?.branchId && !branches.some((b) => b.id === full.branchId)
-  useEffect(() => {
-    if (!needBranchOrg) return undefined
-    let cancelled = false
-    getBranch(full.branchId)
-      .then((b) => {
-        if (!cancelled) setBranchOrg(b?.organization_info?.name ?? '')
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [needBranchOrg, full?.branchId])
-  const tashkilot = full?.tashkilot || branches.find((b) => b.id === full?.branchId)?.tashkilot || branchOrg
+  // Tashkilot nomi to'g'ridan-to'g'ri backendning organization_info obyektidan olinadi
+  const tashkilot = full?.tashkilot || full?.organization_info?.name || ''
 
   // Xodim tarixi ham xuddi shu ro'yxat-endpoint muammosidan aziyat chekadi — `type` maydoni
   // ro'yxat javobida yo'q, shuning uchun ikkita alohida `type` bo'yicha filtrlangan so'rov

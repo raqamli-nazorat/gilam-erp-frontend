@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { useTabCounts } from '@/hooks/useTabCounts'
+import { getRecruitmentDismissalCounts } from '@/services/recruitmentService'
 import { RECRUITMENT_STATUS_PARAM } from '@/features/xodimlar/xodimlarSlice'
 
 // "Ishga qabul qilish" va "Ishdan chiqarish" ro'yxatlari uchun umumiy holat tab'lari/yorlig'i.
@@ -39,12 +39,12 @@ export function StatusBadge({ status }) {
   )
 }
 
-export function StatusTabs({ tab, onChange, counts }) {
+export function StatusTabs({ tab, onChange, counts = {} }) {
   return (
     <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
       {STATUS_TABS.map(([key, label]) => {
         const active = tab === key
-        const n = counts[key]
+        const n = counts?.[key]
         return (
           <button
             key={key}
@@ -77,55 +77,53 @@ export function StatusTabs({ tab, onChange, counts }) {
   )
 }
 
-// Backend javobidagi `counts` — shakli hujjatlashtirilmagan, shuning uchun ikkala ko'rinish qabul
-// qilinadi: { draft: 11, approved: 1, cancelled: 1, all?/total? } yoki [{ status, count }].
-// Natija: { all, confirmed, draft, cancelled } (frontend kalitlari) yoki null.
-function normalizeStatusCounts(raw) {
-  if (!raw || typeof raw !== 'object') return null
-  const byStatus = {}
-  if (Array.isArray(raw)) {
-    raw.forEach((it) => {
-      const k = it?.status ?? it?.key ?? it?.value
-      if (k != null) byStatus[k] = Number(it.count ?? it.total ?? 0)
-    })
-  } else {
-    Object.entries(raw).forEach(([k, v]) => {
-      byStatus[k] = Number(typeof v === 'object' && v !== null ? v.count ?? v.total ?? 0 : v)
-    })
+// /api/v1/hr/recruitment-dismissals/count/ javobidagi hisoblarni frontend tab kalitlariga moslashtirish:
+// approved -> confirmed, all -> all, draft -> draft, cancelled -> cancelled
+export function mapStatusCounts(raw) {
+  if (!raw || typeof raw !== 'object') return {}
+  return {
+    all: raw.all ?? 0,
+    confirmed: raw.approved ?? raw.confirmed ?? 0,
+    draft: raw.draft ?? 0,
+    cancelled: raw.cancelled ?? 0,
   }
-  const out = {}
-  Object.entries(RECRUITMENT_STATUS_PARAM).forEach(([front, back]) => {
-    if (Number.isFinite(byStatus[back])) out[front] = byStatus[back]
-  })
-  if (!STATUS_KEYS.every((k) => Number.isFinite(out[k]))) return null
-  const all = byStatus.all ?? byStatus.total ?? byStatus.barchasi
-  out.all = Number.isFinite(all) ? all : out.confirmed + out.draft + out.cancelled
-  return out
 }
 
-const STATUS_VARIANTS = Object.fromEntries(STATUS_KEYS.map((k) => [k, { status: RECRUITMENT_STATUS_PARAM[k] }]))
-const NO_VARIANTS = {}
+// /api/v1/hr/recruitment-dismissals/count/ endpointidan recruitments yoki dismissals bo'yicha
+// holatlar sonini oluvchi maxsus hook.
+export function useRecruitmentDismissalCounts(type, reloadTrigger) {
+  const [counts, setCounts] = useState({})
 
-// Tab hisoblagichlari — sahifaga kirgan zahoti hammasi ko'rinadi:
-// - backend ro'yxat javobida `counts` bo'lsa — shundan (qo'shimcha so'rovsiz);
-// - bo'lmasa (birinchi yuklanishdan keyin bir marta aniqlanadi) — har bir holat uchun bittadan
-//   1-sahifa so'rovi bilan (useTabCounts), "Barchasi" esa yig'indidan.
-// `fetchPage` — { count } qaytaruvchi modul darajasidagi servis funksiyasi; `baseParams` — status'siz
-// ro'yxat parametrlari (qidiruv/filtrlar).
-export function useStatusTabCounts({ fetchPage, baseParams, statusCounts, tab, totalCount, isLoading, listError }) {
-  const backendCounts = useMemo(() => normalizeStatusCounts(statusCounts), [statusCounts])
-  const [mode, setMode] = useState(null) // null | 'backend' | 'fallback'
+  const fetchCounts = useCallback(async () => {
+    try {
+      const res = await getRecruitmentDismissalCounts()
+      const data = res?.data ?? res
+      const groupKey =
+        type === 'dismissal' || type === 'dismissals'
+          ? 'dismissals'
+          : 'recruitments'
+      const group = data?.[groupKey]
+      if (group) {
+        setCounts(mapStatusCounts(group))
+      }
+    } catch (err) {
+      console.error('Failed to load recruitment dismissal counts:', err)
+    }
+  }, [type])
+
   useEffect(() => {
-    if (mode === null && !isLoading && !listError) setMode(backendCounts ? 'backend' : 'fallback')
-  }, [mode, isLoading, listError, backendCounts])
+    fetchCounts()
+  }, [fetchCounts, reloadTrigger])
 
-  const fallbackCounts = useTabCounts(
-    fetchPage,
-    baseParams,
-    mode === 'fallback' ? STATUS_VARIANTS : NO_VARIANTS,
-    tab,
-    totalCount,
-    isLoading
-  )
-  return backendCounts ?? (mode === 'fallback' ? fallbackCounts : {})
+  return counts
 }
+
+// useStatusTabCounts backwards compatibility uchun
+export function useStatusTabCounts(options = {}) {
+  const type =
+    typeof options === 'string'
+      ? options
+      : options.type || (options.fetchPage?.name?.toLowerCase().includes('dismissal') ? 'dismissals' : 'recruitments')
+  return useRecruitmentDismissalCounts(type, options.reloadTrigger)
+}
+

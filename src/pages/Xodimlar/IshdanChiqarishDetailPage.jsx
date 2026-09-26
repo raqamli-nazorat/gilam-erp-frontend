@@ -25,18 +25,21 @@ const byDate = (a, b) => {
 }
 
 // Xodimning to'liq ish tarixi (ishga olish / ishdan chiqarish hujjatlari), eskisidan yangisiga.
-// Ro'yxat javobida `dismissal_reason` yo'q — sabab faqat banner/"Qayta ishga olish" oynasida
-// ko'rsatiladigan ENG OXIRGI ishdan chiqarish hujjati uchun (bitta detal so'rovi) olinadi.
-async function loadHistory(employeeId) {
+// Agar oxirgi ishdan chiqarish hujjati ochilgan hujjatning o'zi bo'lsa, qayta so'rov yuborilmaydi.
+async function loadHistory(employeeId, currentDoc) {
   const rows = await recruitmentService.getAllRecruitmentDismissalsTagged({ employee: employeeId })
   const hist = rows.map(mapRecruitment).sort(byDate)
   const lastDismissal = [...hist].reverse().find((r) => r.type === 'dismissal')
-  if (lastDismissal && !lastDismissal.dismissalReason) {
-    try {
-      const full = mapRecruitment(await recruitmentService.getRecruitmentDismissal(lastDismissal.id))
-      lastDismissal.dismissalReason = full.dismissalReason
-    } catch {
-      // Sabab ko'rinmasa ham sahifa ishlayveradi.
+  if (lastDismissal) {
+    if (currentDoc && lastDismissal.id === currentDoc.id) {
+      lastDismissal.dismissalReason = currentDoc.dismissalReason || lastDismissal.dismissalReason
+    } else if (!lastDismissal.dismissalReason) {
+      try {
+        const full = mapRecruitment(await recruitmentService.getRecruitmentDismissal(lastDismissal.id))
+        lastDismissal.dismissalReason = full.dismissalReason
+      } catch {
+        // Sabab ko'rinmasa ham sahifa ishlayveradi.
+      }
     }
   }
   return hist
@@ -69,7 +72,7 @@ export default function IshdanChiqarishDetailPage() {
     ;(async () => {
       try {
         const current = mapRecruitment(await recruitmentService.getRecruitmentDismissal(id))
-        const hist = await loadHistory(current.employeeId)
+        const hist = await loadHistory(current.employeeId, current)
         const lastHire = [...hist].reverse().find((r) => r.type === 'recruitment')
         const hireFull = lastHire ? mapRecruitment(await recruitmentService.getRecruitmentDismissal(lastHire.id)) : null
         if (cancelled) return

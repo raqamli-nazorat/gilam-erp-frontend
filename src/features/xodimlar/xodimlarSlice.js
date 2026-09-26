@@ -91,9 +91,9 @@ export function mapRecruitment(r) {
     employeeName: r.employee_info?.full_name ?? r.employee_name ?? '',
     branchId: r.branch_info?.id ?? '',
     branch: r.branch_info?.name ?? r.branch_name ?? '',
-    // Faqat ro'yxat javobida bor (tashkilotni topish uchun filial ID kerak emas) — detaldan
-    // kelganda bo'sh qoladi, chaqiruvchi tomon filiallar ro'yxatidan qidirib topadi (eski usul).
-    tashkilot: r.organization_name ?? '',
+    organization_info: r.organization_info ?? null,
+    tashkilot: r.organization_info?.name ?? r.organization_name ?? '',
+    tashkilotId: r.organization_info?.id ?? r.organization ?? '',
     lavozim: r.position_info?.name ?? r.position_name ?? '',
     lavozimId: r.position_info?.id ?? '',
     kartaRaqami: r.card_number ?? '',
