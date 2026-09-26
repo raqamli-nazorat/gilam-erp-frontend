@@ -39,15 +39,15 @@ export function isEmployeeDismissed(employee) {
   return /dismiss|fired|terminat|inactive|chiqarilgan|bo.?shagan/i.test(employee?.employmentStatus ?? '')
 }
 
-// "Ishga qabul qilish" ro'yxati uchun uch holatli ish jarayoni (Qoralama/Tasdiqlangan/Bekor
-// qilingan) — RecruitmentDismissal'da bunday maydon umuman yo'q (real OpenAPI sxemasi bilan
-// tasdiqlangan: na Response, na Request shaklida "status" degan maydon yo'q), shuning uchun
-// backend uni HECH QACHON saqlamaydi — sahifa yangilansa har doim "yo'q" (fallback) holatga
-// qaytadi. Tashkilotlar/Foydalanuvchilar'da xuddi shunday yetishmayotgan meta-maydonlar uchun
-// ishlatilgan konvensiyani takrorlaymiz: qiymatni brauzerning o'zida (localStorage) hujjat id'si
-// bo'yicha saqlaymiz. Faqat shu brauzerda ishlaydi (boshqa foydalanuvchi/qurilmada ko'rinmaydi)
-// — bu cheklov Tashkilotlar/Foydalanuvchilar'dagi bir xil pattern uchun ham qabul qilingan edi.
+// "Ishga qabul qilish" uch holatli ish jarayoni (Qoralama/Tasdiqlangan/Bekor qilingan).
+// Backend RecruitmentDismissal endi `status` maydonini qaytaradi (draft/approved/cancelled,
+// faqat o'qiladi — o'zgartirish .../{id}/approve/ va .../{id}/cancel/ orqali). Frontendda
+// "approved" tarixiy sabablarga ko'ra "confirmed" deb yuritiladi. Backend qiymati bo'lmasa
+// (eski javob) — avval shu brauzerda localStorage'ga yozilgan belgi zaxira sifatida o'qiladi.
 const RECRUITMENT_STATUSES = ['draft', 'confirmed', 'cancelled']
+const BACKEND_STATUS = { draft: 'draft', approved: 'confirmed', cancelled: 'cancelled' }
+// Frontend holati -> backend `status` query qiymati (ro'yxat filtri uchun).
+export const RECRUITMENT_STATUS_PARAM = { draft: 'draft', confirmed: 'approved', cancelled: 'cancelled' }
 const STATUS_STORAGE_PREFIX = 'gilam:recruitmentStatus:'
 
 function readLocalStatus(id) {
@@ -59,17 +59,16 @@ function readLocalStatus(id) {
   }
 }
 
-export function writeLocalStatus(id, status) {
-  try {
-    if (RECRUITMENT_STATUSES.includes(status)) localStorage.setItem(STATUS_STORAGE_PREFIX + id, status)
-  } catch {
-    // localStorage yo'q/to'lgan bo'lsa — sukut bo'yicha e'tiborsiz qoldiriladi, faqat status
-    // sahifa yangilanguncha eslab qolinmaydi (yangi/eski xatti-harakat).
-  }
+function mapRecruitmentStatus(id, raw) {
+  return BACKEND_STATUS[raw] ?? readLocalStatus(id) ?? 'confirmed'
 }
 
-function mapRecruitmentStatus(id, raw) {
-  return readLocalStatus(id) ?? (RECRUITMENT_STATUSES.includes(raw) ? raw : 'confirmed')
+// Kerakli holatga backend endpointi orqali o'tkazadi ('draft' uchun endpoint yo'q — o'zgarmaydi).
+// Yangilangan hujjatni qaytaradi (yoki null).
+async function applyBackendStatus(id, status) {
+  if (status === 'confirmed') return recruitmentService.approveRecruitmentDismissal(id)
+  if (status === 'cancelled') return recruitmentService.cancelRecruitmentDismissal(id)
+  return null
 }
 
 // Backend "RecruitmentDismissal" — bitta "ishga olish"/"ishdan chiqarish" hujjati.
@@ -418,9 +417,8 @@ export const fetchRecruitments = createAsyncThunk('xodimlar/fetchRecruitments', 
   }
 })
 
-// Yangi "Ishga qabul qilish" hujjati — status 'draft' (Saqlash) yoki 'confirmed' (Tasdiqlash)
-// bo'lib yaratiladi. Backendda status maydoni yo'qligi sababli (yuqoridagi izohga qarang)
-// tanlangan holat natijadagi hujjat id'si bo'yicha localStorage'ga yoziladi.
+// Yangi "Ishga qabul qilish" hujjati — backend uni 'draft' (Saqlash) holatida yaratadi;
+// 'confirmed' (Tasdiqlash) tanlansa yaratilgandan so'ng approve endpointi chaqiriladi.
 export const createRecruitment = createAsyncThunk(
   'xodimlar/createRecruitment',
   async ({ employeeId, status, draft }, { rejectWithValue }) => {
@@ -428,9 +426,9 @@ export const createRecruitment = createAsyncThunk(
       const raw = await recruitmentService.createRecruitmentDismissal(
         buildRecruitmentPayload('recruitment', employeeId, draft)
       )
-      writeLocalStatus(raw.id, status)
+      await applyBackendStatus(raw.id, status)
       // Bu POST javobi ("EmployeeRecruitment" sxemasi) `type` maydonini qaytarmaydi — o'zimiz belgilaymiz.
-      return mapRecruitment({ ...raw, type: 'recruitment' })
+      return { ...mapRecruitment({ ...raw, type: 'recruitment' }), status }
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
     }
@@ -447,7 +445,7 @@ export const bulkCreateRecruitments = createAsyncThunk(
         items.map(({ employeeId, draft }) => buildBulkRecruitmentItem(employeeId, draft))
       )
       const mapped = rawItems.map((raw) => mapRecruitment({ ...raw, type: 'recruitment' }))
-      mapped.forEach((r) => writeLocalStatus(r.id, status))
+      await Promise.all(mapped.map((r) => applyBackendStatus(r.id, status)))
       return mapped.map((r) => ({ ...r, status }))
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Saqlashda xatolik yuz berdi'))
@@ -463,21 +461,21 @@ export const updateRecruitment = createAsyncThunk(
         id,
         buildRecruitmentPayload('recruitment', employeeId, draft)
       )
-      writeLocalStatus(id, status)
-      return mapRecruitment(raw)
+      // Holat haqiqatan o'zgargandagina endpoint chaqiriladi (qayta approve xato berishi mumkin).
+      if (status && BACKEND_STATUS[raw.status] !== status) await applyBackendStatus(id, status)
+      return { ...mapRecruitment(raw), ...(status ? { status } : {}) }
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Yangilashda xatolik yuz berdi'))
     }
   }
 )
 
-// Faqat holatni o'zgartiradi (Tasdiqlash/Bekor qilish) — backendga hech narsa yubormaydi
-// (maydon mavjud emas), faqat localStorage'dagi belgini yangilaydi.
+// Faqat holatni o'zgartiradi (Tasdiqlash/Bekor qilish) — backend approve/cancel endpointlari orqali.
 export const setRecruitmentStatus = createAsyncThunk(
   'xodimlar/setRecruitmentStatus',
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      writeLocalStatus(id, status)
+      await applyBackendStatus(id, status)
       return { id, status }
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Holatni o‘zgartirishda xatolik yuz berdi'))

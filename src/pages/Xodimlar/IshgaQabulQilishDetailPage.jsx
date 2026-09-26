@@ -178,7 +178,9 @@ export default function IshgaQabulQilishDetailPage() {
   function handleTerminate(reason, file) {
     dispatch(terminateXodim({ id: full.employeeId, reason, file }))
       .unwrap()
-      .then(() => dispatch(setRecruitmentStatus({ id: rec.id, status: 'cancelled' })).unwrap())
+      // Hujjatni "Bekor qilingan"ga o'tkazish — ixtiyoriy qadam: backend ishdan chiqarishda uni
+      // o'zi bekor qilgan bo'lsa, bu so'rov xato berishi mumkin, lekin ishdan chiqarish bajarilgan.
+      .then(() => dispatch(setRecruitmentStatus({ id: rec.id, status: 'cancelled' })).unwrap().catch(() => {}))
       .then(() => {
         setDetail((d) => (d ? { ...d, status: 'cancelled' } : d))
         setToast('Xodim ishdan chiqarildi')

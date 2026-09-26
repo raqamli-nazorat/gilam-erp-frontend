@@ -14,6 +14,8 @@ export function useServerPagedList(fetchFn, params) {
   const [items, setItems] = useState([])
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  // Javobdagi qo'shimcha `counts` (bo'lsa) — masalan tab hisoblagichlari uchun.
+  const [counts, setCounts] = useState(null)
   const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -35,9 +37,10 @@ export function useServerPagedList(fetchFn, params) {
       }
       try {
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        const { results, count, next } = await fetchFn({ ...JSON.parse(paramsKey), page: pageNum })
+        const { results, count, next, counts: resCounts } = await fetchFn({ ...JSON.parse(paramsKey), page: pageNum })
         setItems((prev) => (append ? [...prev, ...results] : results))
         setTotalCount(count)
+        setCounts(resCounts ?? null)
         setHasMore(Boolean(next))
       } catch (err) {
         setError(err)
@@ -95,6 +98,7 @@ export function useServerPagedList(fetchFn, params) {
     setItems,
     page,
     totalCount,
+    counts,
     hasMore,
     isLoading,
     isLoadingMore,
