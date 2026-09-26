@@ -61,6 +61,9 @@ import RollarPage from '@/pages/Foydalanuvchilar/RollarPage'
 import ProfilPage from '@/pages/Profil/ProfilPage'
 import DashboardPage from '@/pages/Dashboard/DashboardPage'
 import AuditJurnaliPage from '@/pages/AuditJurnali/AuditJurnaliPage'
+import TabelListPage from '@/pages/Tabel/TabelListPage'
+import TabelDetailPage from '@/pages/Tabel/TabelDetailPage'
+import TabelXodimPage from '@/pages/Tabel/TabelXodimPage'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 function App() {
@@ -153,6 +156,9 @@ function App() {
           <Route path="/foydalanuvchilar/:id" element={<FoydalanuvchilarDetailPage />} />
           <Route path="/profil" element={<ProfilPage />} />
           <Route path="/boshqaruv-paneli" element={<DashboardPage />} />
+          <Route path="/tabel" element={<TabelListPage />} />
+          <Route path="/tabel/:id" element={<TabelDetailPage />} />
+          <Route path="/tabel/:id/xodim/:employeeId" element={<TabelXodimPage />} />
           <Route path="/audit-jurnali" element={<AuditJurnaliPage />} />
         </Route>
 

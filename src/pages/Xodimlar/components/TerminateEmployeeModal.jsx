@@ -21,7 +21,7 @@ function formatFileSize(bytes) {
 
 // Figma dev-mode SVG'lar — fon rangi (#E6EEFB/#FDECEC) SVG'ning o'z <rect>'iga pishirilgan,
 // shuning uchun tashqi "chip" konteyner kerak emas, shu ikonkalarning o'zi 36×36 chiqadi.
-function UploadFileIcon() {
+export function UploadFileIcon() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
       <rect width="36" height="36" rx="8" fill="#E6EEFB" />
@@ -43,7 +43,7 @@ function UploadFileIcon() {
   )
 }
 
-function PdfFileIcon() {
+export function PdfFileIcon() {
   return (
     <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
       <rect width="36" height="36" rx="8" fill="#FDECEC" />
