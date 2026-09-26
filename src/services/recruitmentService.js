@@ -114,3 +114,10 @@ export async function bulkCreateRecruitments(items) {
   const payload = unwrapData(response)
   return payload?.items ?? []
 }
+
+// Ishga qabul qilish va ishdan chiqarish bo'yicha status hisoblagichlari (/api/v1/hr/recruitment-dismissals/count/)
+export async function getRecruitmentDismissalCounts() {
+  const response = await axiosAPI.get('hr/recruitment-dismissals/count/')
+  return unwrapData(response)
+}
+

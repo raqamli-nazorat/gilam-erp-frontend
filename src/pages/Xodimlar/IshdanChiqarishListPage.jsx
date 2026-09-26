@@ -5,13 +5,13 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { getAllDismissals, getDismissalsPage, getRecruitmentDismissal } from '@/services/recruitmentService'
+import { getAllDismissals, getDismissalsPage } from '@/services/recruitmentService'
 import { RECRUITMENT_STATUS_PARAM, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import CopyButton from '@/components/ui/copy-button'
 import IshdanChiqarishFilterModal, { EMPTY_ISHDAN_CHIQARISH_FILTERS } from './components/IshdanChiqarishFilterModal'
-import { StatusBadge, StatusTabs, statusParam, useStatusTabCounts } from './components/statusTabs'
+import { StatusBadge, StatusTabs, statusParam, useRecruitmentDismissalCounts } from './components/statusTabs'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-left text-[13px] font-semibold leading-[18px] whitespace-nowrap text-[#525252] dark:bg-white/5 dark:text-muted-foreground'
@@ -27,26 +27,6 @@ function mapDismissal(raw) {
   return { ...mapRecruitment({ ...raw, type: 'dismissal' }), sanaFmt: formatDate(raw.rec_dism_date) }
 }
 
-// Ro'yxat javobi (RecruitmentDismissalList) sababni qaytarmaydi — u faqat detal endpointida bor.
-// Shuning uchun yuklangan qatorlar uchun detal so'raladi (bir vaqtda ko'pi bilan 6 ta so'rov).
-async function withReasons(rows) {
-  const out = [...rows]
-  let next = 0
-  async function worker() {
-    while (next < out.length) {
-      const i = next++
-      try {
-        const d = await getRecruitmentDismissal(out[i].id)
-        out[i] = { ...out[i], dismissalReason: d?.dismissal_reason ?? '' }
-      } catch {
-        // Sabab olinmasa — qator sababsiz ko'rinadi
-      }
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(6, out.length) }, worker))
-  return out
-}
-
 // `dism_from`/`dism_to` — "Ishdan chiqarilgan sana" oralig'i (ISO). Backendda bu sana uchun faqat
 // aniq qiymat filtri (`rec_dism_date`) bor:
 // - bir kunlik oraliq -> `rec_dism_date` bilan oddiy sahifalab yuklash;
@@ -56,7 +36,7 @@ async function withReasons(rows) {
 async function fetchDismissalsPage({ dism_from, dism_to, ...params }) {
   if (dism_from && dism_from === dism_to) {
     const res = await getDismissalsPage({ ...params, rec_dism_date: dism_from })
-    return { ...res, results: await withReasons(res.results.map(mapDismissal)) }
+    return { ...res, results: res.results.map(mapDismissal) }
   }
   if (dism_from || dism_to) {
     const { page, status, ...rest } = params
@@ -69,10 +49,10 @@ async function fetchDismissalsPage({ dism_from, dism_to, ...params }) {
       counts[s] = all.filter((r) => r.status === s).length
     })
     const rows = (status ? all.filter((r) => r.status === status) : all).map(mapDismissal)
-    return { results: await withReasons(rows), count: rows.length, next: null, counts }
+    return { results: rows, count: rows.length, next: null, counts }
   }
   const res = await getDismissalsPage(params)
-  return { ...res, results: await withReasons(res.results.map(mapDismissal)) }
+  return { ...res, results: res.results.map(mapDismissal) }
 }
 
 // "Ishdan chiqarish" — ishdan chiqarish hujjatlari (RecruitmentDismissal, type=dismissal),
@@ -108,7 +88,6 @@ export default function IshdanChiqarishListPage() {
   const {
     items: rows,
     totalCount,
-    counts: statusCounts,
     isLoading,
     isLoadingMore,
     error,
@@ -119,17 +98,7 @@ export default function IshdanChiqarishListPage() {
     reload,
   } = useServerPagedList(fetchDismissalsPage, { ...baseParams, status: statusParam(tab) })
 
-  // Hisoblagich so'rovlari uchun (backend `counts` bermasa) — faqat backend tushunadigan parametrlar.
-  const { dism_from: dismFrom, dism_to: dismTo, ...countParams } = baseParams
-  const counts = useStatusTabCounts({
-    fetchPage: getDismissalsPage,
-    baseParams: dismFrom && dismFrom === dismTo ? { ...countParams, rec_dism_date: dismFrom } : countParams,
-    statusCounts,
-    tab,
-    totalCount,
-    isLoading,
-    listError: error,
-  })
+  const counts = useRecruitmentDismissalCounts('dismissals')
 
   return (
     <div className="flex h-full flex-col gap-2">

@@ -17,7 +17,7 @@ import RecruitmentModal from './components/RecruitmentModal'
 import HireChoiceModal from './components/HireChoiceModal'
 import EmployeePickerModal from './components/EmployeePickerModal'
 import XodimFilterModal, { EMPTY_XODIM_FILTERS } from './components/XodimFilterModal'
-import { StatusBadge, StatusTabs, statusParam, useStatusTabCounts } from './components/statusTabs'
+import { StatusBadge, StatusTabs, statusParam, useRecruitmentDismissalCounts } from './components/statusTabs'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
@@ -81,10 +81,12 @@ export default function IshgaQabulQilishListPage() {
     return () => clearTimeout(t)
   }, [search])
 
+  const [countsVersion, setCountsVersion] = useState(0)
+  const counts = useRecruitmentDismissalCounts('recruitments', countsVersion)
+
   const {
     items: records,
     totalCount,
-    counts: statusCounts,
     isLoading,
     isLoadingMore,
     error: listError,
@@ -98,16 +100,6 @@ export default function IshgaQabulQilishListPage() {
     start_date: dmyToIso(filters.sanaDan),
     end_date: dmyToIso(filters.sanaGacha),
     status: statusParam(tab),
-  })
-
-  const counts = useStatusTabCounts({
-    fetchPage: getRecruitmentsPage,
-    baseParams: { search: debouncedSearch.trim(), start_date: dmyToIso(filters.sanaDan), end_date: dmyToIso(filters.sanaGacha) },
-    statusCounts,
-    tab,
-    totalCount,
-    isLoading,
-    listError,
   })
 
   useEffect(() => {
@@ -336,6 +328,7 @@ export default function IshgaQabulQilishListPage() {
           if (count > 1) {
             setToast(`${count} ta xodim ishga olindi`)
             reload()
+            setCountsVersion((v) => v + 1)
           }
           else if (createdIdsRef.current[0]) navigate(`/malumotnomalar/ishga-qabul-qilish/${createdIdsRef.current[0]}`)
           createdIdsRef.current = []
