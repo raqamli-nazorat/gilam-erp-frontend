@@ -62,7 +62,7 @@ export default function ReportPrintModal({ open, onOpenChange, title, meta, colu
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i} className="h-9 border-b border-[#E5E5E5]">
-                    <td className="px-2 text-[#737373]">{r.marker ? '—' : i + 1}</td>
+                    <td className="px-2 text-[#737373]">{r.marker ? '' : i + 1}</td>
                     {columns.map((c) => (
                       <td key={c.key} className={cn('px-2', c.align === 'right' ? 'text-right' : 'text-left')}>{fmt(r, c)}</td>
                     ))}

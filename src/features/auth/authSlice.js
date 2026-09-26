@@ -50,15 +50,15 @@ function formatUser(rawUser) {
   // Swagger tasdiqlagan haqiqiy shakl: User.organization/User.branch — nested "_info" obyekt
   // emas, o'zi tayyor matn qatori (o'qish uchungina, tahrirlanmaydi — UserRequest'da bunday
   // maydon umuman yo'q).
-  const branchName = toName(rawUser.branch) || toName(rawUser.filial) || '—'
-  const orgName = toName(rawUser.organization) || toName(rawUser.tashkilot) || '—'
+  const branchName = toName(rawUser.branch) || toName(rawUser.filial) || ''
+  const orgName = toName(rawUser.organization) || toName(rawUser.tashkilot) || ''
 
   return {
     ...rawUser,
     fullName: fullName || 'Foydalanuvchi',
     initials: rawUser.initials || initials,
     role: roleName,
-    phone: rawUser.phone_number || rawUser.phone || '—',
+    phone: rawUser.phone_number || rawUser.phone || '',
     tashkilot: orgName,
     filial: branchName,
     employeeId: rawUser.employee_info?.id ?? rawUser.employeeId ?? null,

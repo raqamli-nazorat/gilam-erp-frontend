@@ -27,7 +27,7 @@ function periodLabel(from, to) {
   const [ty, tm, td] = to.split('-')
   return `${fd}.${fm} — ${td}.${tm}.${ty}`
 }
-const dash = (n) => (n ? formatNumber(n) : '—')
+const dash = (n) => formatNumber(n || 0)
 
 export default function PayrollCalcPage() {
   const dispatch = useDispatch()
@@ -227,8 +227,8 @@ function EmployeeTable({ rows, baseLabel }) {
             <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
             <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{r.name}</td>
             <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.role}</td>
-            <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.base != null ? formatNumber(r.base) : '—'}</td>
-            <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{r.percent != null ? formatNumber(r.percent, 2) : '—'}</td>
+            <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(r.base ?? 0)}</td>
+            <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(r.percent ?? 0, 2)}</td>
             <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(r.hisoblangan)}</td>
             <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(r.avans)}</td>
             <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{dash(r.ushlanma)}</td>

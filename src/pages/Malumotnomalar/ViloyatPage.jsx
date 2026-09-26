@@ -107,7 +107,7 @@ export default function ViloyatPage() {
         clearGeoCounts()
         reload()
       })
-      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
   }
 
   function confirmDelete() {
@@ -119,7 +119,7 @@ export default function ViloyatPage() {
         setCountsVersion((v) => v + 1)
         reload()
       })
-      .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'O‘chirishda xatolik yuz berdi' }))
   }
 
   const hasFilter = Object.values(filters).some(Boolean)
@@ -200,10 +200,10 @@ export default function ViloyatPage() {
                 <tr key={r.id || i} onClick={() => setModalRec(r)} className="h-11 cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={TD_MUTED}>{i + 1}</td>
                   <td className="px-4 text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.name}</td>
-                  <td className={TD_MUTED}>{r.countryName || '—'}</td>
+                  <td className={TD_MUTED}>{r.countryName || ''}</td>
                   <td className={TD_MUTED}>{tumanCountByRegion[r.id] ?? '…'} ta</td>
-                  <td className={TD_MUTED}>{r.yaratilgan || '—'}</td>
-                  <td className={TD_MUTED}>{r.ozgartirilgan || '—'}</td>
+                  <td className={TD_MUTED}>{r.yaratilgan || ''}</td>
+                  <td className={TD_MUTED}>{r.ozgartirilgan || ''}</td>
                 </tr>
               ))
             )}

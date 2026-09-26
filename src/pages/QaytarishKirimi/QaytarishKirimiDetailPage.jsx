@@ -133,12 +133,12 @@ function QkWorkspace() {
                       <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                       <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{r.name}</td>
                       <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.partiya}</td>
-                      <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.basis || <span className="text-[#737373]">—</span>}</td>
+                      <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.basis || ''}</td>
                       <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(r.m2)}</td>
                       <td className={cn('px-3 text-[13px]', defective ? 'font-medium text-[#B45309] dark:text-[#FBBF24]' : 'text-[#0A0A0A] dark:text-white')}>
                         {r.quality}
                       </td>
-                      <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.warehouse || '—'}</td>
+                      <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.warehouse || ''}</td>
                       <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.location || <span className="text-[#B45309] dark:text-[#FBBF24]">Tanlanmagan</span>}</td>
                       <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(r.sum)}</td>
                     </tr>

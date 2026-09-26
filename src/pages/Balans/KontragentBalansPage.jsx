@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Download01Icon } from '@/components/ui/icons'
 
 const TH = 'px-3 text-[13px] font-semibold uppercase leading-[18px] text-[#525252] dark:text-muted-foreground'
-const money = (v) => (v == null ? '—' : formatNumber(v, 2))
+const money = (v) => formatNumber(v ?? 0, 2)
 
 export default function KontragentBalansPage() {
   const { id } = useParams()
@@ -72,7 +72,7 @@ export default function KontragentBalansPage() {
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.sana}</td>
                   <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{r.hujjat}</td>
                   <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{r.amal}</td>
-                  <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.izoh || '—'}</td>
+                  <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.izoh || ''}</td>
                   <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{money(r.debet)}</td>
                   <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{money(r.kredit)}</td>
                   <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{money(r.saldo)}</td>

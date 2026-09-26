@@ -24,10 +24,10 @@ export default function ReopenBranchModal({ open, onOpenChange, branch, onConfir
           {[
             ['Filial', branch.name],
             ['Tashkilot', branch.tashkilot],
-            ['Xodimlar', branch.stats.xodimlar == null ? '—' : `${branch.stats.xodimlar} ta`],
-            ['Omborlar', `${branch.stats.omborlar ?? '—'} ta`],
-            ['Yopilgan', branch.close?.at ?? '—'],
-            ['Sababi', branch.close?.reason ?? '—'],
+            ['Xodimlar', `${branch.stats.xodimlar ?? 0} ta`],
+            ['Omborlar', `${branch.stats.omborlar ?? 0} ta`],
+            ['Yopilgan', branch.close?.at ?? ''],
+            ['Sababi', branch.close?.reason ?? ''],
           ].map(([k, v]) => (
             <div key={k} className="flex items-center justify-between gap-4 py-1">
               <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{k}</span>

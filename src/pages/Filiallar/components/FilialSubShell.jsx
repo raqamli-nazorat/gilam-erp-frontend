@@ -12,7 +12,7 @@ export const TD_NUM = 'px-4 text-right text-[13px] text-[#0A0A0A] dark:text-whit
 export const TD_IDX = 'px-4 text-[13px] text-[#737373] dark:text-muted-foreground'
 
 export function CopyBtn({ value }) {
-  return <CopyButton value={value} className="ml-1.5" />
+  return <CopyButton value={value} className="mr-1.5 align-middle" />
 }
 
 // head: [{ label, align }]

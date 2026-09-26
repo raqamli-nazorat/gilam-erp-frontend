@@ -14,7 +14,7 @@ const TH = 'px-3 text-[13px] font-semibold uppercase leading-[18px] text-[#52525
 function cellText(row, col) {
   const v = row[col.key]
   if (!col.num && col.num !== 0 && !col.perRowNum) return v ?? ''
-  if (v == null) return '—'
+  if (v == null) return formatNumber(0, col.num ?? 2)
   if (col.perRowNum) return formatNumber(v, row.valyuta === 'UZS' ? 0 : 2)
   return formatNumber(v, col.num)
 }

@@ -14,13 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_EXPENSE_FILTERS = {
   from: '',
@@ -76,48 +70,18 @@ export default function ExpenseFilterModal({ open, onOpenChange, filters, onAppl
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Xarajat turi</Label>
-              <Select value={draft.type || '__all'} onValueChange={(v) => set('type', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {EXPENSE_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.type} onChange={(v) => set('type', v)} options={EXPENSE_TYPES} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Kassadan</Label>
-              <Select value={draft.kassa || '__all'} onValueChange={(v) => set('kassa', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {EXPENSE_KASSAS.map((k) => (
-                    <SelectItem key={k} value={k}>{k}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.kassa} onChange={(v) => set('kassa', v)} options={EXPENSE_KASSAS} className={inputCls} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Muallif</Label>
-              <Select value={draft.author || '__all'} onValueChange={(v) => set('author', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {EXPENSE_AUTHORS.map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.author} onChange={(v) => set('author', v)} options={EXPENSE_AUTHORS} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Summa, UZS</Label>

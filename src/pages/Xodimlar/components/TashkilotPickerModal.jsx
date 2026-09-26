@@ -13,7 +13,7 @@ function initials(name) {
       .split(/\s+/)
       .slice(0, 2)
       .map((w) => w[0]?.toUpperCase())
-      .join('') || '—'
+      .join('') || ''
   )
 }
 
@@ -106,10 +106,10 @@ export default function TashkilotPickerModal({ open, onOpenChange, organizations
                     {initials(o.name)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{o.name || '—'}</span>
-                    <span className="block truncate text-[12px] leading-4 text-[#737373]">{o.manzil || '—'}</span>
+                    <span className="block truncate text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{o.name || ''}</span>
+                    <span className="block truncate text-[12px] leading-4 text-[#737373]">{o.manzil || ''}</span>
                   </span>
-                  <span className="shrink-0 text-[12px] leading-4 text-[#737373]">{o.inn || '—'}</span>
+                  <span className="shrink-0 text-[12px] leading-4 text-[#737373]">{o.inn || ''}</span>
                 </button>
               )
             })

@@ -35,8 +35,8 @@ export default function DeleteRecordModal({ open, onOpenChange, entity, record, 
               <div key={label} className="flex items-center justify-between gap-4 py-1">
                 <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{label}</span>
                 <span className="flex min-w-0 items-center justify-end gap-1.5 text-right font-medium text-[#0A0A0A] dark:text-white">
-                  <span className="truncate">{value}</span>
                   {copyable && <CopyButton value={value} stopPropagation={false} />}
+                  <span className="truncate">{value}</span>
                 </span>
               </div>
             ))}

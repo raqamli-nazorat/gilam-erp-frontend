@@ -136,7 +136,7 @@ export default function IshdanChiqarishDetailPage() {
         setToast('Xodim ishdan chiqarildi')
         setVersion((v) => v + 1)
       })
-      .catch((err) => setToast(err || 'Ishdan chiqarishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Ishdan chiqarishda xatolik yuz berdi' }))
   }
 
   // Qayta ishga olish — oxirgi "ishga olish" hujjatidagi filial/lavozim/karta/oylik bilan yangi hujjat.
@@ -163,7 +163,7 @@ export default function IshdanChiqarishDetailPage() {
         setToast('Xodim qayta ishga olindi')
         setVersion((v) => v + 1)
       })
-      .catch((err) => setToast(err || 'Qayta ishga olishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Qayta ishga olishda xatolik yuz berdi' }))
   }
 
   const cards = [
@@ -180,14 +180,14 @@ export default function IshdanChiqarishDetailPage() {
           {cards.map(([label, value, bg]) => (
             <div key={label} className={cn('rounded-xl p-5 text-left text-[#0A0A0A]', bg)}>
               <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">{label}</div>
-              <p className="mt-3 truncate text-[22px] font-bold leading-tight">{value || '—'}</p>
+              <p className="mt-3 truncate text-[22px] font-bold leading-tight min-h-[1.25em]">{value || ''}</p>
             </div>
           ))}
         </div>
 
         {terminated && lastDismissal && (
           <div className="shrink-0 rounded-[8px] bg-[#FEECEC] px-4 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || '—'}.
+            Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}.
           </div>
         )}
         {rehired && (
@@ -220,10 +220,10 @@ export default function IshdanChiqarishDetailPage() {
                         {amalLabel(r, i)}
                       </td>
                       <td className="border-b border-[#DFE4EF] px-3 text-[13px] text-[#0052D2] dark:border-white/5 dark:text-[#60A5FA]">
-                        {r.lavozim || '—'}
+                        {r.lavozim || ''}
                       </td>
                       <td className="border-b border-[#DFE4EF] px-3 pr-4 text-[13px] text-[#737373] dark:border-white/5 dark:text-muted-foreground">
-                        {r.branch || '—'}
+                        {r.branch || ''}
                       </td>
                     </tr>
                   ))}
@@ -305,7 +305,7 @@ export default function IshdanChiqarishDetailPage() {
               setToast('O‘zgarishlar saqlandi')
               setVersion((v) => v + 1)
             })
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <TerminateEmployeeModal

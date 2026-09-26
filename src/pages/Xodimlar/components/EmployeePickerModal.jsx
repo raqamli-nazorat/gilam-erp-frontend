@@ -14,7 +14,7 @@ function initials(name) {
       .split(/\s+/)
       .slice(0, 2)
       .map((w) => w[0]?.toUpperCase())
-      .join('') || '—'
+      .join('') || ''
   )
 }
 
@@ -187,13 +187,13 @@ export default function EmployeePickerModal({ open, onOpenChange, employees, mul
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">
-                      {e.name || '—'}
+                      {e.name || ''}
                     </span>
                     <span className="block truncate text-[12px] leading-4 text-[#737373]">
-                      {[e.viloyat, e.tuman].filter(Boolean).join(', ') || '—'}
+                      {[e.viloyat, e.tuman].filter(Boolean).join(', ') || ''}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[12px] leading-4 text-[#737373]">{e.phone ? formatUzPhone(e.phone) : '—'}</span>
+                  <span className="shrink-0 text-[12px] leading-4 text-[#737373]">{e.phone ? formatUzPhone(e.phone) : ''}</span>
                 </button>
               )
             })

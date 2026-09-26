@@ -59,7 +59,7 @@ export default function FilialOmborDetailPage() {
                     <td className={TD}>{r.ombor}</td>
                     <td className={TD_NUM}>{formatNumber(r.boshlangich, 2)}</td>
                     <td className={TD_NUM}>{formatNumber(r.qoldiq, 2)} UZS</td>
-                    <td className={cn(TD, 'text-[#737373]')}>{r.obrezok ? 'Ha' : '—'}</td>
+                    <td className={cn(TD, 'text-[#737373]')}>{r.obrezok ? 'Ha' : ''}</td>
                     <td className="px-4">
                       <span
                         className={cn(

@@ -155,19 +155,19 @@ export default function IshdanChiqarishListPage() {
                 >
                   <td className={cn(TD, 'w-12 text-[#525252]')}>{i + 1}</td>
                   <td className={cn(TD, 'whitespace-nowrap text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]')}>
-                    {r.employeeName || '—'}
+                    {r.employeeName || ''}
                   </td>
                   <td className={cn(TD, 'whitespace-nowrap text-[#737373]')}>
                     <span className="inline-flex items-center gap-1.5">
-                      {r.lavozim || '—'}
                       {r.lavozim && <CopyButton value={r.lavozim} />}
+                      {r.lavozim || ''}
                     </span>
                   </td>
-                  <td className={cn(TD, 'whitespace-nowrap')}>{r.branch || '—'}</td>
+                  <td className={cn(TD, 'whitespace-nowrap')}>{r.branch || ''}</td>
                   <td className={cn(TD, 'whitespace-nowrap')}>{r.sanaFmt}</td>
-                  <td className={cn(TD, 'min-w-[140px] max-w-[260px] py-2 leading-[18px]')}>{r.dismissalReason || '—'}</td>
-                  <td className={cn(TD, 'whitespace-nowrap')}>{r.yaratilgan || '—'}</td>
-                  <td className={cn(TD, 'whitespace-nowrap')}>{r.ozgartirilgan || '—'}</td>
+                  <td className={cn(TD, 'min-w-[140px] max-w-[260px] py-2 leading-[18px]')}>{r.dismissalReason || ''}</td>
+                  <td className={cn(TD, 'whitespace-nowrap')}>{r.yaratilgan || ''}</td>
+                  <td className={cn(TD, 'whitespace-nowrap')}>{r.ozgartirilgan || ''}</td>
                 </tr>
               ))
             )}

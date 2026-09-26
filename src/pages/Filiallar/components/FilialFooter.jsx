@@ -29,7 +29,7 @@ export default function FilialFooter({ branch }) {
     <>
       <div className="flex shrink-0 items-center justify-between gap-3 bg-[#F5F5F5] px-3 py-3 dark:bg-white/5">
         <Button
-          onClick={() => setToast('Hisobot tayyorlanmoqda…')}
+          onClick={() => setToast({ variant: 'info', message: 'Hisobot tayyorlanmoqda…' })}
           className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium rounded-xl text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
         >
           <FileBarChart2 className="h-4 w-4" /> Xisobot
@@ -69,7 +69,7 @@ export default function FilialFooter({ branch }) {
           dispatch(updateBranch({ id: branch.id, draft: values }))
             .unwrap()
             .then(() => setToast('O‘zgarishlar saqlandi'))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <CloseBranchModal
@@ -80,7 +80,7 @@ export default function FilialFooter({ branch }) {
           dispatch(closeBranch({ id: branch.id, reason }))
             .unwrap()
             .then(() => setToast('Filial yopildi'))
-            .catch((err) => setToast(err || 'Yopishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Yopishda xatolik yuz berdi' }))
         }}
       />
       <ReopenBranchModal
@@ -91,7 +91,7 @@ export default function FilialFooter({ branch }) {
           dispatch(openBranch(branch.id))
             .unwrap()
             .then(() => setToast('Filial qayta ochildi'))
-            .catch((err) => setToast(err || 'Ochishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Ochishda xatolik yuz berdi' }))
         }}
       />
       <Toast message={toast} />

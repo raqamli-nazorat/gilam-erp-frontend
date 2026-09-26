@@ -127,7 +127,7 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         setToast('Saqlandi')
         reloadRows()
       })
-      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
   }
 
   function confirmDelete() {
@@ -137,7 +137,7 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
         setToast('O‘chirildi')
         reloadRows()
       })
-      .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'O‘chirishda xatolik yuz berdi' }))
   }
 
   const totalCols = config.columns.length + 3
@@ -270,10 +270,10 @@ function ApiListDetail({ slug, name, config, apiEntry }) {
                             style={{ backgroundColor: r[c.swatchKey] }}
                           />
                         )}
-                        <span className="truncate min-w-0">
-                          {c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || '—'}
-                        </span>
                         {c.copyable && r[c.key] && <CopyButton value={r[c.key]} />}
+                        <span className="truncate min-w-0">
+                          {c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || ''}
+                        </span>
                       </div>
                     </td>
                   ))}
@@ -471,10 +471,10 @@ function ListDetail({ slug, name, config }) {
                             style={{ backgroundColor: r[c.swatchKey] }}
                           />
                         )}
-                        <span className="truncate min-w-0">
-                          {c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || '—'}
-                        </span>
                         {c.copyable && r[c.key] && <CopyButton value={r[c.key]} />}
+                        <span className="truncate min-w-0">
+                          {c.num != null ? formatNumber(r[c.key], c.num) : r[c.key] || ''}
+                        </span>
                       </div>
                     </td>
                   ))}

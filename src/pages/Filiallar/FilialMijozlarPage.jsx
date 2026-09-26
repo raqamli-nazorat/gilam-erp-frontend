@@ -34,7 +34,7 @@ export default function FilialMijozlarPage() {
         <tr key={m.id} className="h-11 hover:bg-[#F9FAFB] dark:hover:bg-white/5">
           <td className={TD_IDX}>{i + 1}</td>
           <td className={TD_LINK}>{m.name}</td>
-          <td className={cn(TD, 'text-[#737373]')}>{m.phone}<CopyBtn value={m.phone} /></td>
+          <td className={cn(TD, 'text-[#737373]')}><CopyBtn value={m.phone} />{m.phone}</td>
           <td className={TD_NUM}>{formatNumber(m.buyurtma, 0)}</td>
           <td className={TD_NUM}>{formatNumber(m.jamiXarid, 0)}</td>
           <td className={TD_NUM}>{formatNumber(m.qarz, 0)}</td>

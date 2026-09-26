@@ -85,7 +85,7 @@ export default function RollarPage() {
         setToast('Saqlandi')
         reloadRoles()
       })
-      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
   }
 
   return (

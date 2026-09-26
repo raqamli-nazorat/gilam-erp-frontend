@@ -16,13 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 const fieldCls =
   'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-card dark:text-white'
@@ -60,89 +54,30 @@ export default function AuditFilterModal({ open, onOpenChange, filters, onApply 
           {/* Amal (action: 0, 1, 2, 3) */}
           <div>
             <Label className={labelCls}>Amal</Label>
-            <Select
+            <SearchSelect
               value={draft.action === '' || draft.action === undefined ? '' : String(draft.action)}
-              onValueChange={(v) => set('action', v === '' ? '' : Number(v))}
-            >
-              <SelectTrigger className={fieldCls}>
-                <SelectValue>
-                  {draft.action !== '' && draft.action !== undefined
-                    ? ACTION_CHOICES.find((c) => Number(c.value) === Number(draft.action))?.label || 'Barchasi'
-                    : 'Barchasi'}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Barchasi</SelectItem>
-                {ACTION_CHOICES.map((c) => (
-                  <SelectItem key={c.value} value={String(c.value)}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(v) => set('action', v === '' ? '' : Number(v))}
+              options={ACTION_CHOICES.map((c) => ({ value: String(c.value), label: c.label }))}
+              className={fieldCls}
+            />
           </div>
 
           {/* Actor / Foydalanuvchi */}
           <div>
             <Label className={labelCls}>Foydalanuvchi</Label>
-            <Select
-              value={draft.actor || ''}
-              onValueChange={(v) => set('actor', v === '' ? '' : v)}
-            >
-              <SelectTrigger className={fieldCls}>
-                <SelectValue>{draft.actor || 'Barchasi'}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Barchasi</SelectItem>
-                {AUDIT_FOYDALANUVCHILAR.map((u) => (
-                  <SelectItem key={u} value={u}>
-                    {u}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchSelect value={draft.actor} onChange={(v) => set('actor', v)} options={AUDIT_FOYDALANUVCHILAR} className={fieldCls} />
           </div>
 
           {/* Jadval */}
           <div>
             <Label className={labelCls}>Jadval</Label>
-            <Select
-              value={draft.jadval || ''}
-              onValueChange={(v) => set('jadval', v === '' ? '' : v)}
-            >
-              <SelectTrigger className={fieldCls}>
-                <SelectValue>{draft.jadval || 'Barchasi'}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Barchasi</SelectItem>
-                {JADVALLAR.map((j) => (
-                  <SelectItem key={j} value={j}>
-                    {j}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchSelect value={draft.jadval} onChange={(v) => set('jadval', v)} options={JADVALLAR} className={fieldCls} />
           </div>
 
           {/* Tashkilot */}
           <div>
             <Label className={labelCls}>Tashkilot</Label>
-            <Select
-              value={draft.tashkilot || ''}
-              onValueChange={(v) => set('tashkilot', v === '' ? '' : v)}
-            >
-              <SelectTrigger className={fieldCls}>
-                <SelectValue>{draft.tashkilot || 'Barchasi'}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Barchasi</SelectItem>
-                {AUDIT_TASHKILOTLAR.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchSelect value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} options={AUDIT_TASHKILOTLAR} className={fieldCls} />
           </div>
 
           {/* Sana oralig'i (start_date, end_date) */}

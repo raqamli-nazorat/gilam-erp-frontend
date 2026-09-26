@@ -29,7 +29,7 @@ export default function XodimFooter({ employee }) {
     <>
       <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-3 py-3 dark:border-white/10 dark:bg-white/5">
         <Button
-          onClick={() => setToast('Hisobot tayyorlanmoqda…')}
+          onClick={() => setToast({ variant: 'info', message: 'Hisobot tayyorlanmoqda…' })}
           className="h-9 gap-2 rounded-lg bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
         >
           <FileBarChart2 className="h-4 w-4" /> Xisobot
@@ -79,7 +79,7 @@ export default function XodimFooter({ employee }) {
           dispatch(updateXodim({ id: employee.id, recruitmentId, draft }))
             .unwrap()
             .then(() => setToast(holat === 'yangi' ? 'Xodim ishga olindi' : 'O‘zgarishlar saqlandi'))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <TerminateEmployeeModal
@@ -90,7 +90,7 @@ export default function XodimFooter({ employee }) {
           dispatch(terminateXodim({ id: employee.id, reason, file }))
             .unwrap()
             .then(() => setToast('Xodim ishdan chiqarildi'))
-            .catch((err) => setToast(err || 'Ishdan chiqarishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Ishdan chiqarishda xatolik yuz berdi' }))
         }}
       />
       <RehireEmployeeModal
@@ -116,7 +116,7 @@ export default function XodimFooter({ employee }) {
           )
             .unwrap()
             .then(() => setToast('Xodim qayta ishga olindi'))
-            .catch((err) => setToast(err || 'Qayta ishga olishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Qayta ishga olishda xatolik yuz berdi' }))
         }}
       />
       <Toast message={toast} />

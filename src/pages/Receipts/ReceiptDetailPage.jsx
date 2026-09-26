@@ -88,7 +88,7 @@ function ReceiptWorkspace() {
     number: receipt.number,
     date: receipt.date,
     warehouse: receipt.warehouse,
-    agentName: user?.fullName ?? '—',
+    agentName: user?.fullName ?? '',
     exchangeRate,
     counterparty: receipt.counterparty,
     supplierDoc: receipt.supplier?.doc,
@@ -157,7 +157,7 @@ function ReceiptWorkspace() {
         open={!!labelRows}
         onOpenChange={(open) => !open && setLabelRows(null)}
         rows={labelRows ?? []}
-        agentName={user?.fullName ?? '—'}
+        agentName={user?.fullName ?? ''}
         onPrinted={() => setLabelRows(null)}
       />
 

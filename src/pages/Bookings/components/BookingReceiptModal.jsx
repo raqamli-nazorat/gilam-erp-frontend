@@ -73,7 +73,7 @@ export default function BookingReceiptModal({ open, onOpenChange, booking }) {
           <p className="text-center font-semibold">BRON CHEKI № {booking.number}</p>
           <div className="mt-2 space-y-1 text-[12px]">
             <Line l="Sana" r={`${formatDate(booking.date)} ${booking.time}`} />
-            <Line l="Mijoz" r={booking.customer || '—'} />
+            <Line l="Mijoz" r={booking.customer || ''} />
             <Line l="Agent" r={booking.agent} />
           </div>
 

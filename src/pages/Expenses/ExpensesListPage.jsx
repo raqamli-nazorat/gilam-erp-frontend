@@ -244,8 +244,8 @@ export default function ExpensesListPage() {
                   <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{formatDate(e.date)}</TableCell>
                   <TableCell className="px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{e.type}</TableCell>
                   <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{e.kassa}</TableCell>
-                  <TableCell className="max-w-[220px] truncate px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{e.note || '—'}</TableCell>
-                  <TableCell className="px-3 text-right text-[13px] leading-[18px] text-[#0A0A0A] dark:text-white">{e.amountUsd != null ? formatNumber(e.amountUsd) : '—'}</TableCell>
+                  <TableCell className="max-w-[220px] truncate px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{e.note || ''}</TableCell>
+                  <TableCell className="px-3 text-right text-[13px] leading-[18px] text-[#0A0A0A] dark:text-white">{formatNumber(e.amountUsd ?? 0)}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{formatNumber(e.amountUzs, 3)}</TableCell>
                   <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{e.author}</TableCell>
                   <TableCell className="px-3">

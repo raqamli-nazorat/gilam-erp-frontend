@@ -220,8 +220,8 @@ function IshOrni({ balance, rate, operations, onAction }) {
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{o.time}</td>
                   <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{o.type}</td>
                   <td className="max-w-[280px] truncate px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{o.note}</td>
-                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.cashIn != null ? formatNumber(o.cashIn) : '—'}</td>
-                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{o.cashOut != null ? formatNumber(o.cashOut) : '—'}</td>
+                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(o.cashIn ?? 0)}</td>
+                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(o.cashOut ?? 0)}</td>
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{o.cashier}</td>
                 </tr>
               ))}

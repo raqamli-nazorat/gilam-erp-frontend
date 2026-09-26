@@ -9,7 +9,7 @@ import { Download01Icon } from '@/components/ui/icons'
 import Toast from '@/components/Toast'
 
 const TH = 'px-3 text-[13px] font-semibold uppercase leading-[18px] text-[#525252] dark:text-muted-foreground'
-const num = (n) => (n != null ? formatNumber(n) : '—')
+const num = (n) => formatNumber(n ?? 0)
 
 export default function KassaDayEndPage() {
   const [closed, setClosed] = useState(false)
@@ -101,7 +101,7 @@ function StatCard({ title, value, sub }) {
   return (
     <div className="rounded-xl border border-[#E5E5E5] bg-white p-4 dark:border-white/10 dark:bg-card">
       <p className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#737373] dark:text-muted-foreground">{title}</p>
-      <p className="mt-1 text-[22px] font-bold leading-tight">{value}</p>
+      <p className="mt-1 text-[22px] font-bold leading-tight min-h-[1.25em]">{value}</p>
       <p className="mt-1 text-[12px] text-[#737373] dark:text-muted-foreground">{sub}</p>
     </div>
   )

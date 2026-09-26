@@ -12,6 +12,11 @@ export async function getUsersPage(params) {
   return fetchPage('accounts/users/', params)
 }
 
+// Bitta tashkilotga tegishli foydalanuvchilar (barcha sahifalarni yig'ib) — Tashkilot › Foydalanuvchilar sahifasi uchun.
+export async function getUsersByOrganization(organizationId) {
+  return fetchAllPages('accounts/users/', { organization: organizationId })
+}
+
 export async function getUser(id) {
   const response = await axiosAPI.get(`accounts/users/${id}/`)
   return unwrapData(response)

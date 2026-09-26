@@ -164,9 +164,9 @@ export default function SupplierMethodStep({
           </p>
           <div className="space-y-3 text-sm">
             <SummaryRow label="Rulonlar" value="0 ta" />
-            <SummaryRow label="Jami maydon" value="— m²" />
-            <SummaryRow label="Kirim summasi" value="— USD" />
-            <SummaryRow label="Yetkazib beruvchiga qarz" value="— USD" />
+            <SummaryRow label="Jami maydon" value="0 m²" />
+            <SummaryRow label="Kirim summasi" value="0 USD" />
+            <SummaryRow label="Yetkazib beruvchiga qarz" value="0 USD" />
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
             Kurs {formatNumber(doc.exchangeRate)} UZS/USD — hujjat tasdiqlanganda muhrlanadi.

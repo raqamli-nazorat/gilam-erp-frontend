@@ -41,7 +41,7 @@ export default function SendToKassaModal({ open, onOpenChange, doc, exchangeRate
 
         <div className="grid gap-2 rounded-lg bg-[#F5F5F5] p-4 text-sm dark:bg-white/5">
           <Row l="Hujjat" r={`${doc.number} · ${formatDate(doc.date)}`} />
-          <Row l="Kontragent" r={doc.counterparty || '—'} />
+          <Row l="Kontragent" r={doc.counterparty || ''} />
           <Row l="Jami summa" r={`${formatNumber(gross)} USD · ${formatNumber(grossUzs, 0)} UZS`} />
         </div>
 

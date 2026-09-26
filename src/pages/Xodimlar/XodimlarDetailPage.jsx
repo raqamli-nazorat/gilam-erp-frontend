@@ -73,7 +73,7 @@ export default function XodimlarDetailPage() {
         setHistory(
           sorted.map((r, i) => ({
             ...r,
-            tashkilot: r.tashkilot || branches.find((b) => b.id === r.branchId)?.tashkilot || '—',
+            tashkilot: r.tashkilot || branches.find((b) => b.id === r.branchId)?.tashkilot || '',
             holat: i === 0 ? 'Faol' : 'Tugatilgan',
           }))
         )
@@ -111,19 +111,19 @@ export default function XodimlarDetailPage() {
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl bg-[#9E9DAE] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">HOLATI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{isActive ? 'Faol' : 'Nofaol'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{isActive ? 'Faol' : 'Nofaol'}</p>
           </div>
           <div className="rounded-xl bg-[#CDE7FE] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">VILOYATI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{xodim.viloyat || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{xodim.viloyat || ''}</p>
           </div>
           <div className="rounded-xl bg-[#F8C3B3] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">TUMANI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{xodim.tuman || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{xodim.tuman || ''}</p>
           </div>
           <div className="rounded-xl bg-[#B3F8C5] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">FILIALI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{xodim.filial || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{xodim.filial || ''}</p>
           </div>
         </div>
 
@@ -156,8 +156,8 @@ export default function XodimlarDetailPage() {
                       <tr key={r.id} className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">{r.tashkilot}</td>
-                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.branch || '—'}</td>
-                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.lavozim || '—'}</td>
+                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.branch || ''}</td>
+                        <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{r.lavozim || ''}</td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{formatDate(r.sana)}</td>
                         <td className="px-3 pr-4">
                           <span
@@ -242,7 +242,7 @@ export default function XodimlarDetailPage() {
           dispatch(updateKadr({ id: xodim.id, draft: values }))
             .unwrap()
             .then(() => setToast('O‘zgarishlar saqlandi'))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
 
@@ -256,7 +256,7 @@ export default function XodimlarDetailPage() {
           <div className="rounded-lg bg-[#F5F5F5] px-4 py-3 text-[13px] dark:bg-white/5 mx-5 my-4">
             {[
               ['F.I.SH.', xodim.name],
-              ['Telefoni', xodim.phone || '—'],
+              ['Telefoni', xodim.phone || ''],
               ['Holati', isActive ? 'Faol' : 'Nofaol'],
             ].map(([k, v]) => (
               <div key={k} className="flex items-center justify-between py-1">
@@ -280,7 +280,7 @@ export default function XodimlarDetailPage() {
                 dispatch(deleteKadr(xodim.id))
                   .unwrap()
                   .then(() => navigate('/malumotnomalar/xodimlar', { replace: true }))
-                  .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
+                  .catch((err) => setToast({ variant: 'error', message: err || 'O‘chirishda xatolik yuz berdi' }))
                 setDelOpen(false)
               }}
               className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"

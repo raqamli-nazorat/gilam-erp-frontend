@@ -155,8 +155,8 @@ export default function RowsStep({
                 <span className="text-[#737373]">#</span>
                 <span className="ml-4 text-[#0A0A0A] dark:text-white">JAMI</span>
                 <span className="ml-auto flex gap-24 pr-8 text-[#737373]">
-                  <span>—</span>
-                  <span>—</span>
+                  <span>0</span>
+                  <span>0</span>
                 </span>
               </div>
             </>
