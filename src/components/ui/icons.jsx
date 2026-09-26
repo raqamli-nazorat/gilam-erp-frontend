@@ -16,6 +16,7 @@ import {
   FilterResetIcon as FilterResetRaw,
   Invoice01Icon as Invoice01Raw,
   Logout01Icon as Logout01Raw,
+  MoneyBag02Icon as MoneyBag02Raw,
   PackageReceive01Icon as PackageReceive01Raw,
   Search01Icon as Search01Raw,
   Settings01Icon as Settings01Raw,
@@ -27,6 +28,10 @@ import {
   UserGroupIcon as UserGroupRaw,
   UserMultipleIcon as UserMultipleRaw,
 } from '@hugeicons/core-free-icons'
+
+export function MoneyBag02Icon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={MoneyBag02Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
 
 export function FilterResetIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={FilterResetRaw} size={size} className={className} strokeWidth={2} {...props} />

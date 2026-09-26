@@ -47,18 +47,36 @@ export async function fetchPage(url, params = {}) {
   }
 }
 
-export function extractErrorMessage(error, fallback) {
-  const data = error?.response?.data
-  const base = data?.error?.errorMsg || data?.detail || data?.message || error?.message || fallback
-  // 400'da backend har bir maydon nomi bo'yicha aniq sabab qaytaradi (error.details), lekin
-  // faqat umumiy errorMsg ko'rsatilsa bu ma'lumot yo'qolib ketardi — konsolni ochmasdan ham
-  // aniq nima noto'g'ri ekanini ko'rsatish uchun toast xabariga qo'shib qo'yamiz.
-  const details = data?.error?.details
-  if (details && typeof details === 'object') {
-    const parts = Object.entries(details).map(
-      ([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`
-    )
-    if (parts.length) return `${base} (${parts.join('; ')})`
+export function extractErrorMessage(error, fallback = "Xatolik yuz berdi") {
+  const data = error?.response?.data || (typeof error === 'object' && ('error' in error || 'data' in error) ? error : null)
+  const errorObj = data?.error
+  if (errorObj) {
+    const details = errorObj.details
+    if (details && typeof details === 'object') {
+      const messages = []
+      for (const [, msgs] of Object.entries(details)) {
+        if (Array.isArray(msgs) && msgs.length > 0) {
+          messages.push(msgs.join(', '))
+        } else if (typeof msgs === 'string' && msgs.trim()) {
+          messages.push(msgs.trim())
+        } else if (msgs && typeof msgs === 'object') {
+          const innerVals = Object.values(msgs).flat().filter(Boolean)
+          if (innerVals.length) messages.push(innerVals.join(', '))
+        }
+      }
+      if (messages.length > 0) {
+        return messages.join('\n')
+      }
+    }
+    if (errorObj.errorMsg && typeof errorObj.errorMsg === 'string' && errorObj.errorMsg.trim()) {
+      return errorObj.errorMsg.trim()
+    }
   }
-  return base
+
+  if (data?.detail) return String(data.detail)
+  if (data?.message) return String(data.message)
+  if (typeof error === 'string' && error.trim()) return error.trim()
+  if (error?.message && typeof error.message === 'string' && error.message.trim()) return error.message.trim()
+
+  return fallback
 }

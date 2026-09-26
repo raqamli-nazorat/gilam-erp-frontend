@@ -20,6 +20,7 @@ import {
   IshgaQabulQilishIcon,
   Logout01Icon,
   MalumotnomalarIcon,
+  MoneyBag02Icon,
   PackageReceive01Icon,
   Settings01Icon,
   ShoppingCartCheckIn01Icon,
@@ -43,6 +44,7 @@ const NAV_ITEMS = [
   { to: '/malumotnomalar/ishga-qabul-qilish', label: 'Ishga qabul qilish', icon: IshgaQabulQilishIcon },
   { to: '/malumotnomalar/ishdan-chiqarish', label: 'Ishdan chiqarish', icon: IshgaQabulQilishIcon },
   { to: '/tabel', label: 'Tabel', icon: TabelIcon },
+  { to: '/oylik-hisoblash', label: 'Oylik hisoblash', icon: MoneyBag02Icon },
   {
     to: '/malumotnomalar',
     label: "Ma'lumotnomalar",
