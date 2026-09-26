@@ -1,47 +1,92 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Filter, Loader2, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { formatDate, matchesDateRange } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { getDismissalsPage } from '@/services/recruitmentService'
-import { mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
+import { getAllDismissals, getDismissalsPage, getRecruitmentDismissal } from '@/services/recruitmentService'
+import { RECRUITMENT_STATUS_PARAM, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import CopyButton from '@/components/ui/copy-button'
 import IshdanChiqarishFilterModal, { EMPTY_ISHDAN_CHIQARISH_FILTERS } from './components/IshdanChiqarishFilterModal'
+import { StatusBadge, StatusTabs, statusParam, useStatusTabCounts } from './components/statusTabs'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-left text-[13px] font-semibold leading-[18px] whitespace-nowrap text-[#525252] dark:bg-white/5 dark:text-muted-foreground'
 const TD = 'border-b border-[#F0F0F0] px-4 text-[13px] text-[#0A0A0A] dark:border-white/5 dark:text-muted-foreground'
-const COLS = 8
+const COLS = 10
 
 function dmyToIso(value) {
   const m = String(value ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
   return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
 }
 
-const fetchDismissalsPage = (params) =>
-  getDismissalsPage(params).then((res) => ({
-    ...res,
-    results: res.results.map((raw) => ({ ...mapRecruitment({ ...raw, type: 'dismissal' }), sanaFmt: formatDate(raw.rec_dism_date) })),
-  }))
+function mapDismissal(raw) {
+  return { ...mapRecruitment({ ...raw, type: 'dismissal' }), sanaFmt: formatDate(raw.rec_dism_date) }
+}
 
-// "Ishdan chiqarish" — ishdan chiqarilgan xodimlar ro'yxati (RecruitmentDismissal, type=dismissal),
-// scroll pagination bilan. Qidiruv, filial va "Yaratilgan" oralig'i serverga yuboriladi;
-// "Ishdan chiqarilgan sana" oralig'i yuklangan qatorlar ustida ishlaydi.
-// Holat ustuni yo'q — ro'yxat javobida (RecruitmentDismissalList) holat maydoni yo'q.
-// "Sabab" `dismissal_reason` ro'yxat javobida kelganda avtomatik ko'rinadi (mapRecruitment uni
-// o'qiydi); hozircha backend uni faqat detal endpointida qaytaradi.
+// Ro'yxat javobi (RecruitmentDismissalList) sababni qaytarmaydi — u faqat detal endpointida bor.
+// Shuning uchun yuklangan qatorlar uchun detal so'raladi (bir vaqtda ko'pi bilan 6 ta so'rov).
+async function withReasons(rows) {
+  const out = [...rows]
+  let next = 0
+  async function worker() {
+    while (next < out.length) {
+      const i = next++
+      try {
+        const d = await getRecruitmentDismissal(out[i].id)
+        out[i] = { ...out[i], dismissalReason: d?.dismissal_reason ?? '' }
+      } catch {
+        // Sabab olinmasa — qator sababsiz ko'rinadi
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(6, out.length) }, worker))
+  return out
+}
+
+// `dism_from`/`dism_to` — "Ishdan chiqarilgan sana" oralig'i (ISO). Backendda bu sana uchun faqat
+// aniq qiymat filtri (`rec_dism_date`) bor:
+// - bir kunlik oraliq -> `rec_dism_date` bilan oddiy sahifalab yuklash;
+// - haqiqiy oraliq -> mos (qidiruv/filial/lavozim/yaratilgan) yozuvlarning HAMMASI olinadi va
+//   sana bo'yicha shu yerda filtrlanadi (faqat yuklangan sahifalar emas — natija to'liq). Bu
+//   rejimda holat tab'i ham shu yerda qo'llanadi va tab sonlari (`counts`) shu yerda hisoblanadi.
+async function fetchDismissalsPage({ dism_from, dism_to, ...params }) {
+  if (dism_from && dism_from === dism_to) {
+    const res = await getDismissalsPage({ ...params, rec_dism_date: dism_from })
+    return { ...res, results: await withReasons(res.results.map(mapDismissal)) }
+  }
+  if (dism_from || dism_to) {
+    const { page, status, ...rest } = params
+    if (page > 1) return { results: [], count: 0, next: null, counts: null }
+    const all = (await getAllDismissals(rest)).filter(
+      (r) => (!dism_from || r.rec_dism_date >= dism_from) && (!dism_to || r.rec_dism_date <= dism_to)
+    )
+    const counts = { all: all.length }
+    Object.values(RECRUITMENT_STATUS_PARAM).forEach((s) => {
+      counts[s] = all.filter((r) => r.status === s).length
+    })
+    const rows = (status ? all.filter((r) => r.status === status) : all).map(mapDismissal)
+    return { results: await withReasons(rows), count: rows.length, next: null, counts }
+  }
+  const res = await getDismissalsPage(params)
+  return { ...res, results: await withReasons(res.results.map(mapDismissal)) }
+}
+
+// "Ishdan chiqarish" — ishdan chiqarish hujjatlari (RecruitmentDismissal, type=dismissal),
+// scroll pagination bilan. Barcha filtrlar (qidiruv, holat tab'i, filial, lavozim, "Yaratilgan"
+// va "Ishdan chiqarilgan sana" oralig'i) serverdan olingan to'liq natija ustida ishlaydi.
 export default function IshdanChiqarishListPage() {
   const navigate = useNavigate()
+  const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_ISHDAN_CHIQARISH_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
 
-  const hasFilter = Object.values(filters).some(Boolean)
+  const hasFilter = [filters.filialId, filters.lavozimId, filters.sanaDan, filters.sanaGacha, filters.yaratilganDan, filters.yaratilganGacha].some(Boolean)
 
   usePageHeader([{ label: "Ma'lumotnomalar" }, { label: 'Ishdan chiqarish' }])
 
@@ -50,9 +95,20 @@ export default function IshdanChiqarishListPage() {
     return () => clearTimeout(t)
   }, [search])
 
+  const baseParams = {
+    search: debouncedSearch.trim(),
+    branch: filters.filialId,
+    position: filters.lavozimId,
+    start_date: dmyToIso(filters.yaratilganDan),
+    end_date: dmyToIso(filters.yaratilganGacha),
+    dism_from: dmyToIso(filters.sanaDan),
+    dism_to: dmyToIso(filters.sanaGacha),
+  }
 
   const {
     items: rows,
+    totalCount,
+    counts: statusCounts,
     isLoading,
     isLoadingMore,
     error,
@@ -61,40 +117,46 @@ export default function IshdanChiqarishListPage() {
     sentinelRef,
     handleScroll,
     reload,
-  } = useServerPagedList(fetchDismissalsPage, {
-    search: debouncedSearch.trim(),
-    branch: filters.filialId,
-    start_date: dmyToIso(filters.yaratilganDan),
-    end_date: dmyToIso(filters.yaratilganGacha),
+  } = useServerPagedList(fetchDismissalsPage, { ...baseParams, status: statusParam(tab) })
+
+  // Hisoblagich so'rovlari uchun (backend `counts` bermasa) — faqat backend tushunadigan parametrlar.
+  const { dism_from: dismFrom, dism_to: dismTo, ...countParams } = baseParams
+  const counts = useStatusTabCounts({
+    fetchPage: getDismissalsPage,
+    baseParams: dismFrom && dismFrom === dismTo ? { ...countParams, rec_dism_date: dismFrom } : countParams,
+    statusCounts,
+    tab,
+    totalCount,
+    isLoading,
+    listError: error,
   })
 
-  const shown = useMemo(() => {
-    if (!filters.sanaDan && !filters.sanaGacha) return rows
-    return rows.filter((r) => matchesDateRange(r.sanaFmt, filters.sanaDan, filters.sanaGacha))
-  }, [rows, filters])
-
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-        <div className="relative w-[260px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Qidirish"
-            className="h-9 w-[260px] rounded-lg border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
-          />
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <StatusTabs tab={tab} onChange={setTab} counts={counts} />
+
+        <div className="flex flex-1 items-center justify-end gap-2.5">
+          <div className="relative w-[280px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Qidirish"
+              className="h-9 w-[280px] rounded-xl border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setFilterOpen(true)}
+            className={cn(
+              'h-9 gap-2 rounded-xl border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+              hasFilter && 'border-[#0052D2] text-[#0052D2]'
+            )}
+          >
+            <Filter className="h-4 w-4" /> Filtr
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setFilterOpen(true)}
-          className={cn(
-            'h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] shadow-[0px_1px_2px_0px_#0000001A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
-            hasFilter && 'border-[#0052D2] text-[#0052D2]'
-          )}
-        >
-          <Filter className="h-4 w-4" /> Filtr
-        </Button>
       </div>
 
       <div
@@ -107,16 +169,18 @@ export default function IshdanChiqarishListPage() {
             <tr>
               <th className={cn(TH, 'w-12')}>#</th>
               <th className={TH}>F.I.SH</th>
+              <th className={TH}>Tashkilot</th>
               <th className={TH}>Lavozim</th>
               <th className={TH}>Filial</th>
               <th className={TH}>Ishdan chiqarilgan sana</th>
               <th className={TH}>Sabab</th>
               <th className={TH}>Yaratilgan</th>
               <th className={TH}>Yangilangan</th>
+              <th className={TH}>Holat</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && shown.length === 0 ? (
+            {isLoading && rows.length === 0 ? (
               <tr>
                 <td colSpan={COLS} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -125,7 +189,7 @@ export default function IshdanChiqarishListPage() {
                   </div>
                 </td>
               </tr>
-            ) : error && shown.length === 0 ? (
+            ) : error && rows.length === 0 ? (
               <tr>
                 <td colSpan={COLS} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -140,14 +204,14 @@ export default function IshdanChiqarishListPage() {
                   </div>
                 </td>
               </tr>
-            ) : shown.length === 0 ? (
+            ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={COLS} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Yozuv yo‘q
                 </td>
               </tr>
             ) : (
-              shown.map((r, i) => (
+              rows.map((r, i) => (
                 <tr
                   key={r.id}
                   onClick={() => navigate(`/malumotnomalar/ishdan-chiqarish/${r.id}`)}
@@ -155,23 +219,25 @@ export default function IshdanChiqarishListPage() {
                 >
                   <td className={cn(TD, 'w-12 text-[#525252]')}>{i + 1}</td>
                   <td className={cn(TD, 'whitespace-nowrap text-[14px] font-medium text-[#0052D2] dark:text-[#60A5FA]')}>
-                    {r.employeeName || ''}
-                  </td>
-                  <td className={cn(TD, 'whitespace-nowrap text-[#737373]')}>
                     <span className="inline-flex items-center gap-1.5">
-                      {r.lavozim && <CopyButton value={r.lavozim} />}
-                      {r.lavozim || ''}
+                      {r.employeeName && <CopyButton value={r.employeeName} />}
+                      {r.employeeName || ''}
                     </span>
                   </td>
+                  <td className={cn(TD, 'whitespace-nowrap')}>{r.tashkilot || ''}</td>
+                  <td className={cn(TD, 'whitespace-nowrap')}>{r.lavozim || ''}</td>
                   <td className={cn(TD, 'whitespace-nowrap')}>{r.branch || ''}</td>
                   <td className={cn(TD, 'whitespace-nowrap')}>{r.sanaFmt}</td>
                   <td className={cn(TD, 'min-w-[140px] max-w-[260px] py-2 leading-[18px]')}>{r.dismissalReason || ''}</td>
-                  <td className={cn(TD, 'whitespace-nowrap')}>{r.yaratilgan || ''}</td>
-                  <td className={cn(TD, 'whitespace-nowrap')}>{r.ozgartirilgan || ''}</td>
+                  <td className={cn(TD, 'whitespace-nowrap text-[#737373]')}>{r.yaratilgan || ''}</td>
+                  <td className={cn(TD, 'whitespace-nowrap text-[#737373]')}>{r.ozgartirilgan || ''}</td>
+                  <td className={TD}>
+                    <StatusBadge status={r.status} />
+                  </td>
                 </tr>
               ))
             )}
-            {shown.length > 0 && hasMore && !isLoading && (
+            {rows.length > 0 && hasMore && !isLoading && (
               <tr ref={sentinelRef} className="h-1 border-0 p-0">
                 <td colSpan={COLS} className="h-1 border-0 p-0" />
               </tr>

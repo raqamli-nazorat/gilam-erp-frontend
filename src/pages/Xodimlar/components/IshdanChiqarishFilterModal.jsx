@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { branchOptions } from '@/services/optionSources'
+import { branchOptions, positionOptions } from '@/services/optionSources'
 import { PagedSelect } from '@/components/ui/paged-select'
 import { FilterDateRange, FilterField, FilterModal } from '@/components/ui/filter-modal'
 
 export const EMPTY_ISHDAN_CHIQARISH_FILTERS = {
   filialId: '',
   filialNomi: '', // faqat ko'rsatish uchun (tanlangan filial nomi)
+  lavozimId: '',
+  lavozimNomi: '', // faqat ko'rsatish uchun (tanlangan lavozim nomi)
   sanaDan: '',
   sanaGacha: '',
   yaratilganDan: '',
@@ -31,12 +33,22 @@ export default function IshdanChiqarishFilterModal({ open, onOpenChange, filters
         onOpenChange(false)
       }}
     >
-      <FilterField label="Filial" className="col-span-2">
+      <FilterField label="Filial">
         <PagedSelect
           value={draft.filialId}
           onChange={(v, item) => setDraft((d) => ({ ...d, filialId: v, filialNomi: item?.name ?? '' }))}
           fetchPage={branchOptions}
           selectedLabel={draft.filialNomi}
+          placeholder="Barchasi"
+          className="h-9"
+        />
+      </FilterField>
+      <FilterField label="Lavozim">
+        <PagedSelect
+          value={draft.lavozimId}
+          onChange={(v, item) => setDraft((d) => ({ ...d, lavozimId: v, lavozimNomi: item?.name ?? '' }))}
+          fetchPage={positionOptions}
+          selectedLabel={draft.lavozimNomi}
           placeholder="Barchasi"
           className="h-9"
         />

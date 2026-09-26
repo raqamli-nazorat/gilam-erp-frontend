@@ -8,15 +8,8 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { useTabCounts } from '@/hooks/useTabCounts'
 import { getRecruitmentsPage } from '@/services/recruitmentService'
-import {
-  RECRUITMENT_STATUS_PARAM,
-  bulkCreateRecruitments,
-  createRecruitment,
-  fetchXodimlar,
-  mapRecruitment,
-} from '@/features/xodimlar/xodimlarSlice'
+import { bulkCreateRecruitments, createRecruitment, fetchXodimlar, mapRecruitment } from '@/features/xodimlar/xodimlarSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
@@ -24,6 +17,7 @@ import RecruitmentModal from './components/RecruitmentModal'
 import HireChoiceModal from './components/HireChoiceModal'
 import EmployeePickerModal from './components/EmployeePickerModal'
 import XodimFilterModal, { EMPTY_XODIM_FILTERS } from './components/XodimFilterModal'
+import { StatusBadge, StatusTabs, statusParam, useStatusTabCounts } from './components/statusTabs'
 
 const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
@@ -31,52 +25,6 @@ const TH =
 function dmyToIso(value) {
   const m = String(value ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
   return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
-}
-
-const TABS = [
-  ['all', 'Barchasi'],
-  ['confirmed', 'Tasdiqlangan'],
-  ['draft', 'Qoralama'],
-  ['cancelled', 'Bekor qilingan'],
-]
-const STATUS_LABEL = { draft: 'Qoralama', confirmed: 'Tasdiqlangan', cancelled: 'Bekor qilingan' }
-const STATUS_BADGE_CLS = {
-  draft: 'bg-[#0A0A0A] text-white dark:bg-white/20',
-  confirmed: 'bg-[#16A34A] text-white',
-  cancelled: 'bg-[#DC2626] text-white',
-}
-// Backend ro'yxat javobida holatlar bo'yicha sonlarni (`counts`) qaytaradi — tab hisoblagichlari
-// shundan olinadi (qo'shimcha so'rovsiz). Shakli hujjatlashtirilmagan, shuning uchun ikkala
-// ko'rinish qabul qilinadi: { draft: 11, approved: 1, cancelled: 1, all?/total? } yoki
-// [{ status, count }]. Natija: { all, confirmed, draft, cancelled } (frontend kalitlari).
-// Backend `counts` bermasa — har bir holat backend `status` filtri bilan alohida so'raladi.
-const STATUS_VARIANTS = Object.fromEntries(
-  Object.entries(RECRUITMENT_STATUS_PARAM).map(([k, v]) => [k, { status: v }])
-)
-const NO_VARIANTS = {}
-
-function normalizeStatusCounts(raw) {
-  if (!raw || typeof raw !== 'object') return null
-  const byStatus = {}
-  if (Array.isArray(raw)) {
-    raw.forEach((it) => {
-      const k = it?.status ?? it?.key ?? it?.value
-      if (k != null) byStatus[k] = Number(it.count ?? it.total ?? 0)
-    })
-  } else {
-    Object.entries(raw).forEach(([k, v]) => {
-      byStatus[k] = Number(typeof v === 'object' && v !== null ? v.count ?? v.total ?? 0 : v)
-    })
-  }
-  const out = {}
-  Object.entries(RECRUITMENT_STATUS_PARAM).forEach(([front, back]) => {
-    if (Number.isFinite(byStatus[back])) out[front] = byStatus[back]
-  })
-  const all = byStatus.all ?? byStatus.total ?? byStatus.barchasi
-  if (Number.isFinite(all)) out.all = all
-  else if (['confirmed', 'draft', 'cancelled'].every((k) => Number.isFinite(out[k])))
-    out.all = out.confirmed + out.draft + out.cancelled
-  return out
 }
 
 const fetchRecruitmentsPage = (params) =>
@@ -149,33 +97,18 @@ export default function IshgaQabulQilishListPage() {
     search: debouncedSearch.trim(),
     start_date: dmyToIso(filters.sanaDan),
     end_date: dmyToIso(filters.sanaGacha),
-    status: tab === 'all' ? undefined : RECRUITMENT_STATUS_PARAM[tab],
+    status: statusParam(tab),
   })
 
-  // Tab hisoblagichlari — sahifaga kirgan zahoti hammasi ko'rinadi:
-  // - backend javobida `counts` bo'lsa — shundan (qo'shimcha so'rovsiz);
-  // - bo'lmasa (birinchi yuklanishdan keyin bir marta aniqlanadi) — har bir holat uchun bittadan
-  //   1-sahifa so'rovi bilan (useTabCounts), "Barchasi" esa yig'indidan.
-  const backendCounts = useMemo(() => normalizeStatusCounts(statusCounts), [statusCounts])
-  const hasBackendCounts = !!backendCounts && ['confirmed', 'draft', 'cancelled'].every((k) => Number.isFinite(backendCounts[k]))
-  const [countsMode, setCountsMode] = useState(null) // null | 'backend' | 'fallback'
-  useEffect(() => {
-    if (countsMode === null && !isLoading && !listError) setCountsMode(hasBackendCounts ? 'backend' : 'fallback')
-  }, [countsMode, isLoading, listError, hasBackendCounts])
-  const fallbackCounts = useTabCounts(
-    getRecruitmentsPage,
-    { search: debouncedSearch.trim(), start_date: dmyToIso(filters.sanaDan), end_date: dmyToIso(filters.sanaGacha) },
-    countsMode === 'fallback' ? STATUS_VARIANTS : NO_VARIANTS,
+  const counts = useStatusTabCounts({
+    fetchPage: getRecruitmentsPage,
+    baseParams: { search: debouncedSearch.trim(), start_date: dmyToIso(filters.sanaDan), end_date: dmyToIso(filters.sanaGacha) },
+    statusCounts,
     tab,
     totalCount,
-    isLoading
-  )
-  const counts = useMemo(() => {
-    if (!hasBackendCounts) return fallbackCounts
-    const out = { ...backendCounts }
-    if (out.all === undefined) out.all = out.confirmed + out.draft + out.cancelled
-    return out
-  }, [hasBackendCounts, backendCounts, fallbackCounts])
+    isLoading,
+    listError,
+  })
 
   useEffect(() => {
     if (!toast) return undefined
@@ -212,39 +145,7 @@ export default function IshgaQabulQilishListPage() {
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
-          {TABS.map(([key, label]) => {
-            const active = tab === key
-            const n = counts[key]
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={cn(
-                  'flex h-7 items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2.5 text-[13px] font-medium transition-colors',
-                  active
-                    ? 'bg-white text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white'
-                    : 'text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground dark:hover:text-white'
-                )}
-              >
-                {label}
-                {n != null && (
-                  <span
-                    className={cn(
-                      'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium',
-                      active
-                        ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
-                        : 'text-[#A3A3A3] dark:text-muted-foreground'
-                    )}
-                  >
-                    {n}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
+        <StatusTabs tab={tab} onChange={setTab} counts={counts} />
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
           <div className="relative w-[280px]">
@@ -360,16 +261,7 @@ export default function IshgaQabulQilishListPage() {
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.yaratilgan || ''}</td>
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">{r.ozgartirilgan || ''}</td>
                   <td className="px-4">
-                    {STATUS_LABEL[r.status] && (
-                      <span
-                        className={cn(
-                          'inline-flex h-[22px] items-center whitespace-nowrap rounded-full px-2.5 text-[12px] font-medium',
-                          STATUS_BADGE_CLS[r.status]
-                        )}
-                      >
-                        {STATUS_LABEL[r.status]}
-                      </span>
-                    )}
+                    <StatusBadge status={r.status} />
                   </td>
                 </tr>
               ))
