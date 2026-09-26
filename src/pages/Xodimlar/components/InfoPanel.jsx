@@ -27,9 +27,9 @@ export function Panel({ title, children, className }) {
 
 export function InfoRow({ label, value, onCopy }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
+    <div className="flex items-start justify-between gap-3 px-4 py-2.5 text-[13px] leading-[18px]">
       <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{label}</span>
-      <span className="flex min-w-0 items-center justify-end gap-1.5 text-right font-medium text-[#0A0A0A] dark:text-white">
+      <span className="flex min-w-0 items-start justify-end gap-1.5 text-right font-medium text-[#0A0A0A] dark:text-white">
         {onCopy && value && (
           <button
             type="button"
@@ -40,7 +40,7 @@ export function InfoRow({ label, value, onCopy }) {
             <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
           </button>
         )}
-        <span className="truncate">{value || ''}</span>
+        <span className="min-w-0 break-words">{value || ''}</span>
       </span>
     </div>
   )
