@@ -10,14 +10,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 // funksiyasi, masalan `organizationService.getOrganizationsPage`); `page` avtomatik qo'shiladi,
 // alohida `useCallback`ga o'rab bermasa ham bo'ladi — modul darajasidagi funksiya barqaror.
 // `params` (masalan {search, ...filtrlar}) o'zgarsa, ro'yxat 1-sahifadan qayta yuklanadi.
-export function useServerPagedList(fetchFn, params) {
+export function useServerPagedList(fetchFn, params, options = {}) {
+  const { enabled = true } = options
   const [items, setItems] = useState([])
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   // Javobdagi qo'shimcha `counts` (bo'lsa) — masalan tab hisoblagichlari uchun.
   const [counts, setCounts] = useState(null)
   const [hasMore, setHasMore] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(enabled)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState(null)
 
@@ -28,7 +29,7 @@ export function useServerPagedList(fetchFn, params) {
 
   const load = useCallback(
     async (pageNum, { append = false } = {}) => {
-      if (isFetchingRef.current) return
+      if (!enabled || isFetchingRef.current) return
       isFetchingRef.current = true
       if (append) setIsLoadingMore(true)
       else {
@@ -51,16 +52,20 @@ export function useServerPagedList(fetchFn, params) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fetchFn, paramsKey]
+    [fetchFn, paramsKey, enabled]
   )
 
-  // params o'zgarganda (qidiruv/filtr) 1-sahifadan qayta yuklaymiz
+  // params yoki enabled o'zgarganda (qidiruv/filtr) 1-sahifadan qayta yuklaymiz
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false)
+      return
+    }
     setPage(1)
     if (containerRef.current) containerRef.current.scrollTop = 0
     load(1, { append: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [load])
+  }, [load, enabled])
 
   const loadMore = useCallback(() => {
     if (isFetchingRef.current || isLoading || isLoadingMore || !hasMore || items.length === 0) return

@@ -1,4 +1,4 @@
-import { formatDateTime, formatNumber, formatUzPhone } from '@/lib/format'
+import { dmyToIso, formatDate, formatDateTime, formatNumber, formatUzPhone } from '@/lib/format'
 
 function mapMeta(raw) {
   return {
@@ -14,6 +14,43 @@ export function mapCurrency(raw) {
 
 export function buildCurrencyPayload(draft) {
   return { name: draft.name.trim(), short_name: draft.shortName.trim().toUpperCase() }
+}
+
+// ── Kurslar (CurrencyLedger) ──
+export function mapCurrencyLedger(raw) {
+  const currencyName = raw.currency_info?.name ?? ''
+  const currencyShort = raw.currency_info?.short_name ?? ''
+  const valyutaLabel =
+    currencyName && currencyShort
+      ? `${currencyName} (${currencyShort})`
+      : currencyName || currencyShort || ''
+
+  return {
+    id: raw.id,
+    currencyId: raw.currency_info?.id ?? (typeof raw.currency === 'string' ? raw.currency : ''),
+    currencyInfo: raw.currency_info,
+    valyuta: valyutaLabel,
+    value: raw.value != null ? String(raw.value) : '',
+    kursFormatted: raw.value != null ? `${formatNumber(raw.value, 2)} UZS` : '',
+    day: raw.day ? formatDate(raw.day) : '',
+    rawDay: raw.day ?? '',
+    ...mapMeta(raw),
+  }
+}
+
+export function buildCurrencyLedgerPayload(draft) {
+  const dayIso = draft.day?.includes('.')
+    ? dmyToIso(draft.day)
+    : draft.day || new Date().toISOString().slice(0, 10)
+  const cleanValue = String(draft.value ?? '')
+    .replace(/\s/g, '')
+    .replace(',', '.')
+
+  return {
+    currency: draft.currencyId,
+    day: dayIso,
+    value: cleanValue,
+  }
 }
 
 // ── Hisoblash va ushlab qolish turlari ──
