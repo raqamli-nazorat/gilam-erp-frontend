@@ -3,6 +3,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { FilterDateRange, FilterField, FilterModal, FilterRangeRow, FilterSelect } from '@/components/ui/filter-modal'
 
+// `tashkilot` — tashkilot id'si (backend `organization` filtri) yoki GLOBAL_ROLES ("Barcha
+// tashkilotlar" — hech bir tashkilotga bog'lanmagan umumiy rollar).
+export const GLOBAL_ROLES = '__global'
+
 export const EMPTY_ROLE_FILTERS = {
   tashkilot: '',
   holat: '',
@@ -43,7 +47,7 @@ export default function RoleFilterModal({ open, onOpenChange, filters, onApply }
         <FilterSelect
           value={draft.tashkilot}
           onChange={(v) => set('tashkilot', v)}
-          options={['Barcha tashkilotlar', ...orgs.map((o) => o.name)]}
+          options={[{ value: GLOBAL_ROLES, label: 'Barcha tashkilotlar' }, ...orgs.map((o) => ({ value: o.id, label: o.name }))]}
         />
       </FilterField>
       <FilterField label="Turi">
