@@ -15,6 +15,13 @@ export async function getDismissalsPage(params) {
   return fetchPage('hr/recruitment-dismissals/', { ...params, type: 'dismissal' })
 }
 
+// Mos keladigan BARCHA ishdan chiqarish hujjatlari (barcha sahifalar) — backendda filtri yo'q
+// shartlar (masalan "Ishdan chiqarilgan sana" oralig'i) frontendda to'liq natija ustida qo'llanishi uchun.
+export async function getAllDismissals(params = {}) {
+  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v != null))
+  return fetchAllPages('hr/recruitment-dismissals/', { ...clean, type: 'dismissal' })
+}
+
 // "Ishga olish/Ishdan chiqarish" hujjatlari (RecruitmentDismissal) — har biri bitta xodimning
 // bitta filialga ishga olinishi yoki ishdan chiqarilishini bildiradi (type: recruitment|dismissal).
 // `params` (masalan { type: 'recruitment' }) — backend haqiqiy filtr sifatida qo'llab-quvvatlaydi.
