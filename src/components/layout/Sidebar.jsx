@@ -26,6 +26,7 @@ import {
   ShoppingCartCheckOut01Icon,
   ShoppingCartRemove01Icon,
   SidebarLeft01Icon,
+  TabelIcon,
   Tag01Icon,
   UserGroupIcon,
   UserMultipleIcon,
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   // Ishga qabul qilish" breadcrumb) o'zgarmagan, faqat sidebar joylashuvi ko'chirildi.
   { to: '/malumotnomalar/ishga-qabul-qilish', label: 'Ishga qabul qilish', icon: IshgaQabulQilishIcon },
   { to: '/malumotnomalar/ishdan-chiqarish', label: 'Ishdan chiqarish', icon: IshgaQabulQilishIcon },
+  { to: '/tabel', label: 'Tabel', icon: TabelIcon },
   {
     to: '/malumotnomalar',
     label: "Ma'lumotnomalar",
