@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export const fieldCls =
-  'h-10 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-10 data-[size=default]:h-10 [&[data-size]]:h-10 min-h-10 w-full rounded-lg border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 export const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
 export function FormField({ label, full, children }) {
@@ -23,16 +23,10 @@ export function FormField({ label, full, children }) {
 // `options`: [{ id, name }]
 export function OptionSelect({ value, onChange, options, placeholder = 'Tanlang', disabled }) {
   return (
-    <Select value={value || '__none'} onValueChange={(v) => onChange(v === '__none' ? '' : v)} disabled={disabled}>
+    <Select value={value || ''} onValueChange={(v) => onChange(v || '')} disabled={disabled}>
       <SelectTrigger className={cn(fieldCls, disabled && 'opacity-60')}>
-        <SelectValue>
-          {(v) =>
-            v === '__none' ? (
-              <span className="text-[#737373]">{placeholder}</span>
-            ) : (
-              options.find((o) => o.id === v)?.name ?? ''
-            )
-          }
+        <SelectValue placeholder={placeholder}>
+          {options.find((o) => o.id === value)?.name}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
@@ -109,7 +103,7 @@ export default function ReferenceFormModal({
             <Button
               type="button"
               onClick={() => onDelete?.()}
-              className="h-9 gap-1.5 bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
+              className="h-9 gap-1.5 rounded-lg bg-[#DC2626] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#B91C1C]"
             >
               <Trash2 className="h-4 w-4" /> O‘chirish
             </Button>
@@ -121,7 +115,7 @@ export default function ReferenceFormModal({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-9 gap-1.5 border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-9 gap-1.5 rounded-lg border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
             >
               <X className="h-4 w-4" /> Bekor qilish
             </Button>
@@ -129,7 +123,7 @@ export default function ReferenceFormModal({
               type="button"
               disabled={!canSave}
               onClick={handleSave}
-              className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
+              className="h-9 gap-1.5 rounded-lg bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Saqlash
             </Button>

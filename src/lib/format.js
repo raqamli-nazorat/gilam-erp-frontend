@@ -142,3 +142,12 @@ export function formatCountdown(ms) {
   const seconds = totalSeconds % 60
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
+
+// "DD.MM.YYYY" -> "YYYY-MM-DD" (backend start_date/end_date/day uchun); to'liq bo'lmasa — ''.
+export function dmyToIso(value) {
+  if (!value) return ''
+  const trimmed = String(value).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  const m = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : ''
+}
