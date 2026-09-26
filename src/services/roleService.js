@@ -26,9 +26,14 @@ export async function deleteRole(id) {
   await axiosAPI.delete(`accounts/roles/${id}/`)
 }
 
-// Permission ro'yxati sahifalanmagan — bitta so'rovda to'liq massiv qaytadi.
+export async function getRole(id) {
+  const response = await axiosAPI.get(`accounts/roles/${id}/`)
+  return unwrapData(response)
+}
+
+// Permission ro'yxati — guruhlangan lug'at yoki massiv ko'rinishida qaytadi.
 export async function getAllPermissions() {
   const response = await axiosAPI.get('accounts/permissions/')
-  const payload = unwrapData(response)
-  return Array.isArray(payload) ? payload : payload?.results ?? []
+  return unwrapData(response)
 }
+

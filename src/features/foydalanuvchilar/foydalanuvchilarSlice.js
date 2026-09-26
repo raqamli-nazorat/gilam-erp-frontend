@@ -251,15 +251,18 @@ export const deleteRole = createAsyncThunk(
 export const fetchPermissions = createAsyncThunk(
   'foydalanuvchilar/fetchPermissions',
   async (_, { getState, rejectWithValue }) => {
-    if (getState().foydalanuvchilar.permissionsStatus === 'succeeded') return null
+    if (getState().foydalanuvchilar.permissionsStatus === 'succeeded' && getState().foydalanuvchilar.permissions) {
+      return getState().foydalanuvchilar.permissions
+    }
     try {
       const results = await roleService.getAllPermissions()
-      return results.map(mapPermission)
+      return results
     } catch (error) {
       return rejectWithValue(extractErrorMessage(error, 'Ruxsatlarni yuklab bo‘lmadi'))
     }
   }
 )
+
 
 const foydalanuvchilarSlice = createSlice({
   name: 'foydalanuvchilar',
