@@ -40,3 +40,9 @@ export async function openBranch(id) {
   const response = await axiosAPI.patch(`organization/branches/${id}/open/`, {})
   return unwrapData(response)
 }
+
+export async function getBranchCounts() {
+  const response = await axiosAPI.get('organization/branches/counts/')
+  return unwrapData(response)
+}
+

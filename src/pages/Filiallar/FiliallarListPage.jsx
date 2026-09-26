@@ -6,7 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Copy01Icon } from '@hugeicons/core-free-icons/index'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
-import { matchesDateRange } from '@/lib/format'
+
 import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { useTabCounts } from '@/hooks/useTabCounts'
 import { holatLabel } from '@/features/filiallar/filiallarData'
@@ -73,6 +73,19 @@ export default function FiliallarListPage() {
     return undefined
   }, [tab, filters.holat])
 
+  const queryParams = useMemo(() => {
+    const p = {
+      search: debouncedSearch.trim() || undefined,
+      is_closed: isClosedParam,
+    }
+    if (filters.tashkilot) p.organization = filters.tashkilot
+    if (filters.viloyat) p.region = filters.viloyat
+    if (filters.tuman) p.district = filters.tuman
+    if (filters.sanaDan) p.start_date = filters.sanaDan
+    if (filters.sanaGacha) p.end_date = filters.sanaGacha
+    return p
+  }, [debouncedSearch, isClosedParam, filters])
+
   const {
     items: pagedBranches,
     totalCount,
@@ -84,31 +97,38 @@ export default function FiliallarListPage() {
     sentinelRef: branchesSentinelRef,
     handleScroll: handleBranchesScroll,
     reload: reloadBranches,
-  } = useServerPagedList(fetchBranchesPage, {
-    search: debouncedSearch.trim(),
-    is_closed: isClosedParam,
-  })
+  } = useServerPagedList(fetchBranchesPage, queryParams)
 
-  // Tab hisoblagichlari — sahifaga kirganda hammasi ko'rinadi: ochiq tab jadvalning o'z `count`idan,
-  // qolganlari bittadan 1-sahifa so'rovi bilan (useTabCounts).
-  const countTab = isClosedParam === undefined ? 'all' : isClosedParam ? 'closed' : 'active'
-  const counts = useTabCounts(
-    branchService.getBranchesPage,
-    { search: debouncedSearch.trim() },
-    { active: { is_closed: false }, closed: { is_closed: true } },
-    countTab,
-    totalCount,
-    branchesLoading
-  )
+  // Tab hisoblagichlari — /api/v1/organization/branches/counts/ orqali yuklanadi
+  const [countsData, setCountsData] = useState({ active: null, closed: null })
+  const loadCounts = () => {
+    branchService.getBranchCounts()
+      .then((data) => {
+        if (data) {
+          setCountsData({
+            active: data.active ?? 0,
+            closed: data.closed ?? 0,
+          })
+        }
+      })
+      .catch((err) => console.error('Filial hisoblagichlarini yuklab bo‘lmadi:', err))
+  }
 
-  const shown = useMemo(() => {
-    let out = pagedBranches
-    if (filters.tashkilot) out = out.filter((b) => b.tashkilot === filters.tashkilot)
-    if (filters.viloyat) out = out.filter((b) => b.viloyat === filters.viloyat)
-    if (filters.sanaDan || filters.sanaGacha)
-      out = out.filter((b) => matchesDateRange(b.openedAt, filters.sanaDan, filters.sanaGacha))
-    return out
-  }, [pagedBranches, filters])
+  useEffect(() => {
+    loadCounts()
+  }, [])
+
+  const counts = useMemo(() => {
+    const active = countsData.active
+    const closed = countsData.closed
+    const all = active != null && closed != null ? active + closed : null
+    return { all, active, closed }
+  }, [countsData])
+
+  const shown = pagedBranches
+
+
+
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -168,7 +188,9 @@ export default function FiliallarListPage() {
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
-            <Filter className="h-4 w-4" /> Filtr
+            <Filter className="h-4 w-4" />
+            <span>Filtr</span>
+            {hasFilter && <span className="size-1.5 rounded-full bg-[#0052D2] dark:bg-[#60A5FA]" />}
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
