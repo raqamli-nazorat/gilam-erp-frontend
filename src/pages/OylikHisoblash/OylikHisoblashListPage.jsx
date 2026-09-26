@@ -61,18 +61,15 @@ function mapCalculatingSalary(r) {
 async function fetchCalculatingSalariesPage(params) {
   try {
     const res = await getCalculatingSalariesPage(params)
-    const apiResults = (res.results || []).map(mapCalculatingSalary)
-    // Agar backendda ma'lumot bo'lsa uni ko'rsatamiz, bo'sh bo'lsa tekshirish uchun 1 ta mock ma'lumot chiqadi
-    const results = apiResults.length > 0 ? apiResults : MOCK_OYLIK_ITEMS.map(mapCalculatingSalary)
     return {
       ...res,
-      count: res.count || results.length,
-      results,
+      results: (res?.results || []).map(mapCalculatingSalary),
+      count: res?.count ?? (res?.results?.length || 0),
     }
   } catch {
     return {
-      results: MOCK_OYLIK_ITEMS.map(mapCalculatingSalary),
-      count: MOCK_OYLIK_ITEMS.length,
+      results: [],
+      count: 0,
       next: null,
     }
   }
@@ -106,11 +103,14 @@ export default function OylikHisoblashListPage() {
   // Backend so'rov parametrlari
   const baseParams = useMemo(() => {
     const params = {}
+    if (filters.orgId) params.organization = filters.orgId
     if (filters.branch) params.branch = filters.branch
     if (filters.employee) params.employee = filters.employee
     if (filters.for_month) params.for_month = filters.for_month
     if (filters.start_date) params.start_date = dmyToIso(filters.start_date)
     if (filters.end_date) params.end_date = dmyToIso(filters.end_date)
+    if (filters.updated_dan) params.updated_from = dmyToIso(filters.updated_dan)
+    if (filters.updated_gacha) params.updated_to = dmyToIso(filters.updated_gacha)
     const st = statusParam(tab)
     if (st) params.status = st
     if (debouncedSearch.trim()) params.search = debouncedSearch.trim()

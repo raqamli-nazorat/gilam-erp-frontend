@@ -682,11 +682,8 @@ export default function EmployeeSalaryDrawer({
               <div className="text-sm font-semibold text-[#0A0A0A] dark:text-white">
                 Jami
               </div>
-              <div className="mt-0.5 text-xs text-[#737373] dark:text-gray-400">
-                Asos + qo‘shimchalar - ushlanmalar
-              </div>
             </div>
-            <div className="text-[20px] font-extrabold text-[#0A0A0A] dark:text-white">
+            <div className="text-[20px] font-semibold text-[#0A0A0A] dark:text-white">
               {formatNumber(finalTotal, 2)} {employee.currency || 'UZS'}
             </div>
           </div>

@@ -6,40 +6,39 @@ import { FilterField } from '@/components/ui/filter-modal'
 import { DatePicker, fromISODate, toISODate } from '@/components/ui/date-picker'
 import { PagedSelect } from '@/components/ui/paged-select'
 import {
+  accrualRetentionOptions,
   branchOptions,
   employeeOptions,
-  monthOptions,
   organizationOptions,
 } from '@/services/optionSources'
-import { MONTH_NAMES } from '@/features/oylikHisoblash/oylikData'
 
-export const EMPTY_OYLIK_FILTERS = {
+export const EMPTY_QOSHIMCHA_FILTERS = {
   orgId: '',
   orgName: '',
-  branch: '', // branch uuid or id
+  branch: '',
   branchName: '',
-  for_month: '', // 1-12
-  for_month_name: '',
-  employee: '', // employee uuid or id
+  employee: '',
   employeeName: '',
-  start_date: '', // Yaratilgan sana dan
-  end_date: '', // Yaratilgan sana gacha
-  updated_dan: '', // Yangilangan dan
-  updated_gacha: '', // Yangilangan gacha
-  status: '', // draft | approved | cancelled
+  accrual_retention: '',
+  accrualRetentionName: '',
+  date_from: '',
+  date_to: '',
+  updated_from: '',
+  updated_to: '',
+  status: '',
 }
 
-export default function OylikFilterModal({
+export default function QoshimchaFilterModal({
   open,
   onOpenChange,
   filters,
   onApply,
 }) {
-  const [draft, setDraft] = useState(filters || EMPTY_OYLIK_FILTERS)
+  const [draft, setDraft] = useState(filters || EMPTY_QOSHIMCHA_FILTERS)
 
   useEffect(() => {
     if (open) {
-      setDraft(filters || EMPTY_OYLIK_FILTERS)
+      setDraft(filters || EMPTY_QOSHIMCHA_FILTERS)
     }
   }, [open, filters])
 
@@ -48,8 +47,8 @@ export default function OylikFilterModal({
   }
 
   const handleReset = () => {
-    setDraft(EMPTY_OYLIK_FILTERS)
-    onApply(EMPTY_OYLIK_FILTERS)
+    setDraft(EMPTY_QOSHIMCHA_FILTERS)
+    onApply(EMPTY_QOSHIMCHA_FILTERS)
     onOpenChange(false)
   }
 
@@ -65,7 +64,7 @@ export default function OylikFilterModal({
         className="w-full gap-0 overflow-hidden rounded-[16px] p-0 shadow-[0px_12px_24px_-6px_#01091C24] ring-0 sm:max-w-[560px] dark:bg-card"
       >
         {/* Header */}
-        <div className="flex h-[60px] shrink-0 items-center justify-between gap-2 border-b border-[#F0F0F0] px-6 dark:border-white/10">
+        <div className="flex h-[60px] shrink-0 items-center justify-between border-b border-[#F0F0F0] px-6 dark:border-white/10">
           <DialogTitle className="text-[18px] font-semibold text-[#0A0A0A] dark:text-white">
             Filtr
           </DialogTitle>
@@ -82,7 +81,7 @@ export default function OylikFilterModal({
           />
         </div>
 
-        {/* Body (2-rasmdagi form maydonlari - PagedSelect scroll pagination bilan) */}
+        {/* Body (Figma 2-rasm: Tashkilot, Filial, Xodim, Qo'shimcha va ushlanma, Sana, Yangilangan) */}
         <div className="space-y-4 px-6 py-5">
           {/* 1-qator: Tashkilot va Filial */}
           <div className="grid grid-cols-2 gap-4">
@@ -105,6 +104,7 @@ export default function OylikFilterModal({
                 className="h-10 rounded-[10px]"
               />
             </FilterField>
+
             <FilterField label="Filial">
               <PagedSelect
                 value={draft.branch}
@@ -125,25 +125,8 @@ export default function OylikFilterModal({
             </FilterField>
           </div>
 
-          {/* 2-qator: Oy va Xodim */}
+          {/* 2-qator: Xodim va Qo'shimcha va ushlanma */}
           <div className="grid grid-cols-2 gap-4">
-            <FilterField label="Oy">
-              <PagedSelect
-                value={draft.for_month}
-                onChange={(val, item) =>
-                  setDraft((d) => ({
-                    ...d,
-                    for_month: val,
-                    for_month_name: item?.name ?? '',
-                  }))
-                }
-                fetchPage={monthOptions}
-                selectedLabel={draft.for_month_name || MONTH_NAMES[draft.for_month]}
-                placeholder="Barchasi"
-                allowAll
-                className="h-10 rounded-[10px]"
-              />
-            </FilterField>
             <FilterField label="Xodim">
               <PagedSelect
                 value={draft.employee}
@@ -162,22 +145,40 @@ export default function OylikFilterModal({
                 className="h-10 rounded-[10px]"
               />
             </FilterField>
+
+            <FilterField label="Qo‘shimcha va ushlanma">
+              <PagedSelect
+                value={draft.accrual_retention}
+                onChange={(val, item) =>
+                  setDraft((d) => ({
+                    ...d,
+                    accrual_retention: val,
+                    accrualRetentionName: item?.name ?? '',
+                  }))
+                }
+                fetchPage={accrualRetentionOptions}
+                selectedLabel={draft.accrualRetentionName}
+                placeholder="Barchasi"
+                allowAll
+                className="h-10 rounded-[10px]"
+              />
+            </FilterField>
           </div>
 
-          {/* 3-qator: Yaratilgan (dan - gacha) */}
-          <FilterField label="Yaratilgan">
+          {/* 3-qator: Sana (dan - gacha) */}
+          <FilterField label="Sana">
             <div className="grid grid-cols-2 gap-4">
               <DatePicker
                 label="dan"
                 placeholder="KK.OO.YYYY"
-                value={fromISODate(draft.start_date)}
-                onChange={(d) => setField('start_date', toISODate(d))}
+                value={fromISODate(draft.date_from)}
+                onChange={(d) => setField('date_from', toISODate(d))}
               />
               <DatePicker
                 label="gacha"
                 placeholder="KK.OO.YYYY"
-                value={fromISODate(draft.end_date)}
-                onChange={(d) => setField('end_date', toISODate(d))}
+                value={fromISODate(draft.date_to)}
+                onChange={(d) => setField('date_to', toISODate(d))}
               />
             </div>
           </FilterField>
@@ -188,21 +189,21 @@ export default function OylikFilterModal({
               <DatePicker
                 label="dan"
                 placeholder="KK.OO.YYYY"
-                value={fromISODate(draft.updated_dan)}
-                onChange={(d) => setField('updated_dan', toISODate(d))}
+                value={fromISODate(draft.updated_from)}
+                onChange={(d) => setField('updated_from', toISODate(d))}
               />
               <DatePicker
                 label="gacha"
                 placeholder="KK.OO.YYYY"
-                value={fromISODate(draft.updated_gacha)}
-                onChange={(d) => setField('updated_gacha', toISODate(d))}
+                value={fromISODate(draft.updated_to)}
+                onChange={(d) => setField('updated_to', toISODate(d))}
               />
             </div>
           </FilterField>
         </div>
 
-        {/* Footer (2-rasmdagi Tozalash va Qo'llash tugmalari) */}
-        <div className="flex h-[72px] shrink-0 items-center justify-end gap-3 bg-[#F9FAFB] px-6 border-t border-[#F0F0F0] dark:bg-white/5 dark:border-white/10">
+        {/* Footer (Tozalash va Qo'llash) */}
+        <div className="flex h-[72px] shrink-0 items-center justify-end gap-3 border-t border-[#F0F0F0] bg-[#F9FAFB] px-6 dark:border-white/10 dark:bg-white/5">
           <Button
             type="button"
             variant="outline"

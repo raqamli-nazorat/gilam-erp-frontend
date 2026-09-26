@@ -226,3 +226,17 @@ export function IshgaQabulQilishIcon({ className, size = 18, ...props }) {
 export function TabelIcon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={Calendar03Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
+
+// Figma: "Qo'shimcha va ushlanma" ikonkasi
+export function QoshimchaUshlanmaIcon({ className, size = 18, ...props }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" className={className} {...props}>
+      <rect x="2" y="2.5" width="14" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="6.5" cy="9" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M11 6.75H13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M11 9H13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M11 11.25H13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+

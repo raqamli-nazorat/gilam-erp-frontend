@@ -79,6 +79,18 @@ export const designOptions = source('catalog/designs/', (r) => ({
   sifat: r.quality_info?.name ?? '',
 }))
 
+// Hisoblash va ushlab qolish turlari — PagedSelect uchun
+export const accrualRetentionOptions = source('finance/accrual-retentions/', (r) => ({
+  id: r.id,
+  name: r.name ?? '',
+  type: r.type,
+  is_retention: r.is_retention,
+  value: r.value,
+  currency: r.currency,
+  currency_info: r.currency_info,
+}))
+
+
 // Oylar (1-12) — PagedSelect uchun
 export async function monthOptions(params = {}) {
   const months = [

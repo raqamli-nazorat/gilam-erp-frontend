@@ -25,6 +25,8 @@ export function useServerPagedList(fetchFn, params, options = {}) {
   const containerRef = useRef(null)
   const sentinelRef = useRef(null)
   const isFetchingRef = useRef(false)
+  const fetchFnRef = useRef(fetchFn)
+  fetchFnRef.current = fetchFn
   const paramsKey = JSON.stringify(params ?? {})
 
   const load = useCallback(
@@ -38,7 +40,7 @@ export function useServerPagedList(fetchFn, params, options = {}) {
       }
       try {
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        const { results, count, next, counts: resCounts } = await fetchFn({ ...JSON.parse(paramsKey), page: pageNum })
+        const { results, count, next, counts: resCounts } = await fetchFnRef.current({ ...JSON.parse(paramsKey), page: pageNum })
         setItems((prev) => (append ? [...prev, ...results] : results))
         setTotalCount(count)
         setCounts(resCounts ?? null)
@@ -52,7 +54,7 @@ export function useServerPagedList(fetchFn, params, options = {}) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fetchFn, paramsKey, enabled]
+    [paramsKey, enabled]
   )
 
   // params yoki enabled o'zgarganda (qidiruv/filtr) 1-sahifadan qayta yuklaymiz
