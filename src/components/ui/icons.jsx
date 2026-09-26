@@ -217,3 +217,7 @@ export function IshgaQabulQilishIcon({ className, size = 18, ...props }) {
     </svg>
   )
 }
+
+export function TabelIcon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={Calendar03Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
