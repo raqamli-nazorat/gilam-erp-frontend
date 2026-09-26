@@ -16,7 +16,7 @@ const searchableKeys = ['mijoz', 'tashkilot', 'filial', 'buyurtma', 'tolov', 'hu
 
 function cellValue(row, col) {
   const v = row[col.key]
-  if (v == null || v === '') return col.num != null ? '—' : ''
+  if (v == null || v === '') return col.num != null ? formatNumber(0, col.num) : ''
   if (col.num != null) return formatNumber(v, col.num)
   return v
 }
@@ -136,7 +136,7 @@ export default function PlatformReportPage({ slug }) {
             <Button
               variant="outline"
               disabled={status !== 'ready'}
-              onClick={() => setToast('Backend hali ulanmagan')}
+              onClick={() => setToast({ variant: 'warning', message: 'Backend hali ulanmagan' })}
               className="h-9 gap-2 border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-50 dark:border-white/10 dark:bg-card dark:text-white"
             >
               <Download01Icon className="h-4 w-4" /> Yuklab olish

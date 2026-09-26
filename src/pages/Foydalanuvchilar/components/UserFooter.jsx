@@ -86,7 +86,7 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
             dispatch(updateXodim({ id: xodim.id, recruitmentId, draft }))
               .unwrap()
               .then(() => setToast(holat === 'yangi' ? 'Xodim ishga olindi' : 'O‘zgarishlar saqlandi'))
-              .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+              .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
           }}
         />
         <TerminateEmployeeModal
@@ -97,7 +97,7 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
             dispatch(terminateXodim({ id: xodim.id, reason, file }))
               .unwrap()
               .then(() => setToast('Xodim ishdan chiqarildi'))
-              .catch((err) => setToast(err || 'Ishdan chiqarishda xatolik yuz berdi'))
+              .catch((err) => setToast({ variant: 'error', message: err || 'Ishdan chiqarishda xatolik yuz berdi' }))
           }}
         />
         <RehireEmployeeModal
@@ -123,7 +123,7 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
             )
               .unwrap()
               .then(() => setToast('Xodim qayta ishga olindi'))
-              .catch((err) => setToast(err || 'Qayta ishga olishda xatolik yuz berdi'))
+              .catch((err) => setToast({ variant: 'error', message: err || 'Qayta ishga olishda xatolik yuz berdi' }))
           }}
         />
         <Toast message={toast} />
@@ -167,7 +167,7 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
           dispatch(updateUser({ id: user.id, draft: patch }))
             .unwrap()
             .then(() => setToast('O‘zgarishlar saqlandi'))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <BlockUserModal
@@ -193,7 +193,7 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
               })
               setToast('Foydalanuvchi bloklandi')
             })
-            .catch((err) => setToast(err || 'Bloklashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Bloklashda xatolik yuz berdi' }))
         }}
       />
       <ActivateUserModal
@@ -213,7 +213,7 @@ export default function UserFooter({ user, xodim, onStatusChange }) {
               })
               setToast('Foydalanuvchi faollashtirildi')
             })
-            .catch((err) => setToast(err || 'Faollashtirishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Faollashtirishda xatolik yuz berdi' }))
         }}
       />
       <Toast message={toast} />

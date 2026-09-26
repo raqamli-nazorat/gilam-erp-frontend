@@ -14,13 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_QK_FILTERS = {
   from: '',
@@ -74,17 +68,7 @@ export default function QkFilterModal({ open, onOpenChange, filters, onApply }) 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Ombor</Label>
-              <Select value={draft.warehouse || '__all'} onValueChange={(v) => set('warehouse', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {QK_WAREHOUSES.map((w) => (
-                    <SelectItem key={w} value={w}>{w}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.warehouse} onChange={(v) => set('warehouse', v)} options={QK_WAREHOUSES} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Asos hujjat</Label>
@@ -100,17 +84,7 @@ export default function QkFilterModal({ open, onOpenChange, filters, onApply }) 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Sifat holati</Label>
-              <Select value={draft.quality || '__all'} onValueChange={(v) => set('quality', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {QK_QUALITIES.map((q) => (
-                    <SelectItem key={q} value={q}>{q}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.quality} onChange={(v) => set('quality', v)} options={QK_QUALITIES} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Holat</Label>

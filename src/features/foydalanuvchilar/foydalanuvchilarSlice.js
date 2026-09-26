@@ -47,17 +47,17 @@ export function mapUser(u) {
     isStaff: !!u.is_staff,
     holat: isBlocked ? 'blocked' : 'active',
     yaratilgan: u.created_at ? formatDateTime(new Date(u.created_at)) : '',
-    oxirgiKirish: '—',
+    oxirgiKirish: '',
     block: isBlocked
       ? {
-          at: u.blocked_at ? formatDateTime(new Date(u.blocked_at)) : '—',
+          at: u.blocked_at ? formatDateTime(new Date(u.blocked_at)) : '',
           reason: nameOf(u.blocked_reason),
           by: nameOf(u.blocked_by),
         }
       : null,
     activation: null,
     detail: {
-      stats: { savdolar: null, savdoSummasi: null, qaytarishlar: null, oxirgiKirish: '—' },
+      stats: { savdolar: null, savdoSummasi: null, qaytarishlar: null, oxirgiKirish: '' },
       audit: [],
       lastSales: [],
     },

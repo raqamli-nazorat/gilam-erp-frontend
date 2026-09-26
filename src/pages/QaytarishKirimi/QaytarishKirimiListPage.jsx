@@ -219,9 +219,9 @@ export default function QaytarishKirimiListPage() {
                   >
                     <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{i + 1}</TableCell>
                     <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{formatDate(d.date)}</TableCell>
-                    <TableCell className="px-3 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{d.basis || '—'}</TableCell>
-                    <TableCell className="max-w-[200px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{d.counterparty || '—'}</TableCell>
-                    <TableCell className="max-w-[150px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{partiya || '—'}</TableCell>
+                    <TableCell className="px-3 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{d.basis || ''}</TableCell>
+                    <TableCell className="max-w-[200px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{d.counterparty || ''}</TableCell>
+                    <TableCell className="max-w-[150px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{partiya || ''}</TableCell>
                     <TableCell className="px-3 text-right text-[13px] leading-[18px] text-[#0A0A0A] dark:text-white">{formatNumber(qkArea(d))}</TableCell>
                     <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{d.warehouse}</TableCell>
                     <TableCell className="px-3 text-right text-[13px] leading-[18px] text-[#0A0A0A] dark:text-white">{formatNumber(qkValue(d))}</TableCell>

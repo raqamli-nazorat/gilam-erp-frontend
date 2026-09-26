@@ -12,13 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_ADVANCE_FILTERS = { from: '', to: '', empName: '', type: '' }
 
@@ -62,27 +56,11 @@ export default function AdvanceFilterModal({ open, onOpenChange, filters, onAppl
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <Label className={labelCls}>Xodim</Label>
-              <Select value={draft.empName || '__all'} onValueChange={(v) => set('empName', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {EMPLOYEES.map((e) => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.empName} onChange={(v) => set('empName', v)} options={EMPLOYEES} className={inputCls} />
             </div>
             <div>
               <Label className={labelCls}>Turi</Label>
-              <Select value={draft.type || '__all'} onValueChange={(v) => set('type', v === '__all' ? '' : v)}>
-                <SelectTrigger className={inputCls}>
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {ADVANCE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.type} onChange={(v) => set('type', v)} options={ADVANCE_TYPES} className={inputCls} />
             </div>
           </div>
         </div>

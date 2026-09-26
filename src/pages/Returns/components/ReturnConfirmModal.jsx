@@ -31,7 +31,7 @@ export default function ReturnConfirmModal({ open, onOpenChange, doc, exchangeRa
 
         <div className="grid gap-2 rounded-lg bg-[#F5F5F5] p-4 text-sm dark:bg-white/5">
           <Row label="Hujjat" value={`${doc.number} · ${formatDate(doc.date)}`} />
-          <Row label="Kontragent" value={doc.counterparty || '—'} />
+          <Row label="Kontragent" value={doc.counterparty || ''} />
           <Row label="Qaytariladigan maydon" value={`${formatNumber(m2)} m²`} />
           <Row label="Summa" value={`${formatNumber(sumUsd)} USD · ${formatNumber(sumUzs, 0)} UZS`} />
         </div>

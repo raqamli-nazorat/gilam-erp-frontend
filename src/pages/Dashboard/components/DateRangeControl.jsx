@@ -79,7 +79,7 @@ export default function DateRangeControl() {
     {
       key: 'boshqa',
       label: 'Boshqa davr...',
-      hint: draft?.from && draft?.to ? `${dayjs(draft.from).format('DD.MM')} – ${fmt(draft.to)}` : '—',
+      hint: draft?.from && draft?.to ? `${dayjs(draft.from).format('DD.MM')} – ${fmt(draft.to)}` : '',
     },
   ]
 

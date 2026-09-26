@@ -268,8 +268,8 @@ export default function ReceiptsListPage() {
                   <TableCell className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{r.number}</TableCell>
                   <TableCell className="px-3 text-[13px] font-normal text-[#737373] dark:text-muted-foreground">{formatDate(r.date)}</TableCell>
                   <TableCell className="px-3 text-[13px] font-normal text-[#737373] dark:text-muted-foreground">{r.warehouse}</TableCell>
-                  <TableCell className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{r.counterparty || '—'}</TableCell>
-                  <TableCell className="px-3 text-[13px] font-normal text-[#737373] dark:text-muted-foreground">{r.author || '—'}</TableCell>
+                  <TableCell className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{r.counterparty || ''}</TableCell>
+                  <TableCell className="px-3 text-[13px] font-normal text-[#737373] dark:text-muted-foreground">{r.author || ''}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.sumUsd)}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.sumUzs, 0)}</TableCell>
                   <TableCell className="px-3">

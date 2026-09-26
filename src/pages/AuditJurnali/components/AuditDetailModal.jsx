@@ -17,7 +17,7 @@ const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F4
 function JsonBox({ value }) {
   return (
     <pre className="max-h-[220px] overflow-y-auto whitespace-pre-wrap break-all rounded-xl border border-dashed border-[#D4D4D4] bg-[#FAFAFA] p-4 font-mono text-[13px] leading-[20px] text-[#0A0A0A] dark:border-white/15 dark:bg-white/5 dark:text-white">
-      {value == null ? '—' : JSON.stringify(value, null, 2)}
+      {value == null ? '' : JSON.stringify(value, null, 2)}
     </pre>
   )
 }
@@ -28,9 +28,9 @@ export default function AuditDetailModal({ row, onClose }) {
   const { before, after, additional } = buildAuditDiff(row)
   const actionInfo = getActionInfo(row.action)
   const dateTime = formatAuditDateTime(row.timestamp)
-  const actorDisplay = row.actor_name || row.actor || row.object_repr || '—'
-  const recordDisplay = row.object_pk || row.object_id || row.object_repr || '—'
-  const tableDisplay = row.content_type_name || (row.content_type ? `ID: ${row.content_type}` : '—')
+  const actorDisplay = row.actor_name || row.actor || row.object_repr || ''
+  const recordDisplay = row.object_pk || row.object_id || row.object_repr || ''
+  const tableDisplay = row.content_type_name || (row.content_type ? `ID: ${row.content_type}` : '')
 
   return (
     <Dialog open={!!row} onOpenChange={(next) => !next && onClose()}>
@@ -64,7 +64,7 @@ export default function AuditDetailModal({ row, onClose }) {
             </div>
             <div>
               <Label className={labelCls}>IP manzili</Label>
-              <Input disabled value={row.remote_addr || '—'} className={fieldCls} />
+              <Input disabled value={row.remote_addr || ''} className={fieldCls} />
             </div>
           </div>
 

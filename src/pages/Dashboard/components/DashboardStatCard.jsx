@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
@@ -25,7 +24,6 @@ export default function DashboardStatCard({
   to,
   tone = 'violet',
 }) {
-  const navigate = useNavigate()
   const positive = delta >= 0
   const isPct = deltaSuffix.trim() === '%'
   const t = TONES[tone] ?? TONES.violet
@@ -33,7 +31,7 @@ export default function DashboardStatCard({
   return (
     <button
       type="button"
-      onClick={() => to && navigate(to)}
+      onClick={() => to && window.open(to, '_blank', 'noopener')}
       style={{ backgroundColor: t.bg }}
       className={cn(
         'flex h-[124px] flex-col justify-between rounded-xl p-4 text-left transition-[filter,transform] duration-150',

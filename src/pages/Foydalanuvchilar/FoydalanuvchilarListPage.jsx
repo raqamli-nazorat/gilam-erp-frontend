@@ -111,7 +111,7 @@ export default function FoydalanuvchilarListPage() {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
+        <div className="inline-flex w-[400px] items-center gap-0.5 rounded-lg bg-[#F5F5F5] p-1 dark:bg-white/5">
           {[
             ['all', 'Barchasi', counts.all],
             ['active', 'Faol', counts.active],
@@ -124,7 +124,7 @@ export default function FoydalanuvchilarListPage() {
                 type="button"
                 onClick={() => setTab(key)}
                 className={cn(
-                  'flex h-7 items-center gap-1.5 rounded-[7px] px-2 text-[13px] font-medium transition-colors',
+                  'flex h-7 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 text-[13px] font-medium transition-colors',
                   active
                     ? 'bg-white text-[#0A0A0A] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] dark:bg-card dark:text-white'
                     : 'text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground dark:hover:text-white'
@@ -245,7 +245,6 @@ export default function FoydalanuvchilarListPage() {
                   <td className="px-4 text-[13px] text-[#737373] dark:text-muted-foreground">
                     {u.phone ? (
                       <span className="inline-flex items-center gap-1.5">
-                        {u.phone}
                         <button
                           type="button"
                           onClick={(e) => copyPhone(e, u.phone)}
@@ -254,18 +253,19 @@ export default function FoydalanuvchilarListPage() {
                         >
                           <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                         </button>
+                        {u.phone}
                       </span>
                     ) : (
-                      '—'
+                      ''
                     )}
                   </td>
                   <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">
-                    {typeof u.tashkilot === 'object' ? u.tashkilot?.name || '—' : u.tashkilot || '—'}
+                    {typeof u.tashkilot === 'object' ? u.tashkilot?.name || '' : u.tashkilot || ''}
                   </td>
                   <td className="px-4 text-[13px] text-[#525252] dark:text-muted-foreground">
-                    {typeof u.filial === 'object' ? u.filial?.name || '—' : u.filial || '—'}
+                    {typeof u.filial === 'object' ? u.filial?.name || '' : u.filial || ''}
                   </td>
-                  <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-white">{u.rol || '—'}</td>
+                  <td className="px-4 text-[13px] text-[#0A0A0A] dark:text-white">{u.rol || ''}</td>
                   <td className="px-4">
                     <span
                       className={cn(
@@ -305,7 +305,7 @@ export default function FoydalanuvchilarListPage() {
           dispatch(createUser(values))
             .unwrap()
             .then((created) => navigate(`/foydalanuvchilar/${created.id}`))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <UserFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />

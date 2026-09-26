@@ -130,7 +130,7 @@ export const COUNTERPARTY_DETAIL = {
     footnote:
       "Musbat saldo — kontragent qarzi. To'lov muddati o'tgan hujjatlar «Tovarlar savdosi» bo'limida «Qarz» belgisi bilan ko'rinadi.",
     rows: [
-      { sana: '01.01.2026', hujjat: '—', amal: 'Davr boshiga saldo', izoh: '', debet: null, kredit: null, saldo: 2140 },
+      { sana: '01.01.2026', hujjat: '', amal: 'Davr boshiga saldo', izoh: '', debet: null, kredit: null, saldo: 2140 },
       { sana: '14.02.2026', hujjat: 'SV-0871', amal: 'Tovar sotuvi', izoh: '6 ta qator · 320,00 m²', debet: 4320, kredit: null, saldo: 6460 },
       { sana: '20.02.2026', hujjat: 'KAS-0412', amal: "Naqd to'lov", izoh: 'KICHIK KASSA', debet: null, kredit: 4000, saldo: 2460 },
       { sana: '11.04.2026', hujjat: 'SV-1035', amal: 'Tovar sotuvi', izoh: '4 ta qator · 238,00 m²', debet: 4760, kredit: null, saldo: 7220 },

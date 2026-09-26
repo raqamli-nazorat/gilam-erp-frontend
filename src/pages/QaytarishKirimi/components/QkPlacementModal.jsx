@@ -28,7 +28,7 @@ const LOC_OPTIONS = QK_LOCATIONS.filter((l) => l !== DEFECT_LOCATION)
 export default function QkPlacementModal({ open, onOpenChange, doc, onApply }) {
   const yaroqli = doc?.rows.find((r) => r.quality === 'Yaroqli')
   const hasDefect = !!doc?.rows.some((r) => r.quality === 'Nuqsonli')
-  const originalPartiya = yaroqli?.partiya ?? '—'
+  const originalPartiya = yaroqli?.partiya ?? ''
 
   const initial = () => ({
     partiyaMode: yaroqli?.partiyaMode ?? 'original',

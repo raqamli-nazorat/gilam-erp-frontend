@@ -14,13 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchSelect } from '@/components/ui/search-select'
 
 export const EMPTY_FILTERS = {
   from: '',
@@ -92,33 +86,13 @@ export default function FilterModal({ open, onOpenChange, filters, onApply }) {
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">
                 Ombor
               </Label>
-              <Select value={draft.warehouse || '__all'} onValueChange={(v) => set('warehouse', v === '__all' ? '' : v)}>
-                <SelectTrigger className="h-9 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-card dark:text-white">
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {WAREHOUSES.map((w) => (
-                    <SelectItem key={w} value={w}>{w}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.warehouse} onChange={(v) => set('warehouse', v)} options={WAREHOUSES} />
             </div>
             <div>
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">
                 Kontragent (kimdan)
               </Label>
-              <Select value={draft.counterparty || '__all'} onValueChange={(v) => set('counterparty', v === '__all' ? '' : v)}>
-                <SelectTrigger className="h-9 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-card dark:text-white">
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {COUNTERPARTIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.counterparty} onChange={(v) => set('counterparty', v)} options={COUNTERPARTIES} />
             </div>
           </div>
 
@@ -128,17 +102,7 @@ export default function FilterModal({ open, onOpenChange, filters, onApply }) {
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">
                 Muallif
               </Label>
-              <Select value={draft.author || '__all'} onValueChange={(v) => set('author', v === '__all' ? '' : v)}>
-                <SelectTrigger className="h-9 w-full rounded-md border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-card dark:text-white">
-                  <SelectValue>{(v) => (v === '__all' ? 'Barchasi' : v)}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Barchasi</SelectItem>
-                  {AUTHORS.map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchSelect value={draft.author} onChange={(v) => set('author', v)} options={AUTHORS} />
             </div>
             <div>
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">

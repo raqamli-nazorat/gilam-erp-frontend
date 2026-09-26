@@ -51,7 +51,7 @@ export default function CancelBookingModal({ open, onOpenChange, booking, onConf
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Mijoz</span>
-            <span className="font-medium">{booking.customer || '—'}</span>
+            <span className="font-medium">{booking.customer || ''}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Kesilgan rulonlar</span>

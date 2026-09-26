@@ -16,6 +16,7 @@ import Toast from '@/components/Toast'
 import OrgModal from './components/OrgModal'
 import SuspendOrgModal from './components/SuspendOrgModal'
 import ActivateOrgModal from './components/ActivateOrgModal'
+import { groupByRole, useOrgUsers } from './useOrgUsers'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowUpRight01Icon, Copy01Icon, Edit02Icon } from '@hugeicons/core-free-icons/index'
 
@@ -25,10 +26,10 @@ const headBg = 'bg-[#9AC2FF] dark:bg-[#0052D2]/40'
 const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
 const STAT_META = [
-  { key: 'filiallar', title: 'FILIALLAR', bg: '#D7D5FD', suffix: ' ta', digits: 0, to: '/filiallar' },
-  { key: 'foydalanuvchilar', title: 'FOYDALANUVCHILAR', bg: '#CDE7FE', suffix: ' ta', digits: 0, to: '/foydalanuvchilar' },
-  { key: 'mijozlar', title: 'MIJOZLAR', bg: '#F8C3B3', suffix: ' ta', digits: 0, to: '/hisobotlar/mijozlar-boyicha' },
-  { key: 'savdo', title: 'SAVDO', bg: '#B3F8C5', suffix: ' UZS', digits: 2, to: '/hisobotlar/savdo-boyicha' },
+  { key: 'filiallar', title: 'FILIALLAR', bg: '#D7D5FD', suffix: ' ta', digits: 0 },
+  { key: 'foydalanuvchilar', title: 'FOYDALANUVCHILAR', bg: '#CDE7FE', suffix: ' ta', digits: 0 },
+  { key: 'mijozlar', title: 'MIJOZLAR', bg: '#F8C3B3', suffix: ' ta', digits: 0 },
+  { key: 'savdo', title: 'SAVDO', bg: '#B3F8C5', suffix: ' UZS', digits: 2 },
 ]
 
 // Backend Organization modelida to'xtatish/faollashtirishni KIM va AYNAN QACHON bajargani
@@ -72,8 +73,9 @@ export default function TashkilotDetailPage() {
   // `id`ga mos kelmasa (boshqa tashkilotga o'tilgan), localStorage'dagi qiymat ishlatiladi.
   const [actionMeta, setActionMeta] = useState(null)
   const statusMeta = actionMeta?.orgId === id ? actionMeta : loadStatusMeta(id)
+  const orgUsers = useOrgUsers(org?.id)
 
-  usePageHeader(org ? `Tashkilotlar › ${org.name}` : 'Tashkilotlar')
+  usePageHeader(org ? [{ label: 'Tashkilotlar', to: '/tashkilotlar' }, { label: org.name }] : 'Tashkilotlar')
 
   useEffect(() => {
     dispatch(fetchOrganizationDetail(id))
@@ -112,6 +114,8 @@ export default function TashkilotDetailPage() {
   if (!org) return null
 
   const suspended = org.status === 'suspended'
+  const userRoles = groupByRole(orgUsers.users)
+  const stats = { ...org.stats, foydalanuvchilar: orgUsers.loaded && !orgUsers.failed ? orgUsers.users.length : org.stats.foydalanuvchilar }
 
   function copy(text, label) {
     navigator.clipboard?.writeText(String(text))
@@ -127,7 +131,7 @@ export default function TashkilotDetailPage() {
             <button
               key={c.key}
               type="button"
-              onClick={() => navigate(c.to)}
+              onClick={() => window.open(`/tashkilotlar/${org.id}/${c.key}`, '_blank', 'noopener')}
               style={{ backgroundColor: c.bg }}
               className="cursor-pointer rounded-lg p-5 text-left text-[#0A0A0A] transition-[filter] duration-150 hover:brightness-95"
             >
@@ -135,7 +139,7 @@ export default function TashkilotDetailPage() {
                 {c.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
               </div>
               <p className="mt-3 text-[20px] font-semibold leading-tight">
-                {formatNumber(org.stats[c.key], c.digits)}{c.suffix}
+                {formatNumber(stats[c.key], c.digits)}{c.suffix}
               </p>
             </button>
           ))}
@@ -143,8 +147,8 @@ export default function TashkilotDetailPage() {
 
         {suspended && org.suspend && (
           <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Tashkilot to‘xtatilgan, {(statusMeta?.type === 'suspend' && statusMeta.at) || org.suspend.at || '—'}. Sabab:{' '}
-            {org.suspend.reason || '—'}
+            Tashkilot to‘xtatilgan, {(statusMeta?.type === 'suspend' && statusMeta.at) || org.suspend.at || ''}. Sabab:{' '}
+            {org.suspend.reason || ''}
             {statusMeta?.type === 'suspend' && statusMeta.by ? `. To‘xtatdi: ${statusMeta.by}` : ''}.
           </div>
         )}
@@ -183,12 +187,11 @@ export default function TashkilotDetailPage() {
                           onClick={() => navigate(`/filiallar/${b.id}`)}
                           className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA] cursor-pointer hover:underline"
                         >
-                          {b.name || '—'}
+                          {b.name || ''}
                         </td>
                         <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">
                           {b.phone ? (
                             <span className="inline-flex items-center gap-1.5">
-                              {b.phone}
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -200,14 +203,15 @@ export default function TashkilotDetailPage() {
                               >
                                 <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                               </button>
+                              {b.phone}
                             </span>
                           ) : (
-                            '—'
+                            ''
                           )}
                         </td>
-                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil || b.address || '—'}</td>
-                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.xodim != null ? `${b.xodim} ta` : '—'}</td>
-                        <td className="px-3 pr-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{b.ombor != null ? `${b.ombor} ta` : '—'}</td>
+                        <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil || b.address || ''}</td>
+                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{`${b.xodim ?? 0} ta`}</td>
+                        <td className="px-3 pr-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{`${b.ombor ?? 0} ta`}</td>
                       </tr>
                     ))
                   )}
@@ -245,21 +249,25 @@ export default function TashkilotDetailPage() {
             </Panel>
 
             <Panel title="Foydalanuvchilar:" className="min-h-0 flex-1">
-              {org.users.length === 0 ? (
+              {!orgUsers.loaded ? (
+                <div className="flex h-full items-center justify-center px-4 py-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#0052D2]" />
+                </div>
+              ) : userRoles.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
-                  Bu ma’lumot hali mavjud emas
+                  {orgUsers.failed ? 'Foydalanuvchilarni yuklab bo‘lmadi' : 'Foydalanuvchi yo‘q'}
                 </div>
               ) : (
                 <>
-                  {org.users.map((u) => (
+                  {userRoles.map((u) => (
                     <div key={u.role} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
                       <span className="text-[#525252] dark:text-muted-foreground">{u.role}</span>
-                      <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 2)} UZS</span>
+                      <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 0)} ta</span>
                     </div>
                   ))}
                   <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
                     <span>JAMI</span>
-                    <span>{formatNumber(org.stats.foydalanuvchilar, 2)} UZS</span>
+                    <span>{formatNumber(orgUsers.users.length, 0)} ta</span>
                   </div>
                 </>
               )}
@@ -270,7 +278,7 @@ export default function TashkilotDetailPage() {
         {/* Pastki panel */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
           <Button
-            onClick={() => setToast('Hisobot tayyorlanmoqda…')}
+            onClick={() => setToast({ variant: 'info', message: 'Hisobot tayyorlanmoqda…' })}
             className="h-9 gap-2 bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
             <FileBarChart2 className="h-4 w-4" /> Xisobot
@@ -311,7 +319,7 @@ export default function TashkilotDetailPage() {
           dispatch(updateOrganization({ id: org.id, draft: values }))
             .unwrap()
             .then(() => setToast('O‘zgarishlar saqlandi'))
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <SuspendOrgModal
@@ -327,7 +335,7 @@ export default function TashkilotDetailPage() {
               setActionMeta(meta)
               setToast('Tashkilot to‘xtatildi')
             })
-            .catch((err) => setToast(err || 'To‘xtatishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'To‘xtatishda xatolik yuz berdi' }))
         }}
       />
       <ActivateOrgModal
@@ -343,7 +351,7 @@ export default function TashkilotDetailPage() {
               setActionMeta(meta)
               setToast('Tashkilot faollashtirildi')
             })
-            .catch((err) => setToast(err || 'Faollashtirishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Faollashtirishda xatolik yuz berdi' }))
         }}
       />
       <Toast message={toast} />
@@ -371,7 +379,6 @@ function InfoRow({ label, value, onCopy }) {
     <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
       <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{label}</span>
       <span className="flex min-w-0 items-center justify-end gap-1.5 text-right font-medium text-[#0A0A0A] dark:text-white">
-        <span className="truncate">{value || '—'}</span>
         {onCopy && value && (
           <button
             type="button"
@@ -382,6 +389,7 @@ function InfoRow({ label, value, onCopy }) {
             <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
           </button>
         )}
+        <span className="truncate">{value || ''}</span>
       </span>
     </div>
   )

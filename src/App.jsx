@@ -44,6 +44,10 @@ import IshdanChiqarishDetailPage from '@/pages/Xodimlar/IshdanChiqarishDetailPag
 import IshgaQabulQilishDetailPage from '@/pages/Xodimlar/IshgaQabulQilishDetailPage'
 import TashkilotlarListPage from '@/pages/Tashkilotlar/TashkilotlarListPage'
 import TashkilotDetailPage from '@/pages/Tashkilotlar/TashkilotDetailPage'
+import TashkilotFiliallarPage from '@/pages/Tashkilotlar/TashkilotFiliallarPage'
+import TashkilotFoydalanuvchilarPage from '@/pages/Tashkilotlar/TashkilotFoydalanuvchilarPage'
+import TashkilotMijozlarPage from '@/pages/Tashkilotlar/TashkilotMijozlarPage'
+import TashkilotSavdoPage from '@/pages/Tashkilotlar/TashkilotSavdoPage'
 import FiliallarListPage from '@/pages/Filiallar/FiliallarListPage'
 import FilialDetailPage from '@/pages/Filiallar/FilialDetailPage'
 import FilialXodimlarPage from '@/pages/Filiallar/FilialXodimlarPage'
@@ -133,6 +137,10 @@ function App() {
           <Route path="/malumotnomalar/:slug" element={<MalumotnomaDetailPage />} />
           <Route path="/tashkilotlar" element={<TashkilotlarListPage />} />
           <Route path="/tashkilotlar/:id" element={<TashkilotDetailPage />} />
+          <Route path="/tashkilotlar/:id/filiallar" element={<TashkilotFiliallarPage />} />
+          <Route path="/tashkilotlar/:id/foydalanuvchilar" element={<TashkilotFoydalanuvchilarPage />} />
+          <Route path="/tashkilotlar/:id/mijozlar" element={<TashkilotMijozlarPage />} />
+          <Route path="/tashkilotlar/:id/savdo" element={<TashkilotSavdoPage />} />
           <Route path="/filiallar" element={<FiliallarListPage />} />
           <Route path="/filiallar/:id" element={<FilialDetailPage />} />
           <Route path="/filiallar/:id/xodimlar" element={<FilialXodimlarPage />} />

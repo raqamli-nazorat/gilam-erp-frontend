@@ -167,7 +167,7 @@ export default function IshgaQabulQilishDetailPage() {
         setDetail((d) => (d ? { ...d, status } : d))
         setToast('Tasdiqlandi')
       })
-      .catch((err) => setToast(err || 'Xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Xatolik yuz berdi' }))
   }
 
   // Endi "Bekor qilish" o'rniga xodimning o'zini ishdan chiqaramiz (terminateXodim — maxsus
@@ -184,7 +184,7 @@ export default function IshgaQabulQilishDetailPage() {
         setToast('Xodim ishdan chiqarildi')
         setHistoryVersion((v) => v + 1)
       })
-      .catch((err) => setToast(err || 'Ishdan chiqarishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Ishdan chiqarishda xatolik yuz berdi' }))
   }
 
   // Qayta ishga olish yangi "Ishga olish" hujjati yaratadi, lekin shu sahifada (shu xodimning
@@ -214,7 +214,7 @@ export default function IshgaQabulQilishDetailPage() {
         setToast('Xodim qayta ishga olindi')
         setHistoryVersion((v) => v + 1)
       })
-      .catch((err) => setToast(err || 'Qayta ishga olishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Qayta ishga olishda xatolik yuz berdi' }))
   }
 
   return (
@@ -223,31 +223,31 @@ export default function IshgaQabulQilishDetailPage() {
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className={cn('rounded-xl p-5 text-left', STATUS_CARD_CLS[rec.status])}>
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">HOLATI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{STATUS_LABEL[rec.status]}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{STATUS_LABEL[rec.status]}</p>
           </div>
           <div className="rounded-xl bg-[#CDE7FE] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">LAVOZIMI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{rec.lavozim || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{rec.lavozim || ''}</p>
           </div>
           <div className="rounded-xl bg-[#F8C3B3] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">FILIALI</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{rec.branch || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{rec.branch || ''}</p>
           </div>
           <div className="rounded-xl bg-[#B3F8C5] p-5 text-left text-[#0A0A0A]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">ISHGA OLINGAN</div>
-            <p className="mt-3 text-[22px] font-bold leading-tight">{rec.sana || '—'}</p>
+            <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{rec.sana || ''}</p>
           </div>
         </div>
 
         {employeeTerminated && lastDismissal && (
           <div className="shrink-0 rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || '—'}. Chiqardi:{' '}
-            {currentUser?.fullName || '—'}.
+            Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}. Chiqardi:{' '}
+            {currentUser?.fullName || ''}.
           </div>
         )}
         {justRehired && latestDoc && (
           <div className="shrink-0 rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-            Xodim qayta ishga olindi, {latestDoc.yaratilgan}. Ishga oldi: {currentUser?.fullName || '—'}. Avvalgi ishdan
+            Xodim qayta ishga olindi, {latestDoc.yaratilgan}. Ishga oldi: {currentUser?.fullName || ''}. Avvalgi ishdan
             chiqarish sababi tarixda saqlangan.
           </div>
         )}
@@ -270,12 +270,12 @@ export default function IshgaQabulQilishDetailPage() {
                 <tbody>
                   <tr className="h-11 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                     <td className="px-3 text-[13px] text-[#737373]">1</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.sana || '—'}</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.yaratilgan || '—'}</td>
-                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.ozgartirilgan || '—'}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.sana || ''}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.yaratilgan || ''}</td>
+                    <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.ozgartirilgan || ''}</td>
                     <td className="px-3 text-[13px] text-[#0A0A0A] dark:text-white">Ishga olindi</td>
-                    <td className="px-3 text-[13px] text-[#0052D2] dark:text-[#60A5FA]">{rec.lavozim || '—'}</td>
-                    <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.branch || '—'}</td>
+                    <td className="px-3 text-[13px] text-[#0052D2] dark:text-[#60A5FA]">{rec.lavozim || ''}</td>
+                    <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{rec.branch || ''}</td>
                   </tr>
                 </tbody>
               </table>
@@ -311,7 +311,7 @@ export default function IshgaQabulQilishDetailPage() {
 
         <div className="flex shrink-0 items-center justify-between gap-2.5 border-t border-[#E5E5E5] bg-[#F5F5F5] px-6 py-3 dark:border-white/10 dark:bg-white/5">
           <Button
-            onClick={() => setToast('Hisobot tayyorlanmoqda…')}
+            onClick={() => setToast({ variant: 'info', message: 'Hisobot tayyorlanmoqda…' })}
             className="h-9 gap-2 rounded-lg bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
             <FileBarChart2 className="h-4 w-4" /> Xisobot
@@ -367,7 +367,7 @@ export default function IshgaQabulQilishDetailPage() {
               setDetail((d) => ({ ...(d ?? {}), ...updated, status }))
               setToast('O‘zgarishlar saqlandi')
             })
-            .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
         }}
       />
       <TerminateEmployeeModal

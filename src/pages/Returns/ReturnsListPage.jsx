@@ -221,11 +221,11 @@ export default function ReturnsListPage() {
                   >
                     <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{i + 1}</TableCell>
                     <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{formatDate(r.date)}</TableCell>
-                    <TableCell className="max-w-[190px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{r.counterparty || '—'}</TableCell>
-                    <TableCell className="max-w-[140px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{partiya || '—'}</TableCell>
+                    <TableCell className="max-w-[190px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0A0A0A] dark:text-white">{r.counterparty || ''}</TableCell>
+                    <TableCell className="max-w-[140px] truncate px-3 text-[13px] font-medium leading-[18px] text-[#0052D2] dark:text-[#60A5FA]">{partiya || ''}</TableCell>
                     <TableCell className="px-3 text-right text-[13px] leading-[18px] text-[#0A0A0A] dark:text-white">{formatNumber(m2)}</TableCell>
                     <TableCell className="px-3 text-right text-[13px] leading-[18px] text-[#0A0A0A] dark:text-white">{formatNumber(sum)}</TableCell>
-                    <TableCell className="max-w-[170px] truncate px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{reason || '—'}</TableCell>
+                    <TableCell className="max-w-[170px] truncate px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{reason || ''}</TableCell>
                     <TableCell className="px-3 text-[13px] leading-[18px] text-[#525252] dark:text-muted-foreground">{TYPE_LABEL[r.type]}</TableCell>
                     <TableCell className="px-3"><ReturnStatusBadge status={r.status} /></TableCell>
                   </TableRow>

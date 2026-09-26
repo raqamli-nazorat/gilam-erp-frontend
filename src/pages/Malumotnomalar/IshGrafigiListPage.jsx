@@ -84,7 +84,7 @@ export default function IshGrafigiListPage() {
         setToast('Saqlandi')
         reloadRows()
       })
-      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
   }
 
   function confirmDelete() {
@@ -94,7 +94,7 @@ export default function IshGrafigiListPage() {
         setToast('O‘chirildi')
         reloadRows()
       })
-      .catch((err) => setToast(err || 'O‘chirishda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'O‘chirishda xatolik yuz berdi' }))
   }
 
   return (
@@ -188,19 +188,19 @@ export default function IshGrafigiListPage() {
                 >
                   <td className={cn(TD_MUTED, 'w-12 whitespace-nowrap')}>{i + 1}</td>
                   <td className="max-w-[200px] px-4 text-[14px] font-medium whitespace-nowrap text-[#0052D2] dark:text-[#60A5FA]">
-                    <div className="truncate" title={r.name}>{r.name || '—'}</div>
+                    <div className="truncate" title={r.name}>{r.name || ''}</div>
                   </td>
                   <td className="max-w-[200px] px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
-                    <div className="truncate" title={r.filial}>{r.filial || '—'}</div>
+                    <div className="truncate" title={r.filial}>{r.filial || ''}</div>
                   </td>
                   <td className="px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
-                    {r.fromHour && r.toHour ? `${r.fromHour} – ${r.toHour}` : '—'}
+                    {r.fromHour && r.toHour ? `${r.fromHour} – ${r.toHour}` : ''}
                   </td>
                   <td className="px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground">
-                    {formatDaysPart(r.days) || '—'}
+                    {formatDaysPart(r.days) || ''}
                   </td>
                   <td className="max-w-[320px] px-4 text-[13px] whitespace-nowrap text-[#0A0A0A] dark:text-muted-foreground 2xl:max-w-[480px]">
-                    <div className="truncate" title={r.tavsif}>{r.tavsif || '—'}</div>
+                    <div className="truncate" title={r.tavsif}>{r.tavsif || ''}</div>
                   </td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.yaratilgan}</td>
                   <td className={cn(TD_MUTED, 'whitespace-nowrap')}>{r.ozgartirilgan}</td>

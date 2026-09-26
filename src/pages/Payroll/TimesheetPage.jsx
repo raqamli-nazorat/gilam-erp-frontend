@@ -145,9 +145,9 @@ export default function TimesheetPage() {
                   <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                   <td className="px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white">{t.name}</td>
                   <td className="px-3 text-[13px] text-[#525252] dark:text-muted-foreground">{t.role}</td>
-                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{t.arrived || '—'}</td>
-                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{t.left || '—'}</td>
-                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{t.hours != null ? formatNumber(t.hours, 2) : '—'}</td>
+                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{t.arrived || ''}</td>
+                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{t.left || ''}</td>
+                  <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{formatNumber(t.hours ?? 0, 2)}</td>
                   <td className="px-3"><PayrollStatusBadge status={t.status} /></td>
                 </tr>
               ))}

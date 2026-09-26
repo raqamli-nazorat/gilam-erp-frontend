@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
-import { Plus } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { PLATFORM_REPORTS } from '@/features/hisobotlar/platformReportsData'
 import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { fetchBranches } from '@/features/filiallar/filiallarSlice'
 import { fetchUsers } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
-import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
 import DashboardStatCard from './components/DashboardStatCard'
 import DateRangeControl from './components/DateRangeControl'
@@ -18,7 +15,6 @@ import TopTashkilotlarCard from './components/TopTashkilotlarCard'
 import PulQandayKeladiCard from './components/PulQandayKeladiCard'
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
   const dispatch = useDispatch()
   const orgs = useSelector((s) => s.tashkilotlar.list)
   const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
@@ -51,15 +47,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <DateRangeControl />
-          <div className="flex items-center gap-2.5">
-            <DashboardExportButton onExport={() => setToast('Backend hali ulanmagan')} />
-            <Button
-              onClick={() => navigate('/tashkilotlar')}
-              className="h-9 gap-2 rounded-md bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
-            >
-              <Plus className="h-4 w-4" /> Qo‘shish
-            </Button>
-          </div>
+          <DashboardExportButton onExport={() => setToast({ variant: 'warning', message: 'Backend hali ulanmagan' })} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

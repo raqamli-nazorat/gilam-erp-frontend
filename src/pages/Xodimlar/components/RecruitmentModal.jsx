@@ -25,8 +25,8 @@ const SINGLE_KEY = '__single__'
 // Ishga olish/tahrirlash oynasi — uch rejim:
 // - Tahrirlash (`record` bor): bitta hujjatning maydonlari, pagersiz.
 // - Bitta xodim ishga olish (`record` yo'q, `employees` prop berilmagan): "Xodim" maydoni
-//   bosilganda EmployeePickerModal (bitta tanlash) ochiladi; pager doim ko'rinadi lekin
-//   statik "1-Xodim" (navbatda bitta xodim bo'lgani uchun o'q/olib-tashlash faolsiz).
+//   bosilganda EmployeePickerModal (bitta tanlash) ochiladi; navbatda bitta xodim bo'lgani
+//   uchun pager ko'rsatilmaydi.
 // - Bir nechta xodim ishga olish (`record` yo'q, `employees` — oldindan tanlangan ro'yxat):
 //   navbat — har bir xodimning O'Z alohida maydonlari bor, pager ("N-Xodim (N/JAMI)") orqali
 //   navbat bo'ylab o'tiladi, qizil tugma joriy xodimni navbatdan (saqlamasdan) olib tashlaydi.

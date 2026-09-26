@@ -13,7 +13,7 @@ export default function StatCards({ items }) {
           className={cn('rounded-xl p-5 text-left text-[#0A0A0A]')}
         >
           <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">{it.title}</div>
-          <p className="mt-3 text-[22px] font-bold leading-tight">{it.value}</p>
+          <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{it.value}</p>
         </div>
       ))}
     </div>

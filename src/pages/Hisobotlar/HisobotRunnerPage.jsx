@@ -37,7 +37,7 @@ const TH = 'px-3 text-[13px] font-semibold uppercase leading-[18px] text-[#52525
 function cellText(row, col) {
   const v = row[col.key]
   if (!col.num && col.num !== 0 && !col.perRowNum) return v ?? ''
-  if (v == null) return '—'
+  if (v == null) return formatNumber(0, col.num ?? 2)
   if (col.perRowNum) return formatNumber(v, row.valyuta === 'UZS' ? 0 : 2)
   return formatNumber(v, col.num)
 }
@@ -176,7 +176,7 @@ function GenericReportRunner({ slug }) {
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={i} className="h-12 border-b border-[#E5E5E5] last:border-0 dark:border-white/5">
-                      <td className="px-3 text-[13px] text-[#737373]">{r.marker ? '—' : i + 1}</td>
+                      <td className="px-3 text-[13px] text-[#737373]">{r.marker ? '' : i + 1}</td>
                       {config.columns.map((c, ci) => {
                         const v = r[c.key]
                         const neg = c.negRed && typeof v === 'number' && v < 0

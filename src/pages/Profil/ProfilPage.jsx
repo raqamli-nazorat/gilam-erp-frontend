@@ -163,7 +163,7 @@ function PassportFileField({ file, onChange }) {
 function draftFromSources(user, xodim) {
   return {
     fullName: user?.fullName ?? '',
-    phone: user?.phone && user.phone !== '—' ? user.phone : '',
+    phone: user?.phone && user.phone !== '' ? user.phone : '',
     email: '',
     telegram: '',
     balansi: '',
@@ -283,7 +283,7 @@ export default function ProfilPage() {
         setToast('Saqlandi')
         setInitial(draft)
       })
-      .catch((err) => setToast(err || 'Saqlashda xatolik yuz berdi'))
+      .catch((err) => setToast({ variant: 'error', message: err || 'Saqlashda xatolik yuz berdi' }))
       .finally(() => setSaving(false))
   }
 
@@ -331,7 +331,7 @@ export default function ProfilPage() {
                 type="file"
                 accept="image/*"
                 hidden
-                onChange={() => setToast('Backend hali ulanmagan — rasm saqlanmadi')}
+                onChange={() => setToast({ variant: 'warning', message: 'Backend hali ulanmagan — rasm saqlanmadi' })}
               />
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function ProfilPage() {
           </Field>
 
           <Field label="Lavozimi">
-            <Input value={xodim?.lavozim || '—'} disabled className={fieldCls} />
+            <Input value={xodim?.lavozim || ''} disabled className={fieldCls} />
           </Field>
           <Field label="Roli">
             <Input value={user.role} disabled className={fieldCls} />
@@ -389,7 +389,7 @@ export default function ProfilPage() {
             <Input value={draft.manzil} onChange={(e) => set('manzil', e.target.value)} disabled={!xodim} className={fieldCls} />
           </Field>
           <Field label="Tabel raqami">
-            <Input value={xodim?.kartaRaqami || '—'} disabled className={fieldCls} />
+            <Input value={xodim?.kartaRaqami || ''} disabled className={fieldCls} />
           </Field>
 
           <Field label="Passport ma’lumotlari">
@@ -426,7 +426,7 @@ export default function ProfilPage() {
           </Field>
 
           <Field label="Oylik maosh (UZS)">
-            <Input value={oylikMaosh || '—'} disabled className={fieldCls} />
+            <Input value={oylikMaosh || ''} disabled className={fieldCls} />
           </Field>
           <Field label="Balansi (UZS)">
             <Input value={draft.balansi} onChange={(e) => set('balansi', e.target.value)} placeholder="0" className={fieldCls} />
@@ -441,7 +441,7 @@ export default function ProfilPage() {
             />
           </Field>
           <Field label="Ishga kirgan sana">
-            <Input value={xodim?.ishgaOlinganSana || '—'} disabled className={fieldCls} />
+            <Input value={xodim?.ishgaOlinganSana || ''} disabled className={fieldCls} />
           </Field>
 
           <Field label="Interfeys tili">
@@ -487,7 +487,7 @@ export default function ProfilPage() {
           dispatch(changePassword({ id: user.id, password: newPassword }))
             .unwrap()
             .then(() => setToast('Parol yangilandi'))
-            .catch((err) => setToast(err || 'Parolni almashtirishda xatolik yuz berdi'))
+            .catch((err) => setToast({ variant: 'error', message: err || 'Parolni almashtirishda xatolik yuz berdi' }))
         }}
       />
       <Toast message={toast} />

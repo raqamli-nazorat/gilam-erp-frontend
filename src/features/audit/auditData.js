@@ -97,8 +97,8 @@ export function getActionInfo(action) {
   if (upper === 'ACCESS') return ACTION_CONFIG[3]
 
   return {
-    label: upper || '—',
-    title: upper || '—',
+    label: upper || '',
+    title: upper || '',
     cls: 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300',
   }
 }
@@ -110,7 +110,7 @@ export const amalBadgeCls = (action) => getActionInfo(action).cls
  * @param {string} isoString
  */
 export function formatAuditDateTime(isoString) {
-  if (!isoString) return { date: '—', time: '—', full: '—' }
+  if (!isoString) return { date: '', time: '', full: '' }
   try {
     const d = new Date(isoString)
     if (isNaN(d.getTime())) return { date: isoString, time: '', full: isoString }

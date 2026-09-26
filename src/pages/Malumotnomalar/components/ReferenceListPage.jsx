@@ -112,7 +112,7 @@ export default function ReferenceListPage({
       setToast('Saqlandi')
       reloadRows()
     } catch (err) {
-      setToast(extractErrorMessage(err, 'Saqlashda xatolik yuz berdi'))
+      setToast({ variant: 'error', message: extractErrorMessage(err, 'Saqlashda xatolik yuz berdi') })
       throw err
     }
   }
@@ -123,7 +123,7 @@ export default function ReferenceListPage({
       setToast('O‘chirildi')
       reloadRows()
     } catch (err) {
-      setToast(extractErrorMessage(err, 'O‘chirishda xatolik yuz berdi'))
+      setToast({ variant: 'error', message: extractErrorMessage(err, 'O‘chirishda xatolik yuz berdi') })
     }
   }
 
@@ -227,7 +227,7 @@ export default function ReferenceListPage({
                         )}
                       >
                         <div className="truncate" title={typeof value === 'string' ? value : undefined}>
-                          {value === '' || value == null ? '—' : value}
+                          {value === '' || value == null ? '' : value}
                         </div>
                       </td>
                     )

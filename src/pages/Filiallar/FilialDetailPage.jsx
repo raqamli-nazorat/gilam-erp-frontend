@@ -126,21 +126,28 @@ export default function FilialDetailPage() {
                     </tr>
                   ) : (
                     staffRows.map((x, i) => (
-                      <tr key={x.id} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
+                      <tr
+                        key={x.id}
+                        onClick={() => window.open(`/malumotnomalar/xodimlar/${x.id}`, '_blank', 'noopener')}
+                        className="h-10 cursor-pointer hover:bg-[#E3E9F6] dark:hover:bg-white/5"
+                      >
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td className="px-3 text-[13px] font-medium text-[#0052D2] dark:text-[#60A5FA]">{x.name}</td>
-                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim || '—'}</td>
+                        <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">{x.lavozim || ''}</td>
                         <td className="px-3 text-[13px] text-[#0a0a0a] dark:text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5">
-                            {x.phone}
                             <button
                               type="button"
-                              onClick={() => copy(x.phone, 'Telefon')}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copy(x.phone, 'Telefon')
+                              }}
                               className="text-[#737373] transition-colors hover:text-[#0052D2] dark:hover:text-[#60A5FA]"
                               aria-label="Nusxa olish"
                             >
                               <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={2} />
                             </button>
+                            {x.phone}
                           </span>
                         </td>
                         <td className="px-3 pr-4 text-[13px] text-[#525252] dark:text-muted-foreground">{x.holat}</td>
