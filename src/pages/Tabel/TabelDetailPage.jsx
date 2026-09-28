@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { Check, ChevronLeft, Filter, RefreshCw, Search, X } from 'lucide-react'
+import { Check, ChevronLeft, Filter, Loader2, RefreshCw, Search, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Toast from '@/components/Toast'
-import { findDuplicate, overridesSaved, statusChanged, tabelHeaderChanged, tabelSynced, useTabel } from '@/features/tabel/tabelSlice'
-import { BRANCHES, MONTHS, SCHEDULES, WEEKDAY_SHORT, branchName, buildSheet, cellKind, fmtDateTime, fmtHours } from '@/features/tabel/tabelData'
+import { useTimesheet } from '@/features/tabel/useTimesheet'
+import { MONTHS, WEEKDAY_SHORT, buildSheet, cellKind, entryToPayload, fmtDateTime, fmtHours, toIsoDateTime } from '@/features/tabel/tabelData'
+import { extractErrorMessage } from '@/services/apiHelpers'
+import {
+  approveTimesheet,
+  cancelTimesheet,
+  createTimesheetItem,
+  patchTimesheet,
+  patchTimesheetItem,
+  syncTimesheet,
+} from '@/services/timesheetService'
 import TabelHeaderCards from './components/TabelHeaderCards'
 import TabelFilterModal, { EMPTY_TABEL_FILTERS } from './components/TabelFilterModal'
 import DayDetailModal from './components/DayDetailModal'
@@ -41,9 +49,64 @@ const fold = (s) => s.toLocaleLowerCase('uz').replace(/[ʻʼ‘’`']/g, "'")
 
 export default function TabelDetailPage() {
   const { id } = useParams()
-  const { tabel, sheet } = useTabel(id)
-  if (!tabel) return <Navigate to="/tabel" replace />
-  return <TabelDetail tabel={tabel} sheet={sheet} />
+  const { data, loading, error, reload } = useTimesheet(id)
+
+  usePageHeader([{ label: 'Tabel', to: '/tabel' }, data ? `${data.tabel.branchName}, ${MONTHS[data.tabel.month]}` : '…'])
+
+  if (!data) {
+    if (error?.response?.status === 404) return <Navigate to="/tabel" replace />
+    return <PageState loading={loading} error={error} onRetry={() => reload()} />
+  }
+  return <TabelDetail data={data} reload={reload} />
+}
+
+// Yuklanish / xato holati (tabel va xodim sahifalari uchun)
+export function PageState({ loading, error, onRetry }) {
+  return (
+    <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-3 rounded-xl bg-white text-sm text-[#737373] dark:bg-card dark:text-muted-foreground">
+      {loading || !error ? (
+        <>
+          <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+          Yuklanmoqda...
+        </>
+      ) : (
+        <>
+          <p className="text-[#DC2626]">{extractErrorMessage(error, 'Xatolik yuz berdi')}</p>
+          <Button variant="outline" onClick={onRetry} className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px]">
+            Qayta urinish
+          </Button>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Saqlanmagan kunlik o'zgarishlarni backendga yozadi (mavjud qator — PATCH, yangisi — POST).
+// Ketma-ket yuboriladi (429 bo'lmasligi uchun). Natija: yozilmay qolganlari va birinchi xato.
+async function persistPending(tabelId, { year, month }, pending) {
+  const failed = {}
+  let firstError = null
+  for (const [empId, byDay] of Object.entries(pending)) {
+    for (const [dayStr, entry] of Object.entries(byDay)) {
+      const day = Number(dayStr)
+      const payload = entryToPayload(entry, { year, month, day })
+      try {
+        if (entry.itemId) await patchTimesheetItem(entry.itemId, payload)
+        else
+          await createTimesheetItem({
+            employee_timesheet: tabelId,
+            employee: empId,
+            date: toIsoDateTime(year, month, day),
+            work_hour_in_plan: Number(entry.plan || 0).toFixed(2),
+            ...payload,
+          })
+      } catch (err) {
+        firstError ??= err
+        failed[empId] = { ...failed[empId], [day]: entry }
+      }
+    }
+  }
+  return { failed, error: firstError }
 }
 
 // Holatga qarab ogohlantirish qatori rangi: qoralama — to'q sariq, tasdiqlangan — yashil, bekor — qizil
@@ -59,13 +122,13 @@ const BTN_OUTLINE = cn(
   'border-[#E5E5E5] bg-white text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white'
 )
 
-function TabelDetail({ tabel, sheet: savedSheet }) {
-  const dispatch = useDispatch()
+function TabelDetail({ data, reload }) {
   const navigate = useNavigate()
+  const { tabel, items, employees, scheduleName } = data
   const { id, status, year, month } = tabel
-  const filial = branchName(tabel.branchId)
+  const filial = tabel.branchName
   const editable = status === 'draft'
-  const allTabels = useSelector((s) => s.tabel.items)
+  const [busy, setBusy] = useState(false)
 
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_TABEL_FILTERS)
@@ -79,17 +142,8 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
   const [pending, setPending] = useState({})
   const dirty = Object.keys(pending).length > 0
 
-  const sheet = useMemo(() => {
-    if (!dirty) return savedSheet
-    const merged = { ...tabel.overrides }
-    Object.entries(pending).forEach(([empId, byDay]) => {
-      merged[empId] = { ...merged[empId], ...byDay }
-    })
-    return buildSheet({ ...tabel, overrides: merged })
-  }, [dirty, savedSheet, tabel, pending])
+  const sheet = useMemo(() => buildSheet({ year, month, items, employees, pending }), [year, month, items, employees, pending])
   const { days, rows } = sheet
-
-  usePageHeader([{ label: 'Tabel', to: '/tabel' }, `${filial}, ${MONTHS[month]}`])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -98,12 +152,18 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
   }, [toast])
 
   const hasFilter = Boolean(filters.schedule || filters.deviation)
+  // Xodimning o'z grafigi (backend work_schedule_info) bo'lmasa — filialning amaldagi grafigi
+  const scheduleOf = (r) => r.schedule || scheduleName || ''
+  const scheduleNames = useMemo(
+    () => [...new Set(rows.map((r) => r.schedule || scheduleName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'uz')),
+    [rows, scheduleName]
+  )
 
   const visible = useMemo(() => {
     const q = fold(search.trim())
     return rows.filter((r) => {
       if (q && !fold(r.name).includes(q)) return false
-      if (filters.schedule && r.schedule !== filters.schedule) return false
+      if (filters.schedule && scheduleOf(r) !== filters.schedule) return false
       if (filters.deviation) {
         const kinds = r.entries.map(cellKind)
         if (filters.deviation === 'norma') return !kinds.includes('kam') && !kinds.includes('kelmagan')
@@ -111,7 +171,8 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
       }
       return true
     })
-  }, [rows, search, filters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, search, filters, scheduleName])
 
   const totals = useMemo(() => {
     const perDay = days.map((_, i) => visible.reduce((s, r) => s + r.entries[i].fakt, 0))
@@ -129,43 +190,73 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
     ['Fakt soat', `${fmtHours(allFakt, true)} / ${fmtHours(allPlan, true)}`],
   ]
 
-  function savePending() {
-    if (dirty) dispatch(overridesSaved({ id, overrides: pending }))
-    setPending({})
+  const errorToast = (err, fallback) => setToast({ variant: 'error', message: extractErrorMessage(err, fallback) })
+
+  // Saqlanmagan o'zgarishlarni yozadi; hammasi yozilsa true. Xato bo'lganlari sahifada qoladi.
+  async function savePending() {
+    if (!dirty) return true
+    const { failed, error } = await persistPending(id, { year, month }, pending)
+    setPending(failed)
+    await reload({ silent: true })
+    if (error) {
+      errorToast(error, 'Ba’zi kunlarni saqlab bo‘lmadi')
+      return false
+    }
+    return true
   }
 
-  // davomat platformasidan qayta olish (hozircha backend yo'q — mahalliy simulyatsiya)
-  function sync() {
+  // Tugma amallari uchun umumiy o'ram: bir vaqtda bitta amal, xato — toast
+  async function run(action, fallbackError) {
+    if (busy) return
+    setBusy(true)
+    try {
+      await action()
+    } catch (err) {
+      errorToast(err, fallbackError)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Davomat platformasidan qayta to'ldirish (backend sync/), so'ng qayta yuklash.
+  // Saqlanmagan o'zgarishlar tashlab yuboriladi.
+  async function sync() {
     setSyncOpen(false)
     setRefreshing(true)
-    setTimeout(() => {
-      dispatch(tabelSynced(id))
+    try {
+      await syncTimesheet(id)
       setPending({})
-      setRefreshing(false)
+      await reload({ silent: true })
       setToast('Ma’lumotlar yangilandi')
-    }, 700)
+    } catch (err) {
+      errorToast(err, 'Ma’lumotlarni yangilab bo‘lmadi')
+    } finally {
+      setRefreshing(false)
+    }
   }
 
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <div className={cn('shrink-0 rounded-lg px-5 py-2 text-[13px] font-medium', NOTICE_CLS[status])}>
-        Tasdiqlangandan so‘ng kunlik ma’lumotlarni o‘zgartirib bo‘lmaydi.
+        {status === 'cancelled' && tabel.cancelReason
+          ? `Bekor qilingan${tabel.cancelledAt ? ` (${fmtDateTime(tabel.cancelledAt)})` : ''}: ${tabel.cancelReason}`
+          : 'Tasdiqlangandan so‘ng kunlik ma’lumotlarni o‘zgartirib bo‘lmaydi.'}
       </div>
 
       <TabelHeaderCards
         tabel={tabel}
+        busy={busy}
         summary={{ employees: rows.length, plan: sheet.plan, fakt: sheet.fakt }}
-        onChange={(patch) => {
-          const next = { ...tabel, ...patch }
-          if (patch.orgId) next.branchId = BRANCHES.find((b) => b.orgId === patch.orgId)?.id ?? ''
-          if (next.branchId && findDuplicate(allTabels, next, id)) {
-            setToast({ variant: 'error', message: `${branchName(next.branchId)} uchun ${MONTHS[next.month]} oyi tabeli allaqachon mavjud` })
-            return
-          }
-          setPending({}) // xodimlar/oy o'zgaradi — kunlik o'zgarishlar yaroqsiz
-          dispatch(tabelHeaderChanged({ id, patch }))
-        }}
+        onError={(message) => setToast({ variant: 'error', message })}
+        onChange={(patch) =>
+          run(async () => {
+            await patchTimesheet(id, patch)
+            setPending({}) // xodimlar/oy o'zgaradi — kunlik o'zgarishlar yaroqsiz
+            await reload({ silent: true })
+            setToast('Tabel yangilandi')
+          }, 'Tabelni o‘zgartirib bo‘lmadi')
+        }
       />
 
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
@@ -253,7 +344,7 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
                     </button>
                   </td>
                   <td className={cn(TD, STICKY_L, EDGE_L, 'whitespace-nowrap px-2 text-[14px] text-[#525252] dark:text-muted-foreground')} style={{ left: W_NUM + W_NAME }}>
-                    {SCHEDULES[r.schedule].name}
+                    {scheduleOf(r)}
                   </td>
                   {r.entries.map((e, i) => (
                     <td key={days[i].day} className={cn(TD, 'px-1 text-center')}>
@@ -287,20 +378,21 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
       <div className="flex shrink-0 items-center justify-end gap-2.5 rounded-xl bg-[#F5F5F5] px-4 py-3 dark:bg-white/5">
         {status === 'draft' ? (
           <>
-            <Button onClick={() => setConfirm('cancel')} className={cn(BTN, 'bg-[#DC2626] text-white hover:bg-[#B91C1C]')}>
+            <Button onClick={() => setConfirm('cancel')} disabled={busy} className={cn(BTN, 'bg-[#DC2626] text-white hover:bg-[#B91C1C]')}>
               <X className="h-4 w-4" /> Bekor qilish
             </Button>
             <Button
-              onClick={() => {
-                savePending()
-                setToast('Tabel saqlandi')
-              }}
-              disabled={!dirty}
+              onClick={() =>
+                run(async () => {
+                  if (await savePending()) setToast('Tabel saqlandi')
+                }, 'Tabelni saqlab bo‘lmadi')
+              }
+              disabled={!dirty || busy}
               className={cn(BTN, 'bg-[#0052D2] text-white hover:bg-[#0047B8] disabled:opacity-50')}
             >
-              <Check className="h-4 w-4" /> Saqlash
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Saqlash
             </Button>
-            <Button onClick={() => setConfirm('approve')} className={cn(BTN, 'bg-[#16A34A] text-white hover:bg-[#15803D]')}>
+            <Button onClick={() => setConfirm('approve')} disabled={busy} className={cn(BTN, 'bg-[#16A34A] text-white hover:bg-[#15803D]')}>
               <Check className="h-4 w-4" /> Tasdiqlash
             </Button>
           </>
@@ -310,7 +402,7 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
               <ChevronLeft className="h-4 w-4" /> Jurnalga qaytish
             </Button>
             {status === 'confirmed' && (
-              <Button variant="outline" onClick={() => setConfirm('cancelConfirmed')} className={BTN_OUTLINE}>
+              <Button variant="outline" onClick={() => setConfirm('cancelConfirmed')} disabled={busy} className={BTN_OUTLINE}>
                 <X className="h-4 w-4" /> Bekor qilish
               </Button>
             )}
@@ -318,7 +410,13 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
         )}
       </div>
 
-      <TabelFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <TabelFilterModal
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        filters={filters}
+        onApply={setFilters}
+        schedules={scheduleNames}
+      />
 
       <DayDetailModal
         target={dayTarget}
@@ -338,14 +436,18 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
         title="Tabel tasdiqlansinmi?"
         confirmLabel="Tasdiqlash"
         success
+        busy={busy}
         rows={summaryRows}
-        onConfirm={() => {
-          // Tasdiqlashdan oldin saqlanmagan o'zgarishlar yoziladi
-          savePending()
-          dispatch(statusChanged({ id, status: 'confirmed' }))
-          setToast('Tabel tasdiqlandi')
-          setConfirm(null)
-        }}
+        onConfirm={() =>
+          run(async () => {
+            // Tasdiqlashdan oldin saqlanmagan o'zgarishlar yoziladi
+            if (!(await savePending())) return
+            await approveTimesheet(id)
+            await reload({ silent: true })
+            setToast('Tabel tasdiqlandi')
+            setConfirm(null)
+          }, 'Tabelni tasdiqlab bo‘lmadi')
+        }
       />
 
       {/* Bekor qilish — qoralama va tasdiqlangan tabel uchun: sabab (majburiy) + hujjat */}
@@ -354,16 +456,20 @@ function TabelDetail({ tabel, sheet: savedSheet }) {
         onOpenChange={(o) => !o && setConfirm(null)}
         title={confirm === 'cancelConfirmed' ? 'Tasdiqlangan tabel bekor qilinsinmi?' : 'Tabel bekor qilinsinmi?'}
         rows={
-          confirm === 'cancelConfirmed' && tabel.confirmedAt
-            ? [...summaryRows, ['Tasdiqlangan', fmtDateTime(tabel.confirmedAt)]]
+          confirm === 'cancelConfirmed' && (tabel.approvedAt || tabel.updatedAt)
+            ? [...summaryRows, ['Tasdiqlangan', fmtDateTime(tabel.approvedAt || tabel.updatedAt)]]
             : summaryRows
         }
-        onConfirm={({ reason, file }) => {
-          setPending({})
-          dispatch(statusChanged({ id, status: 'cancelled', reason, documentName: file?.name }))
-          setToast('Tabel bekor qilindi')
-          setConfirm(null)
-        }}
+        busy={busy}
+        onConfirm={({ reason, file }) =>
+          run(async () => {
+            await cancelTimesheet(id, { reason, file })
+            setPending({})
+            await reload({ silent: true })
+            setToast('Tabel bekor qilindi')
+            setConfirm(null)
+          }, 'Tabelni bekor qilib bo‘lmadi')
+        }
       />
 
       <TabelConfirmModal

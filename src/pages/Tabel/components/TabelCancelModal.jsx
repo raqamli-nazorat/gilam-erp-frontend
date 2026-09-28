@@ -13,8 +13,8 @@ function formatFileSize(bytes) {
 }
 
 // Figma: "Tabel bekor qilinsinmi?" — ma'lumot bloki, Sabab (majburiy) va Hujjat (ixtiyoriy, PDF/Excel).
-// onConfirm({ reason, file })
-export default function TabelCancelModal({ open, onOpenChange, title = 'Tabel bekor qilinsinmi?', rows, onConfirm }) {
+// onConfirm({ reason, file }). allowFile={false} — hujjat maydoni yashiriladi (backend fayl qabul qilmasa).
+export default function TabelCancelModal({ open, onOpenChange, title = 'Tabel bekor qilinsinmi?', rows, onConfirm, allowFile = true, busy }) {
   const [reason, setReason] = useState('')
   const [file, setFile] = useState(null)
   const [dragOver, setDragOver] = useState(false)
@@ -44,7 +44,7 @@ export default function TabelCancelModal({ open, onOpenChange, title = 'Tabel be
             <X className="size-4" /> Yopish
           </ModalButton>
           <ModalButton
-            disabled={!reason.trim()}
+            disabled={!reason.trim() || busy}
             onClick={() => onConfirm({ reason: reason.trim(), file })}
             className="bg-[#DC2626] hover:bg-[#B91C1C]"
           >
@@ -73,6 +73,7 @@ export default function TabelCancelModal({ open, onOpenChange, title = 'Tabel be
           />
         </div>
 
+        {allowFile && (
         <div>
           <label className="mb-2 block text-[14px] font-medium leading-5 text-[#0A0A0A] dark:text-white">Hujjat</label>
           <input
@@ -132,6 +133,7 @@ export default function TabelCancelModal({ open, onOpenChange, title = 'Tabel be
             </button>
           )}
         </div>
+        )}
       </div>
     </TabelModal>
   )

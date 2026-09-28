@@ -1,6 +1,7 @@
 // "Tabel" — xodimlarning oylik ish vaqti hisobi (filial + oy kesimida).
-// Backendda hozircha tabel endpoint'i yo'q — tashkilot/filial/xodim ro'yxatlari, tabellar va kunlik
-// yozuvlar shu yerda deterministik tarzda yaratiladi (bir xil kalit — har doim bir xil natija).
+// Ma'lumotlar backenddan olinadi: hr/timesheets/ (tabel) va hr/timesheet-items/ (xodimning kunlik
+// davomati). Bu faylda — backend javobini sahifalar uchun qulay shaklga keltiruvchi va hisoblovchi
+// yordamchilar.
 
 export const MONTHS = [
   'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
@@ -17,57 +18,23 @@ export const TABEL_STATUS = {
   cancelled: 'Bekor qilingan',
 }
 
-export const ORGANIZATIONS = [
-  { id: 'sag', name: 'SAG Gilamlari' },
-  { id: 'buxoro', name: 'Buxoro Gilam Savdo' },
-  { id: 'namangan', name: 'Namangan Karpet' },
-  { id: 'andijon', name: 'Andijon Gilam Markazi' },
-  { id: 'fargona', name: 'Farg‘ona To‘qimachilik' },
-  { id: 'xorazm', name: 'Xorazm Gilam' },
-  { id: 'qashqadaryo', name: 'Qashqadaryo Savdo' },
-]
+// Backend `status` <-> frontend holati ("approved" frontendda "confirmed" deb yuritiladi — StatusTabs bilan mos)
+const FROM_BACKEND_STATUS = { draft: 'draft', approved: 'confirmed', cancelled: 'cancelled' }
+export const TABEL_STATUS_PARAM = { draft: 'draft', confirmed: 'approved', cancelled: 'cancelled' }
 
-// staff — filialdagi odatiy xodimlar soni (tabel yaratilganda shundan olinadi)
-export const BRANCHES = [
-  { id: 'registon', orgId: 'sag', name: 'Registon filiali', staff: 8 },
-  { id: 'siyob', orgId: 'sag', name: 'Siyob filiali', staff: 15 },
-  { id: 'chilonzor', orgId: 'sag', name: 'Chilonzor filiali', staff: 22 },
-  { id: 'yunusobod', orgId: 'sag', name: 'Yunusobod filiali', staff: 29 },
-  { id: 'zavod', orgId: 'sag', name: 'Zavod ombori', staff: 11 },
-  { id: 'buxoro-m', orgId: 'buxoro', name: 'Buxoro markaziy', staff: 18 },
-  { id: 'gijduvon', orgId: 'buxoro', name: 'G‘ijduvon filiali', staff: 25 },
-  { id: 'namangan-m', orgId: 'namangan', name: 'Namangan markaziy', staff: 32 },
-  { id: 'chust', orgId: 'namangan', name: 'Chust filiali', staff: 14 },
-  { id: 'andijon-m', orgId: 'andijon', name: 'Andijon markaziy', staff: 21 },
-  { id: 'fargona-m', orgId: 'fargona', name: 'Farg‘ona markaziy', staff: 28 },
-  { id: 'qoqon', orgId: 'fargona', name: 'Qo‘qon filiali', staff: 10 },
-  { id: 'urganch', orgId: 'xorazm', name: 'Urganch markaziy', staff: 17 },
-  { id: 'qarshi', orgId: 'qashqadaryo', name: 'Qarshi filiali', staff: 24 },
-]
+// "Oy uchun" tanlovlari — backend for_month: 1..12
+export const MONTH_OPTIONS = MONTHS.map((label, i) => ({ value: String(i + 1), label }))
 
-export const orgName = (id) => ORGANIZATIONS.find((o) => o.id === id)?.name ?? ''
-export const branchName = (id) => BRANCHES.find((b) => b.id === id)?.name ?? ''
-
-// Ish grafiklari: qaysi hafta kunlari ishlanadi va kunlik reja soati.
-export const SCHEDULES = {
-  asosiy: { id: 'asosiy', name: 'Asosiy smena', days: [1, 2, 3, 4, 5], hours: 8, start: '09:00', lunch: '13:00', back: '14:00', end: '18:00' },
-  ombor: { id: 'ombor', name: 'Ombor smena', days: [1, 2, 3, 4, 5, 6], hours: 8, start: '09:00', lunch: '13:00', back: '14:00', end: '18:00' },
-  kassa: { id: 'kassa', name: 'Kassa smena', days: [1, 3, 5, 6], hours: 8, start: '09:00', lunch: '13:00', back: '14:00', end: '18:00' },
+// Yil + oy tanlovlari: keyingi oydan orqaga 12 oy — qiymat "YYYY-M" (M: 1..12)
+export function periodOptions(now = new Date()) {
+  return Array.from({ length: 13 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + 1 - i, 1)
+    return periodOption(d.getFullYear(), d.getMonth() + 1)
+  })
 }
-
-const NAMES = [
-  ['Abdullayev Otabek', 'ombor'], ['Karimov Jasur', 'asosiy'], ['Yusupova Malika', 'asosiy'],
-  ['Rahimova Dilfuza', 'ombor'], ['Xolmatov Bekzod', 'kassa'], ['Norboyev Shohruh', 'asosiy'],
-  ['Ismoilova Madina', 'ombor'], ['Nazarova Zilola', 'asosiy'], ['Sobirova Feruza', 'asosiy'],
-  ['Hamidov Aziz', 'ombor'], ['Ortiqova Nodira', 'asosiy'], ['Qodirova Nigora', 'asosiy'],
-  ['Rustamov Javohir', 'ombor'], ['Saidova Gulnora', 'asosiy'], ['Botirov Sherzod', 'kassa'],
-  ['Tursunov Akmal', 'asosiy'], ['Ergasheva Shahnoza', 'asosiy'], ['Mirzayev Dilshod', 'ombor'],
-  ['Jo‘rayeva Kamola', 'kassa'], ['Umarov Sardor', 'asosiy'], ['Qosimova Dildora', 'asosiy'],
-  ['Safarov Bobur', 'ombor'], ['Aliyeva Sevara', 'asosiy'], ['Xasanov Ulug‘bek', 'ombor'],
-  ['Po‘latova Munisa', 'asosiy'], ['Toshmatov Farrux', 'kassa'], ['G‘aniyeva Laylo', 'asosiy'],
-  ['Yo‘ldoshev Anvar', 'ombor'], ['Raximov Islom', 'asosiy'], ['Abdurahmonova Zarina', 'asosiy'],
-  ['Normatov Jamshid', 'ombor'], ['Sultonova Mohira', 'asosiy'],
-]
+export function periodOption(year, forMonth) {
+  return { value: `${year}-${forMonth}`, label: `${MONTHS[forMonth - 1]} ${year}` }
+}
 
 export const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate()
 
@@ -75,25 +42,6 @@ export function monthDays(year, month) {
   return Array.from({ length: daysInMonth(year, month) }, (_, i) => {
     const wd = new Date(year, month, i + 1).getDay()
     return { day: i + 1, wd, weekend: wd === 0 || wd === 6 }
-  })
-}
-
-// ── Deterministik "tasodif" ──────────────────────────────────────────────
-export function hash(str) {
-  let h = 2166136261
-  for (let i = 0; i < str.length; i += 1) {
-    h ^= str.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return (h >>> 0) / 4294967295
-}
-
-// Tabel xodimlari: filialga bog'liq barqaror ro'yxat (id — tabel ichidagi tartib raqami)
-export function tabelEmployees(tabel) {
-  const offset = Math.floor(hash(tabel.branchId) * NAMES.length)
-  return Array.from({ length: tabel.employeeCount }, (_, i) => {
-    const [name, schedule] = NAMES[(offset + i) % NAMES.length]
-    return { id: String(i + 1), name, schedule, seed: `${tabel.branchId}|${name}` }
   })
 }
 
@@ -117,7 +65,7 @@ export function calcFact({ kelgan, tushlikChiqqan, tushlikQaytgan, ketgan }) {
   let minutes
   if (b != null && c != null) minutes = Math.max(0, b - a) + Math.max(0, d - c)
   else minutes = Math.max(0, d - a)
-  return Math.round((minutes / 60) * 10) / 10
+  return Math.round((minutes / 60) * 100) / 100
 }
 
 // "HH:MM" niqobi — klaviaturadan yozishda
@@ -126,23 +74,106 @@ export function maskTime(raw) {
   return d.length <= 2 ? d : `${d.slice(0, 2)}:${d.slice(2)}`
 }
 
-const EMPTY_TIMES = { kelgan: '', tushlikChiqqan: '', tushlikQaytgan: '', ketgan: '' }
+export const pad2 = (n) => String(n).padStart(2, '0')
+export const fmtDmy = (year, month, day) => `${pad2(day)}.${pad2(month + 1)}.${year}`
+export const fmtDateTime = (ts) => {
+  if (ts == null) return ''
+  const d = new Date(ts)
+  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
 
-// Bir xodimning bir kunlik standart yozuvi
-export function generateEntry(employee, year, month, day) {
-  const s = SCHEDULES[employee.schedule]
-  const wd = new Date(year, month, day).getDay()
-  if (!s.days.includes(wd)) return { plan: 0, ...EMPTY_TIMES }
+// ISO sana-vaqt -> "HH:MM" (mahalliy vaqt); bo'sh bo'lsa ''
+export function isoToHm(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
 
-  const r = hash(`${employee.seed}|${year}-${month}-${day}`)
-  const base = { plan: s.hours, kelgan: s.start, tushlikChiqqan: s.lunch, tushlikQaytgan: s.back, ketgan: s.end }
-  if (r < 0.015) return { plan: s.hours, ...EMPTY_TIMES } // kelmagan
-  if (r < 0.05) return { ...base, ketgan: '14:00', tushlikChiqqan: '12:00', tushlikQaytgan: '13:00' } // 4 soat
-  if (r < 0.09) return { ...base, ketgan: '16:00' } // 6
-  if (r < 0.12) return { ...base, ketgan: '16:30' } // 6,5
-  if (r < 0.14) return { ...base, ketgan: '17:00' } // 7
-  if (r < 0.19) return { ...base, ketgan: '17:30' } // 7,5
-  return base
+// (yil, oy 0-11, kun, "HH:MM") -> mahalliy vaqt mintaqasi bilan ISO ("2026-09-01T09:00:00+05:00")
+export function toIsoDateTime(year, month, day, hm = '00:00') {
+  const mins = toMinutes(hm)
+  if (mins == null) return null
+  const d = new Date(year, month, day, Math.floor(mins / 60), mins % 60)
+  const off = -d.getTimezoneOffset()
+  const sign = off >= 0 ? '+' : '-'
+  const abs = Math.abs(off)
+  return (
+    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:00` +
+    `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`
+  )
+}
+
+const toNum = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+// ── Backend javobini normallashtirish ─────────────────────────────────────
+
+const toTs = (v) => (v ? new Date(v).getTime() : null)
+const numOrNull = (v) => (v == null || v === '' ? null : toNum(v))
+
+// Backend hali qaytarmaydigan maydonlar (organization_info, year, employees_count, plan_hours,
+// fact_hours, approved_at, cancel_reason ...) — backendga topshiriq berilgan; kelmasa null bo'ladi
+// va sahifa zaxira manbadan (filiallar ro'yxati, qatorlar) oladi yoki "—" ko'rsatadi.
+export function normalizeTimesheet(r) {
+  const forMonth = Number(r?.for_month) || 1
+  const org = r.organization_info ?? r.branch_info?.organization_info ?? null
+  return {
+    id: r.id,
+    orgId: org?.id ?? '',
+    orgName: org?.name ?? '',
+    branchId: r.branch_info?.id ?? r.branch ?? '',
+    branchName: r.branch_info?.name ?? '',
+    year: Number(r.year) || null,
+    forMonth,
+    month: forMonth - 1,
+    status: FROM_BACKEND_STATUS[r.status] ?? 'draft',
+    itemsCount: r.items_count ?? 0,
+    employeesCount: numOrNull(r.employees_count),
+    planHours: numOrNull(r.plan_hours),
+    factHours: numOrNull(r.fact_hours),
+    createdAt: toTs(r.created_at),
+    updatedAt: toTs(r.updated_at),
+    approvedAt: toTs(r.approved_at),
+    cancelledAt: toTs(r.cancelled_at),
+    cancelReason: r.cancel_reason ?? '',
+    cancelDocument: r.cancel_document ?? null,
+  }
+}
+
+// Tabelda yil maydoni yo'q — qatorlar sanasidan olinadi, qatorlar bo'lmasa yaratilgan sanadan
+// (dekabr tabeli yanvarda yaratilgan bo'lsa — o'tgan yil).
+export function inferYear(tabel, items = []) {
+  if (tabel.year) return tabel.year
+  const first = items.find((it) => it.date)
+  if (first) {
+    const d = new Date(first.date)
+    if (!Number.isNaN(d.getTime())) return d.getFullYear()
+  }
+  const created = tabel.createdAt ? new Date(tabel.createdAt) : new Date()
+  const createdMonth = created.getMonth() + 1
+  let year = created.getFullYear()
+  if (tabel.forMonth - createdMonth > 6) year -= 1
+  else if (createdMonth - tabel.forMonth > 6) year += 1
+  return year
+}
+
+const EMPTY_ENTRY = { itemId: null, plan: 0, kelgan: '', tushlikChiqqan: '', tushlikQaytgan: '', ketgan: '', fakt: 0 }
+
+function entryFromItem(item) {
+  const times = {
+    kelgan: isoToHm(item.input_date),
+    tushlikChiqqan: isoToHm(item.output_lunch_date),
+    tushlikQaytgan: isoToHm(item.input_lunch_date),
+    ketgan: isoToHm(item.output_date),
+  }
+  return {
+    itemId: item.id,
+    plan: toNum(item.work_hour_in_plan),
+    ...times,
+    fakt: item.work_hour_in_fact != null ? toNum(item.work_hour_in_fact) : calcFact(times),
+  }
 }
 
 export function withFact(entry) {
@@ -150,18 +181,59 @@ export function withFact(entry) {
 }
 
 // Tabelning to'liq hisobi: kunlar, xodimlar (har kun yozuvlari bilan) va jamlar.
-export function buildSheet(tabel) {
-  const { year, month, overrides = {} } = tabel
+// items     — backend qatorlari (EmployeeTimesheetItem[])
+// employees — qo'shimcha xodimlar [{ id, name }] (qatori hali yo'q xodimlar ham ko'rinsin — qoralama uchun)
+// pending   — saqlanmagan o'zgarishlar { [empId]: { [day]: entry } }
+export function buildSheet({ year, month, items = [], employees = [], pending = {} }) {
   const days = monthDays(year, month)
-  const rows = tabelEmployees(tabel).map((emp) => {
-    const entries = days.map(({ day }) => withFact(overrides[emp.id]?.[day] ?? generateEntry(emp, year, month, day)))
-    const plan = entries.reduce((s, e) => s + e.plan, 0)
-    const fakt = entries.reduce((s, e) => s + e.fakt, 0)
-    return { ...emp, entries, plan, fakt, farq: fakt - plan }
+  const byEmp = new Map()
+
+  items.forEach((item) => {
+    const empId = item.employee_info?.id
+    if (!empId) return
+    const d = new Date(item.date)
+    if (Number.isNaN(d.getTime()) || d.getFullYear() !== year || d.getMonth() !== month) return
+    if (!byEmp.has(empId)) {
+      byEmp.set(empId, {
+        id: empId,
+        name: item.employee_info.full_name ?? '',
+        schedule: item.employee_info.work_schedule_info?.name ?? '',
+        byDay: {},
+      })
+    }
+    byEmp.get(empId).byDay[d.getDate()] = item
   })
+  employees.forEach((e) => {
+    if (e?.id && !byEmp.has(e.id)) byEmp.set(e.id, { id: e.id, name: e.name ?? '', schedule: e.schedule ?? '', byDay: {} })
+  })
+
+  const rows = [...byEmp.values()]
+    .sort((a, b) => a.name.localeCompare(b.name, 'uz'))
+    .map((emp) => {
+      const entries = days.map(({ day }) => {
+        if (pending[emp.id]?.[day]) return withFact(pending[emp.id][day])
+        const item = emp.byDay[day]
+        return item ? entryFromItem(item) : EMPTY_ENTRY
+      })
+      const plan = entries.reduce((s, e) => s + e.plan, 0)
+      const fakt = entries.reduce((s, e) => s + e.fakt, 0)
+      return { id: emp.id, name: emp.name, schedule: emp.schedule, entries, plan, fakt, farq: fakt - plan }
+    })
+
   const plan = rows.reduce((s, r) => s + r.plan, 0)
   const fakt = rows.reduce((s, r) => s + r.fakt, 0)
   return { days, rows, plan, fakt }
+}
+
+// Kunlik yozuv -> backend so'rov tanasi (PATCH uchun; yangi qator uchun create qo'shimchalari bilan)
+export function entryToPayload(entry, { year, month, day }) {
+  return {
+    input_date: toIsoDateTime(year, month, day, entry.kelgan),
+    output_lunch_date: toIsoDateTime(year, month, day, entry.tushlikChiqqan),
+    input_lunch_date: toIsoDateTime(year, month, day, entry.tushlikQaytgan),
+    output_date: toIsoDateTime(year, month, day, entry.ketgan),
+    work_hour_in_fact: calcFact(entry).toFixed(2),
+  }
 }
 
 // Kun katakchasi turi — legenda bilan mos
@@ -178,87 +250,4 @@ export function fmtHours(v, fixed = false) {
   const [i, f] = (fixed ? n.toFixed(1) : String(n)).split('.')
   const int = i.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
   return f ? `${int},${f}` : int
-}
-
-export const pad2 = (n) => String(n).padStart(2, '0')
-export const fmtDmy = (year, month, day) => `${pad2(day)}.${pad2(month + 1)}.${year}`
-export const fmtDateTime = (ts) => {
-  const d = new Date(ts)
-  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
-
-// "DD.MM.YYYY HH:MM" -> timestamp (noto'g'ri bo'lsa null)
-export function parseDateTime(s) {
-  const m = String(s ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})(?: (\d{2}):(\d{2}))?$/)
-  if (!m) return null
-  const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4] ?? 0), Number(m[5] ?? 0))
-  return d.getMonth() === Number(m[2]) - 1 && Number(m[4] ?? 0) < 24 && Number(m[5] ?? 0) < 60 ? d.getTime() : null
-}
-
-// ── Boshlang'ich tabellar (106 ta) ───────────────────────────────────────
-// Joriy oydan orqaga 8 oy × 14 filial dan deterministik tanlab olinadi; holatlar:
-// 22 qoralama, 20 bekor qilingan, qolgani tasdiqlangan.
-export function seedTabels(now = new Date()) {
-  const list = []
-  for (let back = 0; back < 8; back += 1) {
-    const ref = new Date(now.getFullYear(), now.getMonth() - back, 1)
-    const year = ref.getFullYear()
-    const month = ref.getMonth()
-    BRANCHES.forEach((b) => {
-      const h = hash(`${b.id}|${year}-${month}`)
-      const dayMax = back === 0 ? Math.max(1, now.getDate()) : daysInMonth(year, month)
-      const created = new Date(year, month, 1 + Math.floor(h * dayMax), 9 + Math.floor(h * 97) % 9, Math.floor(h * 6007) % 60)
-      list.push({
-        branchId: b.id,
-        orgId: b.orgId,
-        year,
-        month,
-        h,
-        createdAt: Math.min(created.getTime(), now.getTime()),
-        employeeCount: Math.max(6, b.staff + Math.round((hash(`${b.id}${month}`) - 0.5) * 6)),
-      })
-    })
-  }
-  const picked = list.sort((a, b) => a.h - b.h).slice(0, 106)
-  // Qoralama — eng yangilari ustunlik bilan, qolganlari deterministik aralash
-  const byDate = [...picked].sort((a, b) => b.createdAt - a.createdAt)
-  const draftSet = new Set(
-    [...byDate.slice(0, 40)].sort((a, b) => hash(`d${a.branchId}${a.month}`) - hash(`d${b.branchId}${b.month}`)).slice(0, 22)
-  )
-  const rest = byDate.filter((t) => !draftSet.has(t))
-  const cancelSet = new Set([...rest].sort((a, b) => hash(`c${a.branchId}${a.month}`) - hash(`c${b.branchId}${b.month}`)).slice(0, 20))
-
-  return byDate.map((t, i) => {
-    const status = draftSet.has(t) ? 'draft' : cancelSet.has(t) ? 'cancelled' : 'confirmed'
-    const updatedAt =
-      status === 'draft' ? t.createdAt : Math.min(t.createdAt + (1 + Math.floor(t.h * 4)) * 86_400_000 + 3_600_000 * 3, now.getTime())
-    return {
-      id: String(1000 + i),
-      orgId: t.orgId,
-      branchId: t.branchId,
-      year: t.year,
-      month: t.month,
-      employeeCount: t.employeeCount,
-      date: t.createdAt,
-      createdAt: t.createdAt,
-      updatedAt,
-      confirmedAt: status === 'draft' ? null : updatedAt,
-      status,
-      overrides: {},
-    }
-  })
-}
-
-// Joriy oydan orqaga 12 oy — "YYYY-M" qiymatlar (tanlov ro'yxatlari uchun)
-export function monthOptions() {
-  const d = new Date()
-  return Array.from({ length: 12 }, (_, i) => {
-    const x = new Date(d.getFullYear(), d.getMonth() - i, 1)
-    return periodOption(`${x.getFullYear()}-${x.getMonth()}`)
-  })
-}
-
-export function periodOption(value) {
-  const [y, m] = value.split('-').map(Number)
-  return { value, label: y === new Date().getFullYear() ? MONTHS[m] : `${MONTHS[m]} ${y}` }
 }

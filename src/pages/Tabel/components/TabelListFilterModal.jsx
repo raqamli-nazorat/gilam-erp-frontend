@@ -1,28 +1,32 @@
 import { useEffect, useState } from 'react'
 import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
-import { BRANCHES, ORGANIZATIONS, TABEL_STATUS, periodOption } from '@/features/tabel/tabelData'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { branchOptions, organizationOptions } from '@/services/optionSources'
+import { periodOptions } from '@/features/tabel/tabelData'
 
+// Holat — ro'yxat tablari orqali. Tashkilot, oy (yil + oy), yaratilgan va yangilangan sana oraliqlari
+// serverga yuboriladi (organization / year / updated_* — backend topshirig'ida).
 export const EMPTY_TABEL_LIST_FILTERS = {
   orgId: '',
-  branchId: '',
-  period: '',
-  status: '',
+  orgName: '',
+  branch: '',
+  branchName: '',
+  period: '', // "YYYY-M"
   yaratilganDan: '',
   yaratilganGacha: '',
   yangilanganDan: '',
   yangilanganGacha: '',
 }
 
-// periods: ['2026-8', ...] — ro'yxatdagi mavjud oylar (yangisidan eskisiga)
-export default function TabelListFilterModal({ open, onOpenChange, filters, onApply, periods }) {
+const SELECT = 'h-10 rounded-[8px]'
+
+export default function TabelListFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }))
 
   useEffect(() => {
     if (open) setDraft(filters)
   }, [open, filters])
-
-  const branches = BRANCHES.filter((b) => !draft.orgId || b.orgId === draft.orgId)
 
   return (
     <FilterModal
@@ -38,28 +42,36 @@ export default function TabelListFilterModal({ open, onOpenChange, filters, onAp
       }}
     >
       <FilterField label="Tashkilot">
-        <FilterSelect
+        <PagedSelect
           value={draft.orgId}
-          onChange={(v) => set({ orgId: v, branchId: BRANCHES.some((b) => b.id === draft.branchId && b.orgId === v) ? draft.branchId : '' })}
-          options={ORGANIZATIONS.map((o) => ({ value: o.id, label: o.name }))}
+          onChange={(v, item) =>
+            set({
+              orgId: v,
+              orgName: item?.name ?? '',
+              ...(v !== draft.orgId && { branch: '', branchName: '' }),
+            })
+          }
+          fetchPage={organizationOptions}
+          selectedLabel={draft.orgName}
+          placeholder="Barchasi"
+          allowAll
+          className={SELECT}
         />
       </FilterField>
       <FilterField label="Filial">
-        <FilterSelect value={draft.branchId} onChange={(v) => set({ branchId: v })} options={branches.map((b) => ({ value: b.id, label: b.name }))} />
+        <PagedSelect
+          value={draft.branch}
+          onChange={(v, item) => set({ branch: v, branchName: item?.name ?? '' })}
+          fetchPage={branchOptions}
+          params={draft.orgId ? { organization: draft.orgId } : undefined}
+          selectedLabel={draft.branchName}
+          placeholder="Barchasi"
+          allowAll
+          className={SELECT}
+        />
       </FilterField>
       <FilterField label="Oy">
-        <FilterSelect
-          value={draft.period}
-          onChange={(v) => set({ period: v })}
-          options={periods.map(periodOption)}
-        />
-      </FilterField>
-      <FilterField label="Holat">
-        <FilterSelect
-          value={draft.status}
-          onChange={(v) => set({ status: v })}
-          options={Object.entries(TABEL_STATUS).map(([value, label]) => ({ value, label }))}
-        />
+        <FilterSelect value={draft.period} onChange={(v) => set({ period: v })} options={periodOptions()} />
       </FilterField>
       <FilterDateRange
         label="Yaratilgan"
