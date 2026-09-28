@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Plus, Search } from 'lucide-react'
+import { ChevronRight, Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
+import { useTabCounts } from '@/hooks/useTabCounts'
 import { cn } from '@/lib/utils'
-import { matchesDateRange } from '@/lib/format'
+import { dmyToIso } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusTabs } from '@/pages/Xodimlar/components/statusTabs'
-import { findDuplicate, tabelCreated, tabelSummary } from '@/features/tabel/tabelSlice'
-import { MONTHS, branchName, fmtDateTime, fmtHours, orgName } from '@/features/tabel/tabelData'
+import { getAllBranches } from '@/services/branchService'
+import { createTimesheet, getTimesheetsPage } from '@/services/timesheetService'
+import { extractErrorMessage } from '@/services/apiHelpers'
+import { MONTHS, TABEL_STATUS_PARAM, fmtDateTime, fmtHours, normalizeTimesheet } from '@/features/tabel/tabelData'
 import TabelStatusBadge from './components/TabelStatusBadge'
 import TabelListFilterModal, { EMPTY_TABEL_LIST_FILTERS } from './components/TabelListFilterModal'
 import NewTabelModal from './components/NewTabelModal'
@@ -17,15 +20,35 @@ import NewTabelModal from './components/NewTabelModal'
 const TH =
   'sticky top-0 z-10 h-14 bg-[#F5F5F5] px-4 text-left text-[14px] font-medium whitespace-nowrap text-[#0A0A0A] dark:bg-[#1f1f23] dark:text-white'
 const TD = 'h-[56px] border-b border-[#F0F0F0] px-4 text-[15px] whitespace-nowrap text-[#0A0A0A] dark:border-white/5 dark:text-white'
-const COLS = 10
+const COLS = 11
+
+// Backend maydoni hali kelmasa — 0
+const hoursOrZero = (v) => fmtHours(v ?? 0, true)
 
 // Tab kalitlari StatusTabs bilan bir xil: all | confirmed | draft | cancelled
-const fold = (s) => s.toLocaleLowerCase('uz').replace(/[ʻʼ‘’`']/g, "'")
+const TAB_VARIANTS = Object.fromEntries(Object.entries(TABEL_STATUS_PARAM).map(([tab, status]) => [tab, { status }]))
+
+// Zaxira: javobda organization_info bo'lmasa — tashkilot nomi filiallar ro'yxatidan olinadi (bir marta).
+let branchOrgPromise = null
+function loadBranchOrgMap() {
+  if (!branchOrgPromise) {
+    branchOrgPromise = getAllBranches()
+      .then((list) => Object.fromEntries(list.map((b) => [b.id, b.organization_info?.name ?? ''])))
+      .catch(() => {
+        branchOrgPromise = null
+        return {}
+      })
+  }
+  return branchOrgPromise
+}
+
+async function fetchTabelPage(params) {
+  const res = await getTimesheetsPage(params)
+  return { ...res, results: res.results.map(normalizeTimesheet) }
+}
 
 export default function TabelListPage() {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const items = useSelector((s) => s.tabel.items)
 
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -33,73 +56,71 @@ export default function TabelListPage() {
   const [filters, setFilters] = useState(EMPTY_TABEL_LIST_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
+  const [orgByBranch, setOrgByBranch] = useState({})
 
   usePageHeader('Tabel')
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(search), 200)
+    const t = setTimeout(() => setDebounced(search), 250)
     return () => clearTimeout(t)
   }, [search])
 
-  const hasFilter = Object.values(filters).some(Boolean)
+  useEffect(() => {
+    let alive = true
+    loadBranchOrgMap().then((map) => alive && setOrgByBranch(map))
+    return () => {
+      alive = false
+    }
+  }, [])
 
-  const rows = useMemo(
-    () =>
-      items.map((t) => ({
-        ...t,
-        ...tabelSummary(t),
-        org: orgName(t.orgId),
-        branch: branchName(t.branchId),
-        oy: MONTHS[t.month],
-        created: fmtDateTime(t.createdAt),
-        updated: fmtDateTime(t.updatedAt),
-      })),
-    [items]
+  const hasFilter = Boolean(
+    filters.orgId ||
+      filters.branch ||
+      filters.period ||
+      filters.yaratilganDan ||
+      filters.yaratilganGacha ||
+      filters.yangilanganDan ||
+      filters.yangilanganGacha
   )
 
-  // Qidiruv va filtrlar — tab sonlari shular bo'yicha hisoblanadi, tab esa oxirida qo'llanadi
-  const filtered = useMemo(() => {
-    const q = fold(debounced.trim())
-    return rows.filter((r) => {
-      if (q && ![r.org, r.branch, r.oy].some((v) => fold(v).includes(q))) return false
-      if (filters.orgId && r.orgId !== filters.orgId) return false
-      if (filters.branchId && r.branchId !== filters.branchId) return false
-      if (filters.period && `${r.year}-${r.month}` !== filters.period) return false
-      if (filters.status && r.status !== filters.status) return false
-      if (!matchesDateRange(r.created, filters.yaratilganDan, filters.yaratilganGacha)) return false
-      if (!matchesDateRange(r.updated, filters.yangilanganDan, filters.yangilanganGacha)) return false
-      return true
-    })
-  }, [rows, debounced, filters])
+  // Holatdan tashqari so'rov parametrlari — tab hisoblagichlari ham shular bo'yicha
+  const baseParams = useMemo(() => {
+    const p = {}
+    if (filters.orgId) p.organization = filters.orgId
+    if (filters.branch) p.branch = filters.branch
+    if (filters.period) {
+      const [year, forMonth] = filters.period.split('-')
+      p.year = year
+      p.for_month = forMonth
+    }
+    if (filters.yaratilganDan) p.start_date = dmyToIso(filters.yaratilganDan)
+    if (filters.yaratilganGacha) p.end_date = dmyToIso(filters.yaratilganGacha)
+    if (filters.yangilanganDan) p.updated_start_date = dmyToIso(filters.yangilanganDan)
+    if (filters.yangilanganGacha) p.updated_end_date = dmyToIso(filters.yangilanganGacha)
+    if (debounced.trim()) p.search = debounced.trim()
+    return p
+  }, [filters, debounced])
 
-  const counts = useMemo(() => {
-    const c = { all: filtered.length, confirmed: 0, draft: 0, cancelled: 0 }
-    filtered.forEach((r) => {
-      c[r.status] += 1
-    })
-    return c
-  }, [filtered])
-
-  const visible = tab === 'all' ? filtered : filtered.filter((r) => r.status === tab)
-
-  const periods = useMemo(
-    () =>
-      [...new Set(items.map((t) => `${t.year}-${t.month}`))].sort((a, b) => {
-        const [ay, am] = a.split('-').map(Number)
-        const [by, bm] = b.split('-').map(Number)
-        return by * 12 + bm - (ay * 12 + am)
-      }),
-    [items]
+  const listParams = useMemo(
+    () => (tab === 'all' ? baseParams : { ...baseParams, status: TABEL_STATUS_PARAM[tab] }),
+    [baseParams, tab]
   )
 
-  function createTabel(data) {
-    const dup = findDuplicate(items, data)
-    if (dup) return `${branchName(data.branchId)} uchun ${MONTHS[data.month]} oyi tabeli allaqachon mavjud`
-    const action = tabelCreated(data)
-    dispatch(action)
-    setNewOpen(false)
-    navigate(`/tabel/${action.payload.id}`)
-    return null
+  const { items: rows, totalCount, isLoading, isLoadingMore, error, hasMore, containerRef, sentinelRef, handleScroll, reload } =
+    useServerPagedList(fetchTabelPage, listParams)
+
+  const counts = useTabCounts(fetchTabelPage, baseParams, TAB_VARIANTS, tab, totalCount, isLoading)
+
+  async function createTabel({ branchId, year, forMonth }) {
+    try {
+      const created = await createTimesheet({ branch: branchId, year, for_month: forMonth })
+      setNewOpen(false)
+      if (created?.id) navigate(`/tabel/${created.id}`)
+      else reload()
+      return null
+    } catch (err) {
+      return extractErrorMessage(err, 'Tabel yaratishda xatolik yuz berdi')
+    }
   }
 
   return (
@@ -136,7 +157,7 @@ export default function TabelListPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div ref={containerRef} onScroll={handleScroll} className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
         <table className="w-full border-separate border-spacing-0">
           <thead>
             <tr>
@@ -150,38 +171,71 @@ export default function TabelListPage() {
               <th className={TH}>Yaratilgan</th>
               <th className={TH}>Yangilangan</th>
               <th className={TH}>Holat</th>
+              <th className={cn(TH, 'w-10')} />
             </tr>
           </thead>
           <tbody>
-            {visible.length === 0 ? (
+            {isLoading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={COLS} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                  <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-[#0052D2]" />
+                  Yuklanmoqda...
+                </td>
+              </tr>
+            ) : error && rows.length === 0 ? (
+              <tr>
+                <td colSpan={COLS} className="py-16 text-center">
+                  <p className="mb-2 text-sm text-[#DC2626]">{extractErrorMessage(error, 'Xatolik yuz berdi')}</p>
+                  <Button variant="outline" onClick={reload} className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px]">
+                    Qayta urinish
+                  </Button>
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={COLS} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Tabel topilmadi
                 </td>
               </tr>
             ) : (
-              visible.map((r, i) => (
+              rows.map((r, i) => (
                 <tr key={r.id} onClick={() => navigate(`/tabel/${r.id}`)} className="cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={cn(TD, 'text-[#525252] dark:text-muted-foreground')}>{i + 1}</td>
-                  <td className={TD}>{r.org}</td>
-                  <td className={cn(TD, 'font-medium text-[#0052D2] dark:text-[#60A5FA]')}>{r.branch}</td>
-                  <td className={TD}>{r.oy}</td>
-                  <td className={TD}>{r.employeeCount}</td>
-                  <td className={TD}>{fmtHours(r.plan, true)}</td>
-                  <td className={TD}>{fmtHours(r.fakt, true)}</td>
-                  <td className={TD}>{r.created}</td>
-                  <td className={TD}>{r.updated}</td>
+                  <td className={TD}>{r.orgName || orgByBranch[r.branchId] || ''}</td>
+                  <td className={cn(TD, 'font-medium text-[#0052D2] dark:text-[#60A5FA]')}>{r.branchName}</td>
+                  <td className={TD}>{r.year && r.year !== new Date().getFullYear() ? `${MONTHS[r.month]} ${r.year}` : MONTHS[r.month]}</td>
+                  <td className={TD}>{r.employeesCount ?? 0}</td>
+                  <td className={TD}>{hoursOrZero(r.planHours)}</td>
+                  <td className={TD}>{hoursOrZero(r.factHours)}</td>
+                  <td className={TD}>{fmtDateTime(r.createdAt)}</td>
+                  <td className={TD}>{fmtDateTime(r.updatedAt)}</td>
                   <td className={TD}>
                     <TabelStatusBadge status={r.status} />
                   </td>
+                  <td className={cn(TD, 'pr-4 text-[#525252] dark:text-muted-foreground')}>
+                    <ChevronRight className="h-4 w-4" />
+                  </td>
                 </tr>
               ))
+            )}
+            {rows.length > 0 && hasMore && !isLoading && (
+              <tr ref={sentinelRef}>
+                <td colSpan={COLS} className="h-1 p-0" />
+              </tr>
+            )}
+            {isLoadingMore && (
+              <tr>
+                <td colSpan={COLS} className="py-4 text-center text-xs font-medium text-[#737373] dark:text-muted-foreground">
+                  <Loader2 className="mr-2 inline h-4 w-4 animate-spin text-[#0052D2]" />
+                  Ko‘proq ma’lumotlar yuklanmoqda…
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <TabelListFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} periods={periods} />
+      <TabelListFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
       <NewTabelModal open={newOpen} onOpenChange={setNewOpen} onSave={createTabel} />
     </div>
   )

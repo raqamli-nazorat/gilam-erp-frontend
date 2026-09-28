@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowUpRight, ChevronLeft } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
-import { useTabel } from '@/features/tabel/tabelSlice'
-import { MONTHS, SCHEDULES, branchName, WEEKDAY_FULL, cellKind, fmtDmy, fmtHours } from '@/features/tabel/tabelData'
+import { useTimesheet } from '@/features/tabel/useTimesheet'
+import { MONTHS, WEEKDAY_FULL, buildSheet, cellKind, entryToPayload, fmtDmy, fmtHours, toIsoDateTime } from '@/features/tabel/tabelData'
+import { createTimesheetItem, patchTimesheetItem } from '@/services/timesheetService'
+import { PageState } from './TabelDetailPage'
 import DayDetailModal from './components/DayDetailModal'
 import { CELL_STYLE, farqColor } from './components/tabelStyles'
 
@@ -18,15 +20,29 @@ const VALUE = 'text-[24px] font-semibold leading-8'
 
 export default function TabelXodimPage() {
   const { id, employeeId } = useParams()
-  const { tabel, sheet } = useTabel(id)
+  const { data, loading, error, reload } = useTimesheet(id)
+  const sheet = useMemo(
+    () => data && buildSheet({ year: data.tabel.year, month: data.tabel.month, items: data.items, employees: data.employees }),
+    [data]
+  )
   const employee = sheet?.rows.find((r) => r.id === employeeId)
-  if (!tabel) return <Navigate to="/tabel" replace />
+
+  usePageHeader(
+    data
+      ? [{ label: `${data.tabel.branchName}, ${MONTHS[data.tabel.month]}`, to: `/tabel/${id}` }, employee?.name ?? '']
+      : [{ label: 'Tabel', to: '/tabel' }, '…']
+  )
+
+  if (!data) {
+    if (error?.response?.status === 404) return <Navigate to="/tabel" replace />
+    return <PageState loading={loading} error={error} onRetry={() => reload()} />
+  }
   // Tabel filiali almashtirilgan va xodim endi yo'q bo'lsa — tabelga qaytamiz
   if (!employee) return <Navigate to={`/tabel/${id}`} replace />
-  return <XodimTabel tabel={tabel} days={sheet.days} employee={employee} />
+  return <XodimTabel tabel={data.tabel} scheduleName={data.scheduleName} days={sheet.days} employee={employee} reload={reload} />
 }
 
-function XodimTabel({ tabel, days, employee }) {
+function XodimTabel({ tabel, scheduleName, days, employee, reload }) {
   const navigate = useNavigate()
   const { id, status, year, month } = tabel
   const tabelPath = `/tabel/${id}`
@@ -34,15 +50,26 @@ function XodimTabel({ tabel, days, employee }) {
   const [dayTarget, setDayTarget] = useState(null)
   const [toast, setToast] = useState('')
 
-  usePageHeader([{ label: `${branchName(tabel.branchId)}, ${MONTHS[month]}`, to: tabelPath }, employee.name])
+  // Bu sahifada kun darhol backendga yoziladi (mavjud qator — PATCH, yangisi — POST)
+  async function saveDay({ empId, day, entry }) {
+    const payload = entryToPayload(entry, { year, month, day })
+    if (entry.itemId) await patchTimesheetItem(entry.itemId, payload)
+    else
+      await createTimesheetItem({
+        employee_timesheet: id,
+        employee: empId,
+        date: toIsoDateTime(year, month, day),
+        work_hour_in_plan: Number(entry.plan || 0).toFixed(2),
+        ...payload,
+      })
+    await reload({ silent: true })
+  }
 
   useEffect(() => {
     if (!toast) return undefined
     const t = setTimeout(() => setToast(''), 3000)
     return () => clearTimeout(t)
   }, [toast])
-
-  const schedule = SCHEDULES[employee.schedule]
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
@@ -55,7 +82,7 @@ function XodimTabel({ tabel, days, employee }) {
           <span className={cn(LABEL, 'inline-flex items-center gap-1')}>
             Ish grafigi <ArrowUpRight className="size-4 text-[#0052D2]" strokeWidth={2.5} />
           </span>
-          <span className={cn(VALUE, 'uppercase')}>{schedule.name}</span>
+          <span className={cn(VALUE, 'truncate uppercase')}>{employee.schedule || scheduleName || ''}</span>
         </Link>
         <div className={CARD} style={{ backgroundColor: '#CDE7FE' }}>
           <span className={LABEL}>Plan soat</span>
@@ -111,10 +138,10 @@ function XodimTabel({ tabel, days, employee }) {
                   </td>
                   <td className={cn(TD, 'text-[#525252] dark:text-muted-foreground')}>{WEEKDAY_FULL[d.wd]}</td>
                   <td className={cn(TD, off && 'text-[#525252]')}>{fmtHours(e.plan)}</td>
-                  <td className={cn(TD, off && 'text-[#525252]')}>{e.kelgan || '0'}</td>
-                  <td className={cn(TD, off && 'text-[#525252]')}>{e.tushlikChiqqan || '0'}</td>
-                  <td className={cn(TD, off && 'text-[#525252]')}>{e.tushlikQaytgan || '0'}</td>
-                  <td className={cn(TD, off && 'text-[#525252]')}>{e.ketgan || '0'}</td>
+                  <td className={cn(TD, off && 'text-[#525252]')}>{e.kelgan}</td>
+                  <td className={cn(TD, off && 'text-[#525252]')}>{e.tushlikChiqqan}</td>
+                  <td className={cn(TD, off && 'text-[#525252]')}>{e.tushlikQaytgan}</td>
+                  <td className={cn(TD, off && 'text-[#525252]')}>{e.ketgan}</td>
                   <td className={cn(TD, 'text-right')}>
                     {off ? (
                       <span className="text-[#525252]">0</span>
@@ -163,6 +190,7 @@ function XodimTabel({ tabel, days, employee }) {
         month={month}
         readOnly={status !== 'draft'}
         onClose={() => setDayTarget(null)}
+        onSubmit={saveDay}
         onSaved={() => setToast('Kun ma’lumotlari saqlandi')}
       />
 
