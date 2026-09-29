@@ -8,6 +8,7 @@ import {
   accrualRetentionOptions,
   branchOptions,
   employeeOptions,
+  organizationOptions,
 } from '@/services/optionSources'
 import { formatDateTime } from '@/lib/format'
 import { extractErrorMessage } from '@/services/apiHelpers'
@@ -16,8 +17,11 @@ export default function NewQoshimchaModal({
   open,
   onOpenChange,
   onCreate,
+  initialData,
 }) {
   const [date, setDate] = useState('')
+  const [orgId, setOrgId] = useState('')
+  const [orgName, setOrgName] = useState('')
   const [branchId, setBranchId] = useState('')
   const [branchName, setBranchName] = useState('')
   const [employeeId, setEmployeeId] = useState('')
@@ -30,16 +34,60 @@ export default function NewQoshimchaModal({
   useEffect(() => {
     if (open) {
       setDate(formatDateTime(new Date()))
-      setBranchId('')
-      setBranchName('')
-      setEmployeeId('')
-      setEmployeeName('')
-      setAccrualRetentionId('')
-      setAccrualRetentionItem(null)
+
+      // Dastlabki qiymatlar (initialData bo'lsa)
+      const initialOrgId =
+        initialData?.orgId ||
+        initialData?.branch_info?.organization?.id ||
+        initialData?.branch_info?.organization_id ||
+        initialData?.employee_info?.organization ||
+        ''
+      const initialOrgName =
+        initialData?.orgName ||
+        initialData?.branch_info?.organization?.name ||
+        initialData?.branch_info?.organization_name ||
+        initialData?.employee_info?.organization_name ||
+        ''
+      const initialBranchId =
+        initialData?.branchId ||
+        initialData?.branch ||
+        initialData?.branch_info?.id ||
+        ''
+      const initialBranchName =
+        initialData?.branchName ||
+        initialData?.branch_info?.name ||
+        ''
+      const initialEmployeeId =
+        initialData?.employeeId ||
+        initialData?.employee ||
+        initialData?.employee_info?.id ||
+        ''
+      const initialEmployeeName =
+        initialData?.employeeName ||
+        initialData?.employee_info?.full_name ||
+        initialData?.employee_info?.name ||
+        ''
+      const initialArId =
+        initialData?.accrualRetentionId ||
+        initialData?.accrual_retention ||
+        ''
+      const initialArItem =
+        initialData?.accrualRetentionItem ||
+        initialData?.accrual_retention_info ||
+        null
+
+      setOrgId(initialOrgId)
+      setOrgName(initialOrgName)
+      setBranchId(initialBranchId)
+      setBranchName(initialBranchName)
+      setEmployeeId(initialEmployeeId)
+      setEmployeeName(initialEmployeeName)
+      setAccrualRetentionId(initialArId)
+      setAccrualRetentionItem(initialArItem)
       setError('')
       setLoading(false)
     }
-  }, [open])
+  }, [open, initialData])
 
   const handleSubmit = async (e) => {
     e?.preventDefault()
@@ -62,6 +110,8 @@ export default function NewQoshimchaModal({
     try {
       await onCreate({
         date: new Date().toISOString(),
+        organization: orgId,
+        organizationName: orgName,
         branch: branchId,
         branchName,
         employee: employeeId,
@@ -86,7 +136,7 @@ export default function NewQoshimchaModal({
         {/* Header */}
         <div className="flex h-[60px] shrink-0 items-center justify-between border-b border-[#F0F0F0] px-6 dark:border-white/10">
           <DialogTitle className="text-[18px] font-semibold text-[#0A0A0A] dark:text-white">
-            Yangi hujjat
+            Yangi qo‘shimcha yoki ushlanma
           </DialogTitle>
           <DialogClose
             render={
@@ -101,7 +151,7 @@ export default function NewQoshimchaModal({
           />
         </div>
 
-        {/* Forma (Figma 3-rasm) */}
+        {/* Forma (Figma 2-rasm) */}
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 px-6 py-5">
             {error && (
@@ -110,17 +160,40 @@ export default function NewQoshimchaModal({
               </div>
             )}
 
-            {/* 1-qator: Sana va Filial */}
+            {/* 1-qator: Sana */}
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
+                Sana
+              </label>
+              <Input
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                placeholder="27.09.2026 10:00"
+                className="h-10 rounded-[10px] border-[#E5E5E5] bg-white text-sm text-[#0A0A0A] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              />
+            </div>
+
+            {/* 2-qator: Tashkilot va Filial */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
-                  Sana
+                  Tashkilot
                 </label>
-                <Input
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  placeholder="26.09.2026 09:00"
-                  className="h-10 rounded-[10px] border-[#E5E5E5] bg-white text-sm text-[#0A0A0A] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+                <PagedSelect
+                  value={orgId}
+                  onChange={(val, item) => {
+                    setOrgId(val)
+                    setOrgName(item?.name ?? '')
+                    // Tashkilot o'zgarganda filial va xodim tozalanadi
+                    setBranchId('')
+                    setBranchName('')
+                    setEmployeeId('')
+                    setEmployeeName('')
+                  }}
+                  fetchPage={organizationOptions}
+                  selectedLabel={orgName}
+                  placeholder="Tashkilot tanlang"
+                  className="h-10 rounded-[10px]"
                 />
               </div>
 
@@ -133,18 +206,20 @@ export default function NewQoshimchaModal({
                   onChange={(val, item) => {
                     setBranchId(val)
                     setBranchName(item?.name ?? '')
+                    // Filial o'zgarganda xodim tozalanadi
                     setEmployeeId('')
                     setEmployeeName('')
                   }}
                   fetchPage={branchOptions}
+                  params={orgId ? { organization: orgId } : undefined}
                   selectedLabel={branchName}
-                  placeholder="Filial tanlang"
+                  placeholder={orgId ? 'Filial tanlang' : 'Filial tanlang'}
                   className="h-10 rounded-[10px]"
                 />
               </div>
             </div>
 
-            {/* 2-qator: Xodim va Qo'shimcha va ushlanma */}
+            {/* 3-qator: Xodim va Qo'shimcha va ushlanma */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
@@ -157,10 +232,9 @@ export default function NewQoshimchaModal({
                     setEmployeeName(item?.name ?? '')
                   }}
                   fetchPage={employeeOptions}
-                  params={branchId ? { branch: branchId } : undefined}
+                  params={branchId ? { branch: branchId } : (orgId ? { organization: orgId } : undefined)}
                   selectedLabel={employeeName}
-                  placeholder={branchId ? 'Xodim tanlang' : 'Avval filialni tanlang'}
-                  disabled={!branchId}
+                  placeholder={branchId ? 'Xodim tanlang' : (orgId ? 'Xodim tanlang' : 'Xodim tanlang')}
                   className="h-10 rounded-[10px]"
                 />
               </div>
@@ -177,29 +251,29 @@ export default function NewQoshimchaModal({
                   }}
                   fetchPage={accrualRetentionOptions}
                   selectedLabel={accrualRetentionItem?.name ?? ''}
-                  placeholder="Tanlang"
+                  placeholder="Turini tanlang"
                   className="h-10 rounded-[10px]"
                 />
               </div>
             </div>
           </div>
 
-          {/* Footer (Bekor qilish va Saqlash) */}
+          {/* Footer (Bekor qilish va Qo'shish) */}
           <div className="flex h-[72px] shrink-0 items-center justify-end gap-3 border-t border-[#F0F0F0] bg-[#F9FAFB] px-6 dark:border-white/10 dark:bg-white/5">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-10 gap-2 rounded-[10px] border-[#E5E5E5] bg-white px-5 text-[14px] font-medium text-[#0A0A0A] shadow-sm hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+              className="h-10 gap-2 rounded-[10px] border-[#E5E5E5] bg-white px-5 text-[14px] font-medium text-[#0A0A0A] shadow-sm hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white cursor-pointer"
             >
               <X className="size-4" /> Bekor qilish
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-6 text-[14px] font-medium text-white shadow-sm hover:bg-[#0047B8]"
+              className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-6 text-[14px] font-medium text-white shadow-sm hover:bg-[#0047B8] cursor-pointer"
             >
-              <Check className="size-4" /> {loading ? 'Saqlanmoqda...' : 'Saqlash'}
+              <Check className="size-4" /> {loading ? 'Qo‘shilmoqda...' : 'Qo‘shish'}
             </Button>
           </div>
         </form>
@@ -207,3 +281,4 @@ export default function NewQoshimchaModal({
     </Dialog>
   )
 }
+

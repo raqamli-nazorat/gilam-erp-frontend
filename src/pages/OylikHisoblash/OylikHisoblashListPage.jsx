@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusTabs } from '@/pages/Xodimlar/components/statusTabs'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { getCalculatingSalariesPage } from '@/services/calculatingSalaryService'
+import {
+  getCalculatingSalariesPage,
+  getCalculatingSalaryCounts,
+} from '@/services/calculatingSalaryService'
 import { calculateSalariesThunk } from '@/features/oylikHisoblash/oylikSlice'
 import { MONTH_NAMES, MOCK_OYLIK_ITEMS } from '@/features/oylikHisoblash/oylikData'
 import OylikStatusBadge from './components/OylikStatusBadge'
@@ -121,7 +124,6 @@ export default function OylikHisoblashListPage() {
   const {
     items: rows,
     totalCount,
-    counts: serverCounts,
     isLoading,
     isLoadingMore,
     error,
@@ -131,6 +133,20 @@ export default function OylikHisoblashListPage() {
     handleScroll,
     reload,
   } = useServerPagedList(fetchCalculatingSalariesPage, baseParams)
+
+  const [counts, setCounts] = useState({ all: 0, confirmed: 0, draft: 0, cancelled: 0 })
+  const [countsVersion, setCountsVersion] = useState(0)
+
+  // Holatlar sonini /api/v1/hr/calculating-salaries/count/ endpointidan olish
+  useEffect(() => {
+    let active = true
+    getCalculatingSalaryCounts().then((data) => {
+      if (active) setCounts(data)
+    })
+    return () => {
+      active = false
+    }
+  }, [countsVersion])
 
   const hasFilter = [
     filters.orgId,
@@ -143,36 +159,24 @@ export default function OylikHisoblashListPage() {
     filters.updated_gacha,
   ].some(Boolean)
 
-  // StatusTabs hisoblagichlari
-  const counts = useMemo(() => {
-    if (serverCounts) {
-      return {
-        all: serverCounts.all ?? totalCount,
-        confirmed: serverCounts.approved ?? serverCounts.confirmed ?? 0,
-        draft: serverCounts.draft ?? 0,
-        cancelled: serverCounts.cancelled ?? 0,
-      }
-    }
-    const c = { all: totalCount || rows.length, confirmed: 0, draft: 0, cancelled: 0 }
-    rows.forEach((r) => {
-      if (r.status === 'approved' || r.status === 'confirmed') c.confirmed += 1
-      else if (r.status === 'draft') c.draft += 1
-      else if (r.status === 'cancelled') c.cancelled += 1
-    })
-    return c
-  }, [serverCounts, totalCount, rows])
-
   // Yangi hisob yaratish handler
   const handleCreateHisob = async (data) => {
-    const res = await dispatch(
-      calculateSalariesThunk({
-        branch: data.branchId,
-        for_month: data.forMonth,
-        year: data.year || new Date().getFullYear(),
-      })
-    ).unwrap()
+    const payload = {
+      branch: data.branchId || data.branch,
+      for_month: data.forMonth || data.for_month,
+      year: data.year || new Date().getFullYear(),
+    }
+    if (data.organization || data.orgId) {
+      payload.organization = data.organization || data.orgId
+    }
+    if (data.date) {
+      payload.date = data.date
+    }
+
+    const res = await dispatch(calculateSalariesThunk(payload)).unwrap()
 
     setNewOpen(false)
+    setCountsVersion((v) => v + 1)
     reload()
 
     if (res?.id) {
@@ -281,15 +285,15 @@ export default function OylikHisoblashListPage() {
                   <td className={cn(TD, 'w-12 text-center text-[#525252] dark:text-muted-foreground')}>
                     {idx + 1}
                   </td>
-                  <td className={TD}>{row.orgName || '-'}</td>
+                  <td className={TD}>{row.orgName || ''}</td>
                   <td className={cn(TD, 'font-medium text-[#0052D2] hover:underline dark:text-[#60A5FA]')}>
-                    {row.branchName || '-'}
+                    {row.branchName || ''}
                   </td>
-                  <td className={TD}>{MONTH_NAMES[row.forMonth] || row.forMonth || '-'}</td>
+                  <td className={TD}>{MONTH_NAMES[row.forMonth] || row.forMonth || ''}</td>
                   <td className={TD}>{row.employeeCount}</td>
                   <td className={cn(TD, 'font-medium')}>{formatNumber(row.totalAmount, 2)}</td>
-                  <td className={TD}>{row.createdAt || '-'}</td>
-                  <td className={TD}>{row.updatedAt || '-'}</td>
+                  <td className={TD}>{row.createdAt || ''}</td>
+                  <td className={TD}>{row.updatedAt || ''}</td>
                   <td className={TD}>
                     <OylikStatusBadge status={row.status} />
                   </td>

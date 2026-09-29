@@ -55,8 +55,19 @@ export async function approveAccrualRetentionDocument(id) {
 }
 
 // Hujjatni bekor qilish
+// payload: { reason: string, attachment?: File, file?: File } yoki FormData
 export async function cancelAccrualRetentionDocument(id, payload = {}) {
-  const response = await axiosAPI.post(`finance/accrual-retention-documents/${id}/cancel/`, payload)
+  let body = payload
+  if (payload instanceof FormData) {
+    body = payload
+  } else if (payload && typeof payload === 'object') {
+    const formData = new FormData()
+    if (payload.reason) formData.append('reason', payload.reason)
+    const file = payload.attachment || payload.file
+    if (file) formData.append('attachment', file)
+    body = formData
+  }
+  const response = await axiosAPI.post(`finance/accrual-retention-documents/${id}/cancel/`, body)
   return unwrapData(response)
 }
 
@@ -68,19 +79,16 @@ export async function bulkCreateAccrualRetentionDocuments(payload) {
 }
 
 // Tab hisoblagichlari (barchasi, tasdiqlangan, qoralama, bekor qilingan)
+// Backend endpoint: /api/v1/finance/accrual-retention-documents/count/
 export async function getAccrualRetentionDocumentCounts() {
   try {
-    const [allRes, approvedRes, draftRes, cancelledRes] = await Promise.all([
-      getAccrualRetentionDocumentsPage({ page_size: 1 }),
-      getAccrualRetentionDocumentsPage({ status: 'approved', page_size: 1 }),
-      getAccrualRetentionDocumentsPage({ status: 'draft', page_size: 1 }),
-      getAccrualRetentionDocumentsPage({ status: 'cancelled', page_size: 1 }),
-    ])
+    const response = await axiosAPI.get('finance/accrual-retention-documents/count/')
+    const data = unwrapData(response)
     return {
-      all: allRes?.count ?? 0,
-      approved: approvedRes?.count ?? 0,
-      draft: draftRes?.count ?? 0,
-      cancelled: cancelledRes?.count ?? 0,
+      all: data?.all ?? 0,
+      approved: data?.approved ?? 0,
+      draft: data?.draft ?? 0,
+      cancelled: data?.cancelled ?? 0,
     }
   } catch {
     return { all: 0, approved: 0, draft: 0, cancelled: 0 }

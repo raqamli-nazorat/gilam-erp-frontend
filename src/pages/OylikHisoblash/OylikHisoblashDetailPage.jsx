@@ -201,14 +201,16 @@ export default function OylikHisoblashDetailPage() {
   }
 
   // Bekor qilish
-  const handleCancel = async ({ reason }) => {
+  const handleCancel = async ({ reason, attachment, file }) => {
     setActionLoading(true)
     try {
       if (hisob?.id === 'test-hisob-1') {
         setMockStatus('cancelled')
         return
       }
-      await dispatch(cancelSalaryThunk({ id: hisob.id, reason })).unwrap()
+      await dispatch(
+        cancelSalaryThunk({ id: hisob.id, reason, attachment: attachment || file })
+      ).unwrap()
     } finally {
       setActionLoading(false)
       setCancelOpen(false)

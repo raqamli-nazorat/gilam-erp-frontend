@@ -54,8 +54,19 @@ export async function approveCalculatingSalary(id) {
 }
 
 // Oylikni bekor qilish
+// payload: { reason: string, attachment?: File, file?: File } yoki FormData
 export async function cancelCalculatingSalary(id, payload = {}) {
-  const response = await axiosAPI.post(`hr/calculating-salaries/${id}/cancel/`, payload)
+  let body = payload
+  if (payload instanceof FormData) {
+    body = payload
+  } else if (payload && typeof payload === 'object') {
+    const formData = new FormData()
+    if (payload.reason) formData.append('reason', payload.reason)
+    const file = payload.attachment || payload.file
+    if (file) formData.append('attachment', file)
+    body = formData
+  }
+  const response = await axiosAPI.post(`hr/calculating-salaries/${id}/cancel/`, body)
   return unwrapData(response)
 }
 
@@ -64,4 +75,22 @@ export async function cancelCalculatingSalary(id, payload = {}) {
 export async function calculateSalaries(payload) {
   const response = await axiosAPI.post('hr/calculating-salaries/calculate/', payload)
   return unwrapData(response)
+}
+
+// Tab hisoblagichlari (barchasi, tasdiqlangan, qoralama, bekor qilingan)
+// Backend endpoint: /api/v1/hr/calculating-salaries/count/
+export async function getCalculatingSalaryCounts() {
+  try {
+    const response = await axiosAPI.get('hr/calculating-salaries/count/')
+    const data = unwrapData(response)
+    return {
+      all: data?.all ?? 0,
+      confirmed: data?.approved ?? data?.confirmed ?? 0,
+      approved: data?.approved ?? data?.confirmed ?? 0,
+      draft: data?.draft ?? 0,
+      cancelled: data?.cancelled ?? 0,
+    }
+  } catch {
+    return { all: 0, confirmed: 0, approved: 0, draft: 0, cancelled: 0 }
+  }
 }
