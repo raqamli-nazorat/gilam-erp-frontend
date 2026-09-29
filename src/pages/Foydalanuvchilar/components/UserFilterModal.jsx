@@ -1,41 +1,32 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
-import { fetchBranches } from '@/features/filiallar/filiallarSlice'
-import { fetchRoles } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { useState } from 'react'
 import { FilterDateRange, FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { branchOptions, organizationOptions, roleOptions } from '@/services/optionSources'
 
-export const EMPTY_USER_FILTERS = { tashkilot: '', filial: '', rol: '', holat: '', sanaDan: '', sanaGacha: '' }
+export const EMPTY_USER_FILTERS = {
+  tashkilot: '',
+  tashkilotName: '',
+  filial: '',
+  filialName: '',
+  rol: '',
+  rolName: '',
+  holat: '',
+  sanaDan: '',
+  sanaGacha: '',
+}
 
 export default function UserFilterModal({ open, onOpenChange, filters, onApply }) {
   const [draft, setDraft] = useState(filters)
-  const dispatch = useDispatch()
-  const orgs = useSelector((s) => s.tashkilotlar.list)
-  const branches = useSelector((s) => s.filiallar.list)
-  const roles = useSelector((s) => s.foydalanuvchilar.roles)
-  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
-  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
-  const rolesStatus = useSelector((s) => s.foydalanuvchilar.rolesStatus)
-
-  useEffect(() => {
-    // Faqat hali yuklanmagan bo'lsa — har ochilishda barcha sahifalarni qayta so'ramaslik uchun.
-    if (!open) return
-    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
-    if (branchesStatus === 'idle') dispatch(fetchBranches())
-    if (rolesStatus === 'idle') dispatch(fetchRoles())
-  }, [open, orgsStatus, branchesStatus, rolesStatus, dispatch])
 
   const set = (k, v) =>
     setDraft((d) => {
       const next = { ...d, [k]: v }
-      if (k === 'tashkilot' && v !== d.tashkilot) next.filial = ''
+      if (k === 'tashkilot' && v !== d.tashkilot) {
+        next.filial = ''
+        next.filialName = ''
+      }
       return next
     })
-
-  const filialOptions = useMemo(() => {
-    const org = orgs.find((o) => o.name === draft.tashkilot)
-    return org ? branches.filter((b) => b.tashkilotId === org.id).map((b) => b.name) : []
-  }, [orgs, branches, draft.tashkilot])
 
   return (
     <FilterModal
@@ -51,18 +42,61 @@ export default function UserFilterModal({ open, onOpenChange, filters, onApply }
       }}
     >
       <FilterField label="Tashkilot">
-        <FilterSelect value={draft.tashkilot} onChange={(v) => set('tashkilot', v)} options={orgs.map((o) => o.name)} />
+        <PagedSelect
+          value={draft.tashkilot}
+          onChange={(v, item) =>
+            setDraft((d) => ({
+              ...d,
+              tashkilot: v,
+              tashkilotName: item?.name ?? '',
+              ...(v !== d.tashkilot && { filial: '', filialName: '' }),
+            }))
+          }
+          fetchPage={organizationOptions}
+          selectedLabel={draft.tashkilotName}
+          placeholder="Barcha tashkilotlar"
+          allowAll
+          allLabel="Barcha tashkilotlar"
+          className="h-9 rounded-[8px]"
+        />
       </FilterField>
       <FilterField label="Filial">
-        <FilterSelect
+        <PagedSelect
           value={draft.filial}
-          onChange={(v) => set('filial', v)}
-          options={filialOptions}
+          onChange={(v, item) =>
+            setDraft((d) => ({
+              ...d,
+              filial: v,
+              filialName: item?.name ?? '',
+            }))
+          }
+          fetchPage={branchOptions}
+          params={draft.tashkilot ? { organization: draft.tashkilot } : undefined}
           disabled={!draft.tashkilot}
+          selectedLabel={draft.filialName}
+          placeholder={draft.tashkilot ? 'Barcha filiallar' : 'Avval tashkilotni tanlang'}
+          allowAll
+          allLabel="Barcha filiallar"
+          className="h-9 rounded-[8px]"
         />
       </FilterField>
       <FilterField label="Rol">
-        <FilterSelect value={draft.rol} onChange={(v) => set('rol', v)} options={roles.map((r) => r.name)} />
+        <PagedSelect
+          value={draft.rol}
+          onChange={(v, item) =>
+            setDraft((d) => ({
+              ...d,
+              rol: v,
+              rolName: item?.name ?? '',
+            }))
+          }
+          fetchPage={roleOptions}
+          selectedLabel={draft.rolName}
+          placeholder="Barcha rollar"
+          allowAll
+          allLabel="Barcha rollar"
+          className="h-9 rounded-[8px]"
+        />
       </FilterField>
       <FilterField label="Holat">
         <FilterSelect value={draft.holat} onChange={(v) => set('holat', v)} options={['Faol', 'Bloklangan']} />
@@ -76,3 +110,4 @@ export default function UserFilterModal({ open, onOpenChange, filters, onApply }
     </FilterModal>
   )
 }
+

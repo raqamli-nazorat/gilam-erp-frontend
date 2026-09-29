@@ -15,6 +15,13 @@ export async function getTimesheetsPage(params = {}) {
   return fetchPage('hr/timesheets/', params)
 }
 
+// Tab hisoblagichlari (/api/v1/hr/timesheets/count/)
+export async function getTimesheetCounts(params = {}) {
+  const response = await axiosAPI.get('hr/timesheets/count/', { params })
+  return unwrapData(response)
+}
+
+
 export async function getTimesheet(id) {
   const response = await axiosAPI.get(`hr/timesheets/${id}/`)
   return unwrapData(response)

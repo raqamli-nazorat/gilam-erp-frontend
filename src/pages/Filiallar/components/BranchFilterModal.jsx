@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
 import { fetchDistricts, fetchRegions } from '@/features/geo/geoSlice'
 import { FilterField, FilterModal, FilterSelect } from '@/components/ui/filter-modal'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { organizationOptions } from '@/services/optionSources'
 import { DatePicker, toISODate } from '@/components/ui/date-picker'
 
 export const EMPTY_BRANCH_FILTERS = {
   tashkilot: '',
+  tashkilotName: '',
   viloyat: '',
   tuman: '',
   holat: '',
@@ -18,16 +20,13 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
   const [draft, setDraft] = useState(filters)
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
   const dispatch = useDispatch()
-  const orgs = useSelector((s) => s.tashkilotlar.list)
-  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
   const regions = useSelector((s) => s.geo.regions)
   const districts = useSelector((s) => (draft.viloyat ? s.geo.districtsByRegion[draft.viloyat] || [] : []))
 
   useEffect(() => {
     if (!open) return
-    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
     dispatch(fetchRegions())
-  }, [open, orgsStatus, dispatch])
+  }, [open, dispatch])
 
   useEffect(() => {
     if (draft.viloyat) {
@@ -49,11 +48,21 @@ export default function BranchFilterModal({ open, onOpenChange, filters, onApply
       }}
     >
       <FilterField label="Tashkilot">
-        <FilterSelect
+        <PagedSelect
           value={draft.tashkilot}
-          onChange={(v) => set('tashkilot', v)}
+          onChange={(v, item) =>
+            setDraft((d) => ({
+              ...d,
+              tashkilot: v,
+              tashkilotName: item?.name ?? '',
+            }))
+          }
+          fetchPage={organizationOptions}
+          selectedLabel={draft.tashkilotName}
           placeholder="Barcha tashkilotlar"
-          options={orgs.map((o) => ({ value: o.id, label: o.name }))}
+          allowAll
+          allLabel="Barcha tashkilotlar"
+          className="h-9 rounded-[8px]"
         />
       </FilterField>
 

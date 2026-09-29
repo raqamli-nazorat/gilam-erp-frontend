@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { useTabCounts } from '@/hooks/useTabCounts'
 import { cn } from '@/lib/utils'
 import { dmyToIso } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusTabs } from '@/pages/Xodimlar/components/statusTabs'
 import { getAllBranches } from '@/services/branchService'
-import { createTimesheet, getTimesheetsPage } from '@/services/timesheetService'
+import { createTimesheet, getTimesheetCounts, getTimesheetsPage } from '@/services/timesheetService'
 import { extractErrorMessage } from '@/services/apiHelpers'
 import { MONTHS, TABEL_STATUS_PARAM, fmtDateTime, fmtHours, normalizeTimesheet } from '@/features/tabel/tabelData'
 import TabelStatusBadge from './components/TabelStatusBadge'
@@ -24,9 +23,6 @@ const COLS = 11
 
 // Backend maydoni hali kelmasa — 0
 const hoursOrZero = (v) => fmtHours(v ?? 0, true)
-
-// Tab kalitlari StatusTabs bilan bir xil: all | confirmed | draft | cancelled
-const TAB_VARIANTS = Object.fromEntries(Object.entries(TABEL_STATUS_PARAM).map(([tab, status]) => [tab, { status }]))
 
 // Zaxira: javobda organization_info bo'lmasa — tashkilot nomi filiallar ro'yxatidan olinadi (bir marta).
 let branchOrgPromise = null
@@ -109,12 +105,32 @@ export default function TabelListPage() {
   const { items: rows, totalCount, isLoading, isLoadingMore, error, hasMore, containerRef, sentinelRef, handleScroll, reload } =
     useServerPagedList(fetchTabelPage, listParams)
 
-  const counts = useTabCounts(fetchTabelPage, baseParams, TAB_VARIANTS, tab, totalCount, isLoading)
+  const [counts, setCounts] = useState({ all: null, confirmed: null, draft: null, cancelled: null })
+
+  const loadCounts = () => {
+    getTimesheetCounts(baseParams)
+      .then((data) => {
+        if (data) {
+          setCounts({
+            all: data.all ?? 0,
+            confirmed: data.approved ?? data.confirmed ?? 0,
+            draft: data.draft ?? 0,
+            cancelled: data.cancelled ?? 0,
+          })
+        }
+      })
+      .catch((err) => console.error('Tabel hisoblagichlarini yuklab bo‘lmadi:', err))
+  }
+
+  useEffect(() => {
+    loadCounts()
+  }, [baseParams])
 
   async function createTabel({ branchId, year, forMonth }) {
     try {
       const created = await createTimesheet({ branch: branchId, year, for_month: forMonth })
       setNewOpen(false)
+      loadCounts()
       if (created?.id) navigate(`/tabel/${created.id}`)
       else reload()
       return null

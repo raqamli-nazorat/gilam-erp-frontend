@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Check, Loader2, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Check, X } from 'lucide-react'
 import { isValidUzPhone } from '@/lib/format'
-import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
-import { fetchDistricts, fetchRegions } from '@/features/geo/geoSlice'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { districtOptions, organizationOptions, regionOptions } from '@/services/optionSources'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -16,89 +14,55 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 const fieldCls =
-  'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-// tashkilot/viloyat/tuman bu yerda backend UUID'lari sifatida saqlanadi (Select value'lari uchun)
-const EMPTY = { name: '', tashkilot: '', viloyat: '', tuman: '', manzil: '', phone: '' }
-
-function Picker({ value, onChange, placeholder, options, disabled, loading }) {
-  return (
-    <Select value={value || '__none'} onValueChange={(v) => onChange(v === '__none' ? '' : v)} disabled={disabled}>
-      <SelectTrigger className={cn(fieldCls, disabled && 'opacity-60')}>
-        <SelectValue>
-          {(v) => {
-            if (v === '__none') return <span className="text-[#737373]">{placeholder}</span>
-            return options.find((o) => o.id === v)?.name ?? ''
-          }}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {loading ? (
-          <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
-            <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
-          </div>
-        ) : (
-          options.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)
-        )}
-      </SelectContent>
-    </Select>
-  )
+// tashkilot/viloyat/tuman bu yerda backend UUID'lari sifatida saqlanadi
+const EMPTY = {
+  name: '',
+  tashkilot: '',
+  tashkilotName: '',
+  viloyat: '',
+  viloyatName: '',
+  tuman: '',
+  tumanName: '',
+  manzil: '',
+  phone: '',
 }
 
 export default function BranchModal({ open, onOpenChange, branch, onSave }) {
   const isEdit = !!branch
   const [draft, setDraft] = useState(EMPTY)
-  const dispatch = useDispatch()
-
-  const orgs = useSelector((s) => s.tashkilotlar.list)
-  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
-  const regions = useSelector((s) => s.geo.regions)
-  const regionsStatus = useSelector((s) => s.geo.regionsStatus)
-  const districtsByRegion = useSelector((s) => s.geo.districtsByRegion)
-  const districtsStatus = useSelector((s) => s.geo.districtsStatus)
 
   useEffect(() => {
     if (!open) return
-    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
-    dispatch(fetchRegions())
     if (branch) {
       setDraft({
         name: branch.name ?? '',
         tashkilot: branch.tashkilotId ?? '',
+        tashkilotName: typeof branch.tashkilot === 'object' ? branch.tashkilot?.name ?? '' : branch.tashkilot ?? '',
         viloyat: branch.viloyatId ?? '',
+        viloyatName: typeof branch.viloyat === 'object' ? branch.viloyat?.name ?? '' : branch.viloyat ?? '',
         tuman: branch.tumanId ?? '',
+        tumanName: typeof branch.tuman === 'object' ? branch.tuman?.name ?? '' : branch.tuman ?? '',
         manzil: branch.manzil ?? '',
         phone: branch.phone ?? '',
       })
-      if (branch.viloyatId) dispatch(fetchDistricts(branch.viloyatId))
     } else {
       setDraft(EMPTY)
     }
-  }, [open, branch, dispatch, orgsStatus])
+  }, [open, branch])
 
   const set = (k, v) => setDraft((d) => {
     const next = { ...d, [k]: v }
-    if (k === 'viloyat' && v !== d.viloyat) next.tuman = ''
+    if (k === 'viloyat' && v !== d.viloyat) {
+      next.tuman = ''
+      next.tumanName = ''
+    }
     return next
   })
-
-  function setViloyat(regionId) {
-    set('viloyat', regionId)
-    if (regionId) dispatch(fetchDistricts(regionId))
-  }
-
-  const tumanOptions = districtsByRegion[draft.viloyat] ?? []
-  const districtsLoading = districtsStatus[draft.viloyat] === 'loading'
 
   const dirty = useMemo(() => {
     if (!branch) return true
@@ -127,7 +91,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 rounded-2xl p-0 sm:max-w-[600px]">
+      <DialogContent className="gap-0 rounded-[20px] p-0 sm:max-w-[600px]">
         <DialogHeader className="flex flex-row items-center justify-between px-6 pb-2 pt-6">
           <DialogTitle className="text-[20px] font-semibold leading-[28px] tracking-[-0.2px] text-[#0A0A0A] dark:text-white">
             {isEdit ? 'Tahrirlash' : 'Yangi filial'}
@@ -147,34 +111,57 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
 
           <div className="col-span-2">
             <Label className={labelCls}>Tashkilot</Label>
-            <Picker
+            <PagedSelect
               value={draft.tashkilot}
-              onChange={(v) => set('tashkilot', v)}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  tashkilot: v,
+                  tashkilotName: item?.name ?? '',
+                }))
+              }
+              fetchPage={organizationOptions}
+              selectedLabel={draft.tashkilotName}
               placeholder="Tashkilotni tanlang"
-              options={orgs}
-              loading={orgsStatus === 'loading'}
+              className={fieldCls}
             />
           </div>
 
           <div>
             <Label className={labelCls}>Viloyat</Label>
-            <Picker
+            <PagedSelect
               value={draft.viloyat}
-              onChange={setViloyat}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  viloyat: v,
+                  viloyatName: item?.name ?? '',
+                  ...(v !== d.viloyat && { tuman: '', tumanName: '' }),
+                }))
+              }
+              fetchPage={regionOptions}
+              selectedLabel={draft.viloyatName}
               placeholder="Viloyatni tanlang"
-              options={regions}
-              loading={regionsStatus === 'loading'}
+              className={fieldCls}
             />
           </div>
           <div>
             <Label className={labelCls}>Tuman</Label>
-            <Picker
+            <PagedSelect
               value={draft.tuman}
-              onChange={(v) => set('tuman', v)}
-              placeholder={draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}
-              options={tumanOptions}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  tuman: v,
+                  tumanName: item?.name ?? '',
+                }))
+              }
+              fetchPage={districtOptions}
+              params={draft.viloyat ? { region: draft.viloyat } : undefined}
               disabled={!draft.viloyat}
-              loading={districtsLoading}
+              selectedLabel={draft.tumanName}
+              placeholder={draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}
+              className={fieldCls}
             />
           </div>
 
@@ -194,7 +181,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="h-9 gap-2 rounded-xl border border-[#E5E5E5] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
+            className="h-11 gap-2 rounded-lg border border-[#E5E5E5] bg-white px-5 text-[15px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white"
           >
             <X className="h-4 w-4" /> Bekor qilish
           </Button>
@@ -202,7 +189,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             type="button"
             disabled={!canSave}
             onClick={handleSave}
-            className="h-9 gap-2 rounded-xl bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
+            className="h-11 gap-2 rounded-lg bg-[#0052D2] px-5 text-[15px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10"
           >
             <Check className="h-4 w-4" /> Saqlash
           </Button>
@@ -211,3 +198,4 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
     </Dialog>
   )
 }
+

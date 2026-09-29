@@ -61,9 +61,47 @@ export const employeeOptions = async (params = {}) => {
     results: list.map((r) => ({
       id: r.id,
       name: r.full_name || r.name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || '',
+      phone: r.phone_number || r.phone || '',
+      organizationId: r.organization_info?.id ?? r.organization ?? '',
+      organizationName: r.organization_info?.name ?? '',
+      branchId: r.branch_info?.id ?? r.branch ?? '',
+      branchName: r.branch_info?.name ?? '',
+      regionId: r.region_info?.id ?? r.region ?? '',
+      regionName: r.region_info?.name ?? '',
+      districtId: r.district_info?.id ?? r.district ?? '',
+      districtName: r.district_info?.name ?? '',
+      raw: r,
     })),
   }
 }
+export const regionOptions = source('organization/regions/')
+
+export const districtOptions = async (params = {}) => {
+  const cleanParams = {}
+  for (const [k, v] of Object.entries(params || {})) {
+    if (v !== '' && v !== null && v !== undefined) cleanParams[k] = v
+  }
+  const regionFilter = cleanParams.region || cleanParams.region_id || cleanParams.regionId
+  const res = await fetchPage('organization/districts/', cleanParams)
+  let list = res.results || []
+  if (regionFilter) {
+    const rStr = String(regionFilter)
+    list = list.filter((r) => {
+      const dReg = r.region ?? r.region_info?.id ?? r.region_id
+      return dReg ? String(dReg) === rStr : true
+    })
+  }
+  return {
+    ...res,
+    results: list.map((r) => ({
+      id: r.id,
+      name: r.name ?? '',
+      regionId: r.region ?? r.region_info?.id ?? '',
+    })),
+  }
+}
+
+export const roleOptions = source('accounts/roles/')
 export const positionOptions = source('hr/positions/')
 export const qualityOptions = source('catalog/qualities/')
 export const colorOptions = source('catalog/colors/')

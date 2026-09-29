@@ -12,6 +12,13 @@ export async function getUsersPage(params) {
   return fetchPage('accounts/users/', params)
 }
 
+// Foydalanuvchilar soni (/api/v1/accounts/users/count/)
+export async function getUserCounts(params) {
+  const response = await axiosAPI.get('accounts/users/count/', { params })
+  return unwrapData(response)
+}
+
+
 // Bitta tashkilotga tegishli foydalanuvchilar (barcha sahifalarni yig'ib) — Tashkilot › Foydalanuvchilar sahifasi uchun.
 export async function getUsersByOrganization(organizationId) {
   return fetchAllPages('accounts/users/', { organization: organizationId })

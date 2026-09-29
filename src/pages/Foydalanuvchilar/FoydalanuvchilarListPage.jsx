@@ -8,7 +8,6 @@ import { usePageHeader } from '@/hooks/usePageHeader'
 import { cn } from '@/lib/utils'
 import { matchesDateRange } from '@/lib/format'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { useTabCounts } from '@/hooks/useTabCounts'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
 import { createUser, fetchUsers, mapUser } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import * as userService from '@/services/userService'
@@ -22,10 +21,8 @@ const TH =
   'sticky top-0 z-10 h-10 bg-[#F5F5F5] px-4 text-[13px] font-semibold uppercase leading-[18px] text-[#737373] dark:bg-white/5 dark:text-muted-foreground'
 
 // Jadval "scroll pagination" bilan yuklanadi — qidiruv va tab/"Holat" (backend `is_blocked`
-// filtri) serverga so'rov parametri sifatida yuboriladi. Tab hisoblagichlari endi barcha
-// foydalanuvchilarni yuklab sanalmaydi — "Barchasi" jadval so'rovining o'z `count`idan,
-// Faol/Bloklangan esa bittadan 1-sahifa so'rovidan olinadi (useTabCounts). "Tashkilot"/"Filial"/"Rol"/sana filtrlari
-// yuklangan qatorlar ustida ishlaydi.
+// filtri) serverga so'rov parametri sifatida yuboriladi. Tab hisoblagichlari /api/v1/accounts/users/count/
+// orqali olinadi. "Tashkilot"/"Filial"/"Rol"/sana filtrlari yuklangan qatorlar ustida ishlaydi.
 function fetchUsersPage(params) {
   return userService.getUsersPage(params).then((res) => ({ ...res, results: res.results.map(mapUser) }))
 }
@@ -67,7 +64,24 @@ export default function FoydalanuvchilarListPage() {
   }
 
   const hasFilter = Object.values(filters).some(Boolean)
-  const isBlockedParam = tab === 'all' ? undefined : tab === 'blocked'
+  const isBlockedParam = useMemo(() => {
+    if (tab === 'active') return false
+    if (tab === 'blocked') return true
+    if (filters.holat === 'Faol') return false
+    if (filters.holat === 'Bloklangan') return true
+    return undefined
+  }, [tab, filters.holat])
+
+  const queryParams = useMemo(() => {
+    const p = {
+      search: debouncedSearch.trim() || undefined,
+      is_blocked: isBlockedParam,
+    }
+    if (filters.tashkilot) p.organization = filters.tashkilot
+    if (filters.filial) p.branch = filters.filial
+    if (filters.rol) p.role = filters.rol
+    return p
+  }, [debouncedSearch, isBlockedParam, filters.tashkilot, filters.filial, filters.rol])
 
   const {
     items: pagedUsers,
@@ -80,33 +94,45 @@ export default function FoydalanuvchilarListPage() {
     sentinelRef: usersSentinelRef,
     handleScroll: handleUsersScroll,
     reload: reloadUsers,
-  } = useServerPagedList(fetchUsersPage, {
-    search: debouncedSearch.trim(),
-    is_blocked: isBlockedParam,
-  })
+  } = useServerPagedList(fetchUsersPage, queryParams)
 
-  // Tab hisoblagichlari — sahifaga kirganda hammasi ko'rinadi: ochiq tab jadvalning o'z `count`idan,
-  // qolganlari bittadan 1-sahifa so'rovi bilan (useTabCounts).
-  const countTab = isBlockedParam === undefined ? 'all' : isBlockedParam ? 'blocked' : 'active'
-  const counts = useTabCounts(
-    userService.getUsersPage,
-    { search: debouncedSearch.trim() },
-    { active: { is_blocked: false }, blocked: { is_blocked: true } },
-    countTab,
-    totalCount,
-    usersLoading
-  )
+  // Tab hisoblagichlari — /api/v1/accounts/users/count/ orqali yuklanadi
+  const [countsData, setCountsData] = useState({ active: null, blocked: null, all: null })
+  const loadCounts = () => {
+    userService
+      .getUserCounts()
+      .then((data) => {
+        if (data) {
+          const active = data.active ?? data.is_active ?? 0
+          const blocked = data.blocked ?? data.is_blocked ?? 0
+          const all = data.all ?? data.total ?? (active != null && blocked != null ? active + blocked : null)
+          setCountsData({
+            all,
+            active,
+            blocked,
+          })
+        }
+      })
+      .catch((err) => console.error('Foydalanuvchi hisoblagichlarini yuklab bo‘lmadi:', err))
+  }
+
+  useEffect(() => {
+    loadCounts()
+  }, [])
+
+  const counts = useMemo(() => {
+    const active = countsData.active
+    const blocked = countsData.blocked
+    const all = countsData.all ?? (active != null && blocked != null ? active + blocked : null)
+    return { all, active, blocked }
+  }, [countsData])
 
   const shown = useMemo(() => {
     let out = pagedUsers
-    if (filters.tashkilot) out = out.filter((u) => (typeof u.tashkilot === 'object' ? u.tashkilot?.name : u.tashkilot) === filters.tashkilot)
-    if (filters.filial) out = out.filter((u) => (typeof u.filial === 'object' ? u.filial?.name : u.filial) === filters.filial)
-    if (filters.rol) out = out.filter((u) => u.rol === filters.rol)
-    if (filters.holat) out = out.filter((u) => (filters.holat === 'Faol' ? u.holat === 'active' : u.holat === 'blocked'))
     if (filters.sanaDan || filters.sanaGacha)
       out = out.filter((u) => matchesDateRange(u.yaratilgan, filters.sanaDan, filters.sanaGacha))
     return out
-  }, [pagedUsers, filters])
+  }, [pagedUsers, filters.sanaDan, filters.sanaGacha])
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -173,7 +199,9 @@ export default function FoydalanuvchilarListPage() {
               hasFilter && 'border-[#0052D2] text-[#0052D2]'
             )}
           >
-            <Filter className="h-4 w-4" /> Filtr
+            <Filter className="h-4 w-4" />
+            <span>Filtr</span>
+            {hasFilter && <span className="size-1.5 rounded-full bg-[#0052D2] dark:bg-[#60A5FA]" />}
           </Button>
           <Button
             onClick={() => setModalOpen(true)}
