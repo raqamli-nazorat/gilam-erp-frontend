@@ -10,13 +10,14 @@ export default function ApproveConfirmModal({
   document: doc,
   onConfirm,
   loading = false,
+  currencyMap = {},
 }) {
   if (!doc) return null
 
   const employeeName = doc.employee_info?.full_name || doc.employee_info?.name || doc.employeeName || '-'
   const branchName = doc.branch_info?.name || doc.branchName || '-'
   const typeName = doc.accrual_retention_info?.name || doc.accrualRetentionName || '-'
-  const valueDisplay = formatAccrualRetentionValue(doc)
+  const valueDisplay = formatAccrualRetentionValue(doc, currencyMap)
   const dateDisplay = doc.date ? formatDateTime(new Date(doc.date)) : (doc.createdAt || '-')
 
   return (
