@@ -30,7 +30,7 @@ export default function CancelConfirmModal({
       return
     }
     setError('')
-    onConfirm({ reason, file })
+    onConfirm({ reason: reason.trim(), attachment: file, file })
   }
 
   return (

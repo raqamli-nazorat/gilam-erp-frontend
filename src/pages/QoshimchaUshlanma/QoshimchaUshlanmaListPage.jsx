@@ -304,7 +304,7 @@ export default function QoshimchaUshlanmaListPage() {
                   <td className={cn(TD, 'text-center text-[#737373] font-medium')}>
                     {index + 1}
                   </td>
-                  <td className={cn(TD, 'font-medium text-[#0A0A0A] dark:text-white')}>
+                  <td className={cn(TD, 'font-medium text-[#0A0A0A] dark:text-white max-w-[200px] truncate')}>
                     {row.branchName}
                   </td>
                   <td className={TD}>
@@ -312,14 +312,19 @@ export default function QoshimchaUshlanmaListPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        navigate(`/qoshimcha-va-ushlanma/${row.id}`)
+                        const empId = row.employee || row.employee_info?.id
+                        if (empId) {
+                          navigate(`/malumotnomalar/xodimlar/${empId}`)
+                        } else {
+                          navigate(`/qoshimcha-va-ushlanma/${row.id}`)
+                        }
                       }}
                       className="font-medium text-[#0052D2] hover:underline dark:text-[#60A5FA] cursor-pointer"
                     >
                       {row.employeeName}
                     </button>
                   </td>
-                  <td className={cn(TD, 'text-[#0A0A0A] dark:text-white')}>
+                  <td className={cn(TD, 'text-[#0A0A0A] dark:text-white max-w-[200px] truncate')}>
                     {row.typeName}
                   </td>
                   <td className={cn(TD, 'font-medium text-[#0A0A0A] dark:text-white')}>

@@ -33,7 +33,8 @@ export default function CancelConfirmModal({
   const isApproved = doc.status === 'approved'
 
   const handleConfirm = () => {
-    onConfirm({ reason: reason || "Ma'lumotlar noto'g'ri kiritilgan", file })
+    const finalReason = reason.trim() || "Ma'lumotlar noto'g'ri kiritilgan"
+    onConfirm({ reason: finalReason, attachment: file, file })
   }
 
   return (

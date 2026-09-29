@@ -64,8 +64,13 @@ export default function NewOylikModal({
     try {
       await onCreate({
         date,
+        organization: orgId,
         orgId,
+        organizationName: orgName,
+        branch: branchId,
         branchId,
+        branchName,
+        for_month: Number(forMonth),
         forMonth: Number(forMonth),
         year: 2026,
       })

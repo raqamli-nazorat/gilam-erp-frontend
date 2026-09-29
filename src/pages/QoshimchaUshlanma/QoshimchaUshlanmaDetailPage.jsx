@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { AlertCircle, Check, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
+import { AlertCircle, Check, ChevronLeft, ChevronRight, Loader2, Plus, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { cn } from '@/lib/utils'
 import { formatDateTime, formatDate, formatNumber, formatUzPhone } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import {
   approveAccrualRetentionDocument,
   cancelAccrualRetentionDocument,
+  createAccrualRetentionDocument,
   getAccrualRetentionDocument,
   getAccrualRetentionDocumentsPage,
   patchAccrualRetentionDocument,
@@ -18,10 +20,11 @@ import {
   MOCK_ACCRUAL_RETENTION_DOCUMENTS,
   MOCK_EMPLOYEE_HISTORY,
 } from '@/features/accrualRetention/accrualRetentionData'
-import { localUpdateDocumentStatus } from '@/features/accrualRetention/accrualRetentionSlice'
+import { localAddDocument, localUpdateDocumentStatus } from '@/features/accrualRetention/accrualRetentionSlice'
 import QoshimchaStatusBadge from './components/QoshimchaStatusBadge'
 import ApproveConfirmModal from './components/ApproveConfirmModal'
 import CancelConfirmModal from './components/CancelConfirmModal'
+import NewQoshimchaModal from './components/NewQoshimchaModal'
 
 const TH =
   'sticky top-0 z-10 h-11 bg-[#93C5FD] px-4 text-left text-[13px] font-semibold uppercase tracking-wider text-[#1E3A8A] dark:bg-blue-950 dark:text-blue-200'
@@ -42,11 +45,10 @@ export default function QoshimchaUshlanmaDetailPage() {
 
   const [doc, setDoc] = useState(initialDoc)
   const [loading, setLoading] = useState(false)
-  const [historyItems, setHistoryItems] = useState([])
-  const [historyLoading, setHistoryLoading] = useState(false)
 
   const [approveOpen, setApproveOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
 
@@ -73,10 +75,114 @@ export default function QoshimchaUshlanmaDetailPage() {
     }
   }, [id])
 
+  const employeeId = doc?.employee || doc?.employee_info?.id || null
+
+  // Tanlangan xodimga tegishli barcha ushlanma/qo'shimchalarni sahifalab olish
+  const fetchHistoryPage = useCallback(
+    async (params) => {
+      try {
+        const res = await getAccrualRetentionDocumentsPage(params)
+        return {
+          ...res,
+          results: (res?.results || []).map((item) => ({
+            id: item.id,
+            date: item.date
+              ? formatDateTime(new Date(item.date))
+              : item.created_at
+                ? formatDateTime(new Date(item.created_at))
+                : '-',
+            name: item.accrual_retention_info?.name || item.accrualRetentionName || item.name || '-',
+            value: formatAccrualRetentionValue(item),
+            status: item.status || 'draft',
+          })),
+          count: res?.count ?? (res?.results?.length || 0),
+        }
+      } catch (err) {
+        console.error('Failed to fetch employee accrual retention history:', err)
+        const mockFiltered = MOCK_ACCRUAL_RETENTION_DOCUMENTS.filter(
+          (m) =>
+            String(m.employee) === String(employeeId) ||
+            String(m.employee_info?.id) === String(employeeId)
+        )
+        return {
+          count: mockFiltered.length,
+          results: mockFiltered.map((item) => ({
+            id: item.id,
+            date: item.date ? formatDateTime(new Date(item.date)) : '-',
+            name: item.accrual_retention_info?.name || '-',
+            value: formatAccrualRetentionValue(item),
+            status: item.status || 'draft',
+          })),
+          next: null,
+        }
+      }
+    },
+    [employeeId]
+  )
+
+  const historyQueryParams = useMemo(() => {
+    if (!employeeId) return null
+    return { employee: employeeId }
+  }, [employeeId])
+
+  const {
+    items: historyItems,
+    isLoading: historyLoading,
+    isLoadingMore: historyLoadingMore,
+    containerRef: historyContainerRef,
+    sentinelRef: historySentinelRef,
+    handleScroll: handleHistoryScroll,
+    reload: reloadHistory,
+  } = useServerPagedList(fetchHistoryPage, historyQueryParams, {
+    enabled: Boolean(employeeId),
+  })
+
+  // Yangi qo'shimcha yoki ushlanma yaratish
+  const handleCreateDocument = async (payload) => {
+    let created = null
+    try {
+      created = await createAccrualRetentionDocument({
+        branch: payload.branch,
+        employee: payload.employee,
+        accrual_retention: payload.accrual_retention,
+        date: payload.date,
+      })
+    } catch {
+      created = {
+        id: `doc-${Date.now()}`,
+        branch: payload.branch,
+        branch_info: { id: payload.branch, name: payload.branchName },
+        employee: payload.employee,
+        employee_info: {
+          id: payload.employee,
+          full_name: payload.employeeName,
+          name: payload.employeeName,
+        },
+        accrual_retention: payload.accrual_retention,
+        accrual_retention_info: payload.accrualRetentionItem,
+        value: payload.accrualRetentionItem?.value || 0,
+        type: payload.accrualRetentionItem?.type || 'percent',
+        currency: payload.accrualRetentionItem?.currency_info?.short_name || 'UZS',
+        date: payload.date,
+        created_at: payload.date,
+        updated_at: payload.date,
+        created_by_info: { full_name: 'Anvarov Sardorbek' },
+        status: 'draft',
+      }
+    }
+
+    if (created) {
+      dispatch(localAddDocument(created))
+      if (String(payload.employee) === String(employeeId)) {
+        if (reloadHistory) reloadHistory()
+      }
+    }
+  }
+
   const employeeName =
-    doc?.employee_info?.full_name || doc?.employee_info?.name || doc?.employeeName || '-'
+    doc?.employee_info?.full_name || doc?.employee_info?.name || doc?.employeeName || ''
   const typeName =
-    doc?.accrual_retention_info?.name || doc?.accrualRetentionName || '-'
+    doc?.accrual_retention_info?.name || doc?.accrualRetentionName || ''
   const currentStatus = doc?.status || 'draft'
   const isDraft = currentStatus === 'draft'
   const valueDisplay = formatAccrualRetentionValue(doc)
@@ -215,7 +321,11 @@ export default function QoshimchaUshlanmaDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch flex-1 min-h-0 overflow-hidden">
           {/* Chap qism: Xodimning barcha hisob-kitoblari tarixi jadvali */}
           <div className="lg:col-span-8 h-full rounded-xl border border-[#E5E5E5] bg-[#EFF1F7] dark:border-white/10 dark:bg-card overflow-hidden flex flex-col">
-            <div className="flex-1 overflow-auto">
+            <div
+              ref={historyContainerRef}
+              onScroll={handleHistoryScroll}
+              className="flex-1 overflow-auto"
+            >
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr>
@@ -227,7 +337,7 @@ export default function QoshimchaUshlanmaDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {historyLoading ? (
+                {historyLoading && historyItems.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center">
                       <Loader2 className="h-5 w-5 animate-spin mx-auto text-[#0052D2]" />
@@ -240,35 +350,63 @@ export default function QoshimchaUshlanmaDetailPage() {
                     </td>
                   </tr>
                 ) : (
-                  historyItems.map((h, idx) => (
-                    <tr
-                      key={h.id || idx}
-                      className={cn(
-                        'transition-colors hover:bg-[#F9FAFB] dark:hover:bg-white/5',
-                        idx === 0 && 'bg-[#F0F7FF]/50 dark:bg-blue-950/20'
-                      )}
-                    >
-                      <td className={cn(TD, 'text-center text-[#737373] font-medium')}>
-                        {idx + 1}
-                      </td>
-                      <td className={cn(TD, 'text-[#525252] dark:text-muted-foreground')}>
-                        {h.date}
-                      </td>
-                      <td className={cn(TD, 'font-medium text-[#0A0A0A] dark:text-white')}>
-                        {h.name}
-                      </td>
-                      <td className={cn(TD, 'font-semibold text-[#0A0A0A] dark:text-white')}>
-                        {h.value}
-                      </td>
-                      <td className={TD}>
-                        <QoshimchaStatusBadge status={h.status} />
-                      </td>
-                    </tr>
-                  ))
+                  <>
+                    {historyItems.map((h, idx) => {
+                      const isCurrent = String(h.id) === String(id)
+                      return (
+                        <tr
+                          key={h.id || idx}
+                          onClick={() => {
+                            if (h.id && !isCurrent) {
+                              navigate(`/qoshimcha-va-ushlanma/${h.id}`)
+                            }
+                          }}
+                          className={cn(
+                            'transition-colors hover:bg-[#F9FAFB] dark:hover:bg-white/5',
+                            !isCurrent && 'cursor-pointer',
+                            isCurrent && 'bg-[#F0F7FF]/70 dark:bg-blue-950/40 font-medium'
+                          )}
+                        >
+                          <td className={cn(TD, 'text-center text-[#737373] font-medium')}>
+                            {idx + 1}
+                          </td>
+                          <td className={cn(TD, 'text-[#525252] dark:text-muted-foreground')}>
+                            {h.date}
+                          </td>
+                          <td className={cn(TD, 'font-medium text-[#0A0A0A] dark:text-white')}>
+                            {h.name}
+                          </td>
+                          <td className={cn(TD, 'font-semibold text-[#0A0A0A] dark:text-white')}>
+                            {h.value}
+                          </td>
+                          <td className={TD}>
+                            <QoshimchaStatusBadge status={h.status} />
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {historyLoadingMore && (
+                      <tr>
+                        <td colSpan={5} className="py-3 text-center">
+                          <Loader2 className="h-4 w-4 animate-spin mx-auto text-[#0052D2]" />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 )}
               </tbody>
             </table>
+            <div ref={historySentinelRef} className="h-1" />
           </div>
+
+          {/* Jadval ostida doimiy qotib turuvchi "+ Qo'shish" tugmasi */}
+          <button
+            type="button"
+            onClick={() => setNewOpen(true)}
+            className="shrink-0 flex w-full items-center justify-center gap-2 border-t border-dashed border-[#D1D5DB] py-3 text-sm font-semibold text-[#0A0A0A] bg-[#EFF1F7] hover:bg-black/5 dark:bg-card dark:border-white/15 dark:text-white dark:hover:bg-white/5 transition-colors cursor-pointer z-10"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" /> Qo‘shish
+          </button>
         </div>
 
         {/* O'ng qism: Hujjat va Xodim ma'lumotlari (5 ustun / ~40%) */}
@@ -284,7 +422,7 @@ export default function QoshimchaUshlanmaDetailPage() {
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Tabel nomer</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {doc?.employee_info?.tab_num || ''}
+                  {doc?.employee_details?.tab_num || doc?.employee_info?.tab_num || ''}
                 </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
@@ -296,7 +434,10 @@ export default function QoshimchaUshlanmaDetailPage() {
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Lavozimi</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {doc?.employee_info?.position_name || doc?.employee_info?.position?.name || ''}
+                  {doc?.employee_details?.position_info?.name ||
+                    doc?.employee_info?.position_name ||
+                    doc?.employee_info?.position?.name ||
+                    ''}
                 </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
@@ -328,8 +469,9 @@ export default function QoshimchaUshlanmaDetailPage() {
             <div className="divide-y divide-[#F0F0F0] dark:divide-white/5 text-[14px]">
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Tashkiloti</span>
-                <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {doc?.branch_info?.organization?.name ||
+                <span className="font-semibold text-[#0A0A0A] dark:text-white text-right max-w-[60%] truncate" title={doc?.employee_details?.organization_info?.name || doc?.branch_info?.organization?.name || doc?.branch_info?.organization_name || doc?.employee_info?.organization_name || ''}>
+                  {doc?.employee_details?.organization_info?.name ||
+                    doc?.branch_info?.organization?.name ||
                     doc?.branch_info?.organization_name ||
                     doc?.employee_info?.organization_name ||
                     ''}
@@ -338,32 +480,44 @@ export default function QoshimchaUshlanmaDetailPage() {
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Karta raqami</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {doc?.employee_info?.card_number || ''}
+                  {doc?.employee_details?.card_number || doc?.employee_info?.card_number || ''}
                 </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Ishga olingan sana</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {formatDate(doc?.employee_info?.hired_date || doc?.employee_info?.hire_date) || ''}
+                  {doc?.employee_details?.hire_date
+                    ? formatDate(doc.employee_details.hire_date)
+                    : (doc?.employee_info?.hired_date || doc?.employee_info?.hire_date)
+                      ? formatDate(doc?.employee_info?.hired_date || doc?.employee_info?.hire_date)
+                      : ''}
                 </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Ish haqi turi</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {doc?.employee_info?.salary_type_label || ''}
+                  {doc?.employee_details?.salary_type?.label ||
+                    doc?.employee_details?.salary_type_label ||
+                    (typeof doc?.employee_details?.salary_type === 'string' ? doc.employee_details.salary_type : '') ||
+                    doc?.employee_info?.salary_type_label ||
+                    ''}
                 </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Telefon</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {formatUzPhone(doc?.employee_info?.phone_number) || ''}
+                  {doc?.employee_details?.phone_number
+                    ? (formatUzPhone(doc.employee_details.phone_number) || doc.employee_details.phone_number)
+                    : doc?.employee_info?.phone_number
+                      ? (formatUzPhone(doc.employee_info.phone_number) || doc.employee_info.phone_number)
+                      : ''}
                 </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[#737373] dark:text-muted-foreground">Oxirgi kirish</span>
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">
-                  {doc?.employee_info?.last_login
-                    ? formatDateTime(new Date(doc.employee_info.last_login))
+                  {(doc?.employee_details?.last_login || doc?.employee_info?.last_login)
+                    ? formatDateTime(new Date(doc.employee_details?.last_login || doc.employee_info?.last_login))
                     : ''}
                 </span>
               </div>
@@ -462,6 +616,13 @@ export default function QoshimchaUshlanmaDetailPage() {
         document={doc}
         onConfirm={handleCancel}
         loading={actionLoading}
+      />
+
+      <NewQoshimchaModal
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        initialData={doc}
+        onCreate={handleCreateDocument}
       />
     </div>
   )

@@ -78,9 +78,9 @@ export const approveAccrualDocumentThunk = createAsyncThunk(
 // Bekor qilish
 export const cancelAccrualDocumentThunk = createAsyncThunk(
   'accrualRetention/cancel',
-  async ({ id, reason }, { rejectWithValue }) => {
+  async ({ id, reason, attachment, file }, { rejectWithValue }) => {
     try {
-      const data = await cancelAccrualRetentionDocument(id, { reason })
+      const data = await cancelAccrualRetentionDocument(id, { reason, attachment: attachment || file })
       return data
     } catch (err) {
       return rejectWithValue(err?.response?.data || err.message)
