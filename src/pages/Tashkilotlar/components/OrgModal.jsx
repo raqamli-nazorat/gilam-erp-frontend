@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Check, Loader2, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isValidUzPhone } from '@/lib/format'
-import { fetchDistricts, fetchRegions } from '@/features/geo/geoSlice'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { districtOptions, regionOptions } from '@/services/optionSources'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -15,33 +15,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 const fieldCls =
-  'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-// viloyat/tuman bu yerda backend UUID'lari sifatida saqlanadi (Select value'lari uchun)
-const EMPTY = { name: '', inn: '', phone: '', director: '', viloyat: '', tuman: '', manzil: '', titul: '' }
+// viloyat/tuman bu yerda backend UUID'lari sifatida saqlanadi
+const EMPTY = {
+  name: '',
+  inn: '',
+  phone: '',
+  director: '',
+  viloyat: '',
+  viloyatName: '',
+  tuman: '',
+  tumanName: '',
+  manzil: '',
+  titul: '',
+}
 
 export default function OrgModal({ open, onOpenChange, org, onSave }) {
   const isEdit = !!org
   const [draft, setDraft] = useState(EMPTY)
-  const dispatch = useDispatch()
-  const regions = useSelector((s) => s.geo.regions)
-  const regionsStatus = useSelector((s) => s.geo.regionsStatus)
-  const districtsByRegion = useSelector((s) => s.geo.districtsByRegion)
-  const districtsStatus = useSelector((s) => s.geo.districtsStatus)
 
   useEffect(() => {
     if (!open) return
-    dispatch(fetchRegions())
     if (org) {
       setDraft({
         name: org.name ?? '',
@@ -49,29 +47,26 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
         phone: org.phone ?? '',
         director: org.director ?? '',
         viloyat: org.viloyatId ?? '',
+        viloyatName: typeof org.viloyat === 'object' ? org.viloyat?.name ?? '' : org.viloyat ?? '',
         tuman: org.tumanId ?? '',
+        tumanName: typeof org.tuman === 'object' ? org.tuman?.name ?? '' : org.tuman ?? '',
         manzil: org.manzil ?? '',
         titul: org.titul ?? '',
       })
-      if (org.viloyatId) dispatch(fetchDistricts(org.viloyatId))
     } else {
       setDraft(EMPTY)
     }
-  }, [open, org, dispatch])
+  }, [open, org])
 
   const set = (k, v) => setDraft((d) => {
     const next = { ...d, [k]: v }
-    if (k === 'viloyat' && v !== d.viloyat) next.tuman = ''
+    if (k === 'viloyat' && v !== d.viloyat) {
+      next.tuman = ''
+      next.tumanName = ''
+    }
     return next
   })
 
-  function setViloyat(regionId) {
-    set('viloyat', regionId)
-    if (regionId) dispatch(fetchDistricts(regionId))
-  }
-
-  const tumanOptions = districtsByRegion[draft.viloyat] ?? []
-  const districtsLoading = districtsStatus[draft.viloyat] === 'loading'
   const innDigits = draft.inn.replace(/\D/g, '')
 
   const dirty = useMemo(() => {
@@ -162,53 +157,40 @@ export default function OrgModal({ open, onOpenChange, org, onSave }) {
 
           <div>
             <Label className={labelCls}>Viloyat</Label>
-            <Select value={draft.viloyat || '__none'} onValueChange={(v) => setViloyat(v === '__none' ? '' : v)}>
-              <SelectTrigger className={fieldCls}>
-                <SelectValue>
-                  {(v) => {
-                    if (v === '__none') return <span className="text-[#737373]">Viloyatni tanlang</span>
-                    return regions.find((r) => r.id === v)?.name ?? ''
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {regionsStatus === 'loading' ? (
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
-                  </div>
-                ) : (
-                  regions.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)
-                )}
-              </SelectContent>
-            </Select>
+            <PagedSelect
+              value={draft.viloyat}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  viloyat: v,
+                  viloyatName: item?.name ?? '',
+                  ...(v !== d.viloyat && { tuman: '', tumanName: '' }),
+                }))
+              }
+              fetchPage={regionOptions}
+              selectedLabel={draft.viloyatName}
+              placeholder="Viloyatni tanlang"
+              className={fieldCls}
+            />
           </div>
           <div>
             <Label className={labelCls}>Tuman</Label>
-            <Select
-              value={draft.tuman || '__none'}
-              onValueChange={(v) => set('tuman', v === '__none' ? '' : v)}
+            <PagedSelect
+              value={draft.tuman}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  tuman: v,
+                  tumanName: item?.name ?? '',
+                }))
+              }
+              fetchPage={districtOptions}
+              params={draft.viloyat ? { region: draft.viloyat } : undefined}
               disabled={!draft.viloyat}
-            >
-              <SelectTrigger className={cn(fieldCls, !draft.viloyat && 'opacity-60')}>
-                <SelectValue>
-                  {(v) => {
-                    if (v === '__none') {
-                      return <span className="text-[#737373]">{draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}</span>
-                    }
-                    return tumanOptions.find((t) => t.id === v)?.name ?? ''
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {districtsLoading ? (
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
-                  </div>
-                ) : (
-                  tumanOptions.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)
-                )}
-              </SelectContent>
-            </Select>
+              selectedLabel={draft.tumanName}
+              placeholder={draft.viloyat ? 'Tumanni tanlang' : 'Avval viloyatni tanlang'}
+              className={fieldCls}
+            />
           </div>
 
           <div className="col-span-2">

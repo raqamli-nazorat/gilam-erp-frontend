@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // ko'rinishi orqaga chiqib qolishi mumkin (qalin qora chegara + to'liq dumaloq burchak);
 // bu ikkalasi doim aniq berilishi kerak (faqat border-RANGI yetarli emas).
 const fieldCls =
-  'h-10 w-full appearance-none rounded-md border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 w-full appearance-none rounded-md border border-[#E5E5E5] bg-white px-3 text-[14px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-1.5 block text-[13px] font-normal leading-[16px] text-[#525252] dark:text-muted-foreground'
 
 // tashkilot/viloyat/tuman/filial — backend UUID'lari (Select value'lari uchun)

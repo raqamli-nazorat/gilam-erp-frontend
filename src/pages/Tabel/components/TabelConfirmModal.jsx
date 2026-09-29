@@ -13,6 +13,7 @@ export default function TabelConfirmModal({
   confirmIcon: Icon = Check,
   danger,
   success,
+  busy,
   onConfirm,
 }) {
   return (
@@ -25,7 +26,7 @@ export default function TabelConfirmModal({
           <ModalButton variant="outline" onClick={() => onOpenChange(false)}>
             <X className="size-4" /> {cancelLabel}
           </ModalButton>
-          <ModalButton onClick={onConfirm} className={danger ? 'bg-[#DC2626] hover:bg-[#B91C1C]' : success ? 'bg-[#16A34A] hover:bg-[#15803D]' : undefined}>
+          <ModalButton onClick={onConfirm} disabled={busy} className={danger ? 'bg-[#DC2626] hover:bg-[#B91C1C]' : success ? 'bg-[#16A34A] hover:bg-[#15803D]' : undefined}>
             <Icon className="size-4" /> {confirmLabel}
           </ModalButton>
         </>

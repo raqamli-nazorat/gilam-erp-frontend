@@ -95,8 +95,11 @@ function mapPermission(p) {
 function buildUserPayload(draft, isEdit) {
   const payload = {
     full_name: (draft.name ?? '').trim(),
+    employee: draft.employeeId || draft.employee || null,
     phone_number: draft.phone ? draft.phone.replace(/[\s-]/g, '') : '',
     role: draft.rol || null,
+    organization: draft.tashkilot || null,
+    branch: draft.filial || null,
     is_staff: !!draft.isStaff,
   }
   if (!isEdit || draft.password) payload.password = draft.password

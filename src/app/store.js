@@ -15,7 +15,6 @@ import filiallarReducer from '@/features/filiallar/filiallarSlice'
 import foydalanuvchilarReducer from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
 import xodimlarReducer from '@/features/xodimlar/xodimlarSlice'
 import ishGrafigiReducer from '@/features/ishGrafigi/ishGrafigiSlice'
-import tabelReducer from '@/features/tabel/tabelSlice'
 import oylikHisoblashReducer from '@/features/oylikHisoblash/oylikSlice'
 import accrualRetentionReducer from '@/features/accrualRetention/accrualRetentionSlice'
 import {
@@ -47,7 +46,6 @@ export const store = configureStore({
     foydalanuvchilar: foydalanuvchilarReducer,
     xodimlar: xodimlarReducer,
     ishGrafigi: ishGrafigiReducer,
-    tabel: tabelReducer,
     oylikHisoblash: oylikHisoblashReducer,
     accrualRetention: accrualRetentionReducer,
     sifatlar: qualitySlice.reducer,

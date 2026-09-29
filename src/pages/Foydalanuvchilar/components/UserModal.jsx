@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Check, Loader2, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isValidUzPhone } from '@/lib/format'
-import { fetchOrganizations } from '@/features/tashkilotlar/tashkilotlarSlice'
-import { fetchBranches } from '@/features/filiallar/filiallarSlice'
-import { fetchRoles } from '@/features/foydalanuvchilar/foydalanuvchilarSlice'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { branchOptions, employeeOptions, organizationOptions, roleOptions } from '@/services/optionSources'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -26,60 +24,41 @@ import {
 } from '@/components/ui/select'
 
 const fieldCls =
-  'h-11 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
+  'h-9 w-full rounded-lg border-[#E5E5E5] bg-white px-3.5 text-[15px] font-normal text-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.06)] placeholder:text-[#737373] dark:border-white/10 dark:bg-card dark:text-white'
 const labelCls = 'mb-2 block text-[14px] font-normal leading-[18px] text-[#3F3F46] dark:text-muted-foreground'
 
-// tashkilot/filial/rol bu yerda backend UUID'lari sifatida saqlanadi (Select value'lari uchun)
-const EMPTY = { name: '', tashkilot: '', filial: '', rol: '', holat: 'Faol', phone: '', password: '' }
-
-function Picker({ value, onChange, placeholder, options, disabled, loading }) {
-  return (
-    <Select value={value || '__none'} onValueChange={(v) => onChange(v === '__none' ? '' : v)} disabled={disabled}>
-      <SelectTrigger className={cn(fieldCls, disabled && 'opacity-60')}>
-        <SelectValue>
-          {(v) => {
-            if (v === '__none') return <span className="text-[#737373]">{placeholder}</span>
-            return options.find((o) => o.id === v)?.name ?? ''
-          }}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {loading ? (
-          <div className="flex items-center gap-2 px-3 py-2 text-sm text-[#737373]">
-            <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda…
-          </div>
-        ) : (
-          options.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)
-        )}
-      </SelectContent>
-    </Select>
-  )
+// tashkilot/filial/rol/employee bu yerda backend UUID'lari sifatida saqlanadi
+const EMPTY = {
+  employeeId: '',
+  name: '',
+  tashkilot: '',
+  tashkilotName: '',
+  filial: '',
+  filialName: '',
+  rol: '',
+  rolName: '',
+  holat: 'Faol',
+  phone: '',
+  password: '',
 }
 
 // user: null (yangi) | { ...record, tashkilotId, filialId, rolId, holat: 'active'|'blocked' }
 export default function UserModal({ open, onOpenChange, user, onSave }) {
   const isEdit = !!user
   const [draft, setDraft] = useState(EMPTY)
-  const dispatch = useDispatch()
-
-  const orgs = useSelector((s) => s.tashkilotlar.list)
-  const orgsStatus = useSelector((s) => s.tashkilotlar.listStatus)
-  const branches = useSelector((s) => s.filiallar.list)
-  const branchesStatus = useSelector((s) => s.filiallar.listStatus)
-  const roles = useSelector((s) => s.foydalanuvchilar.roles)
-  const rolesStatus = useSelector((s) => s.foydalanuvchilar.rolesStatus)
 
   useEffect(() => {
     if (!open) return
-    if (orgsStatus === 'idle') dispatch(fetchOrganizations())
-    if (branchesStatus === 'idle') dispatch(fetchBranches())
-    if (rolesStatus === 'idle') dispatch(fetchRoles())
     if (user) {
       setDraft({
+        employeeId: user.employeeId ?? '',
         name: user.name ?? '',
         tashkilot: user.tashkilotId ?? '',
+        tashkilotName: typeof user.tashkilot === 'object' ? user.tashkilot?.name ?? '' : user.tashkilot ?? '',
         filial: user.filialId ?? '',
+        filialName: typeof user.filial === 'object' ? user.filial?.name ?? '' : user.filial ?? '',
         rol: user.rolId ?? '',
+        rolName: user.rol ?? '',
         holat: user.holat === 'blocked' ? 'Bloklangan' : 'Faol',
         phone: user.phone ?? '',
         password: '',
@@ -87,26 +66,22 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
     } else {
       setDraft(EMPTY)
     }
-  }, [open, user, dispatch, orgsStatus, branchesStatus, rolesStatus])
+  }, [open, user])
 
-  const set = (k, v) => setDraft((d) => {
-    const next = { ...d, [k]: v }
-    if (k === 'tashkilot' && v !== d.tashkilot) next.filial = ''
-    return next
-  })
-
-  const filialOptions = useMemo(
-    () => branches.filter((b) => b.tashkilotId === draft.tashkilot),
-    [branches, draft.tashkilot]
-  )
-  const rolOptions = useMemo(
-    () => roles.filter((r) => !r.tashkilotId || r.tashkilotId === draft.tashkilot),
-    [roles, draft.tashkilot]
-  )
+  const set = (k, v) =>
+    setDraft((d) => {
+      const next = { ...d, [k]: v }
+      if (k === 'tashkilot' && v !== d.tashkilot) {
+        next.filial = ''
+        next.filialName = ''
+      }
+      return next
+    })
 
   const baseline = useMemo(() => {
     if (!user) return null
     return {
+      employeeId: user.employeeId ?? '',
       name: user.name ?? '',
       tashkilot: user.tashkilotId ?? '',
       filial: user.filialId ?? '',
@@ -119,6 +94,7 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
   const dirty = useMemo(() => {
     if (!baseline) return true
     return (
+      draft.employeeId !== baseline.employeeId ||
       draft.name !== baseline.name ||
       draft.tashkilot !== baseline.tashkilot ||
       draft.filial !== baseline.filial ||
@@ -130,7 +106,7 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
 
   const canSave =
     dirty &&
-    draft.name.trim().length > 1 &&
+    (draft.name.trim().length > 1 || !!draft.employeeId) &&
     !!draft.tashkilot &&
     !!draft.filial &&
     !!draft.rol &&
@@ -154,52 +130,85 @@ export default function UserModal({ open, onOpenChange, user, onSave }) {
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-5 px-6 pb-4 pt-2">
           <div className="col-span-2">
-            <Label className={labelCls}>F.I.SH.</Label>
-            <Input
-              value={draft.name}
-              onChange={(e) => set('name', e.target.value)}
-              placeholder="Masalan: Karimov Sanjar"
+            <Label className={labelCls}>F.I.SH. (Xodim)</Label>
+            <PagedSelect
+              value={draft.employeeId}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  employeeId: v,
+                  name: item?.name ?? '',
+                  ...(item?.phone ? { phone: item.phone } : {}),
+                  ...(item?.organizationId ? { tashkilot: item.organizationId, tashkilotName: item.organizationName } : {}),
+                  ...(item?.branchId ? { filial: item.branchId, filialName: item.branchName } : {}),
+                }))
+              }
+              fetchPage={employeeOptions}
+              selectedLabel={draft.name}
+              placeholder="Xodimni tanlang"
               className={fieldCls}
             />
           </div>
 
           <div>
             <Label className={labelCls}>Tashkilot</Label>
-            <Picker
+            <PagedSelect
               value={draft.tashkilot}
-              onChange={(v) => set('tashkilot', v)}
-              placeholder="Tashkilotni tanlang"
-              options={orgs}
-              loading={orgsStatus === 'loading'}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  tashkilot: v,
+                  tashkilotName: item?.name ?? '',
+                }))
+              }
+              fetchPage={organizationOptions}
+              disabled={true}
+              selectedLabel={draft.tashkilotName}
+              placeholder="Xodimdan olinadi"
+              className={fieldCls}
             />
           </div>
           <div>
             <Label className={labelCls}>Filial</Label>
-            <Picker
+            <PagedSelect
               value={draft.filial}
-              onChange={(v) => set('filial', v)}
-              placeholder={draft.tashkilot ? 'Filialni tanlang' : 'Avval tashkilotni tanlang'}
-              options={filialOptions}
-              disabled={!draft.tashkilot}
-              loading={branchesStatus === 'loading'}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  filial: v,
+                  filialName: item?.name ?? '',
+                }))
+              }
+              fetchPage={branchOptions}
+              disabled={true}
+              selectedLabel={draft.filialName}
+              placeholder="Xodimdan olinadi"
+              className={fieldCls}
             />
           </div>
 
           <div>
             <Label className={labelCls}>Rol</Label>
-            <Picker
+            <PagedSelect
               value={draft.rol}
-              onChange={(v) => set('rol', v)}
+              onChange={(v, item) =>
+                setDraft((d) => ({
+                  ...d,
+                  rol: v,
+                  rolName: item?.name ?? '',
+                }))
+              }
+              fetchPage={roleOptions}
+              selectedLabel={draft.rolName}
               placeholder="Rolni tanlang"
-              options={rolOptions}
-              loading={rolesStatus === 'loading'}
+              className={fieldCls}
             />
           </div>
           <div>
             <Label className={labelCls}>Holat</Label>
             <Select value={draft.holat} onValueChange={(v) => set('holat', v)}>
               <SelectTrigger className={fieldCls}>
-                <SelectValue />
+                <SelectValue>{draft.holat}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Faol">Faol</SelectItem>

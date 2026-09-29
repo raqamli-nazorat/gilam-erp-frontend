@@ -49,7 +49,6 @@ export async function getBranchesByOrganization(organizationId) {
 }
 
 export async function getOrganizationCounts() {
-  const response = await axiosAPI.get('organization/organizations/counts/')
+  const response = await axiosAPI.get('organization/organizations/count/')
   return unwrapData(response)
 }
-

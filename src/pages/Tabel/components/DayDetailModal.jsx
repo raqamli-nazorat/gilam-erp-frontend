@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { Check, ChevronRight, X } from 'lucide-react'
+import { Check, ChevronRight, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { dayUpdated } from '@/features/tabel/tabelSlice'
 import { calcFact, fmtDmy, fmtHours, maskTime, toMinutes } from '@/features/tabel/tabelData'
+import { extractErrorMessage } from '@/services/apiHelpers'
 import TabelModal, { ModalButton } from './TabelModal'
 
 const INPUT =
@@ -18,15 +17,20 @@ const TIME_FIELDS = [
 ]
 
 // target: { employee, day, entry } | null
+// onSubmit({ empId, day, entry }) — sahifada yig'ish (sinxron) yoki darhol backendga yozish (Promise);
+// Promise xato bilan tugasa — xabar oynada ko'rsatiladi.
 export default function DayDetailModal({ target, tabelId, year, month, readOnly, onClose, onSaved, onSubmit }) {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const [form, setForm] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (target) {
       const { kelgan, tushlikChiqqan, tushlikQaytgan, ketgan } = target.entry
       setForm({ kelgan, tushlikChiqqan, tushlikQaytgan, ketgan })
+      setSaving(false)
+      setError('')
     }
   }, [target])
 
@@ -37,13 +41,18 @@ export default function DayDetailModal({ target, tabelId, year, month, readOnly,
   const dirty = TIME_FIELDS.some(([k]) => form[k] !== entry[k])
   const fakt = invalid ? entry.fakt : calcFact(form)
 
-  function save() {
-    const next = { plan: entry.plan, ...form }
-    // onSubmit berilsa — o'zgarish sahifada yig'iladi ("Saqlash" bilan yoziladi), aks holda darhol saqlanadi
-    if (onSubmit) onSubmit({ empId: employee.id, day, entry: next })
-    else dispatch(dayUpdated({ id: tabelId, empId: employee.id, day, entry: next }))
-    onSaved?.()
-    onClose()
+  async function save() {
+    const next = { ...entry, ...form }
+    setSaving(true)
+    setError('')
+    try {
+      await onSubmit({ empId: employee.id, day, entry: next })
+      onSaved?.()
+      onClose()
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Saqlashda xatolik yuz berdi'))
+      setSaving(false)
+    }
   }
 
   return (
@@ -58,8 +67,8 @@ export default function DayDetailModal({ target, tabelId, year, month, readOnly,
             <X className="size-4" /> Bekor qilish
           </ModalButton>
           {!readOnly && (
-            <ModalButton onClick={save} disabled={!dirty || invalid}>
-              <Check className="size-4" /> Saqlash
+            <ModalButton onClick={save} disabled={!dirty || invalid || saving}>
+              {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Saqlash
             </ModalButton>
           )}
         </>
@@ -100,6 +109,11 @@ export default function DayDetailModal({ target, tabelId, year, month, readOnly,
         <Field label="Fakt bo‘yicha ishlagan soat" className="col-span-2">
           <input className={INPUT} value={fmtHours(fakt, true)} disabled readOnly />
         </Field>
+        {error && (
+          <p className="col-span-2 whitespace-pre-line rounded-lg bg-[#FEECEC] px-3 py-2 text-[13px] font-medium text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+            {error}
+          </p>
+        )}
       </div>
     </TabelModal>
   )

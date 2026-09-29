@@ -42,7 +42,6 @@ export async function openBranch(id) {
 }
 
 export async function getBranchCounts() {
-  const response = await axiosAPI.get('organization/branches/counts/')
+  const response = await axiosAPI.get('organization/branches/count/')
   return unwrapData(response)
 }
-
