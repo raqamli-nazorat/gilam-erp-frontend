@@ -8,7 +8,6 @@ import { dmyToIso } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusTabs } from '@/pages/Xodimlar/components/statusTabs'
-import { getAllBranches } from '@/services/branchService'
 import { createTimesheet, getTimesheetCounts, getTimesheetsPage } from '@/services/timesheetService'
 import { extractErrorMessage } from '@/services/apiHelpers'
 import { MONTHS, TABEL_STATUS_PARAM, fmtDateTime, fmtHours, normalizeTimesheet } from '@/features/tabel/tabelData'
@@ -24,20 +23,6 @@ const COLS = 11
 // Backend maydoni hali kelmasa — 0
 const hoursOrZero = (v) => fmtHours(v ?? 0, true)
 
-// Zaxira: javobda organization_info bo'lmasa — tashkilot nomi filiallar ro'yxatidan olinadi (bir marta).
-let branchOrgPromise = null
-function loadBranchOrgMap() {
-  if (!branchOrgPromise) {
-    branchOrgPromise = getAllBranches()
-      .then((list) => Object.fromEntries(list.map((b) => [b.id, b.organization_info?.name ?? ''])))
-      .catch(() => {
-        branchOrgPromise = null
-        return {}
-      })
-  }
-  return branchOrgPromise
-}
-
 async function fetchTabelPage(params) {
   const res = await getTimesheetsPage(params)
   return { ...res, results: res.results.map(normalizeTimesheet) }
@@ -52,7 +37,6 @@ export default function TabelListPage() {
   const [filters, setFilters] = useState(EMPTY_TABEL_LIST_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
-  const [orgByBranch, setOrgByBranch] = useState({})
 
   usePageHeader('Tabel')
 
@@ -60,14 +44,6 @@ export default function TabelListPage() {
     const t = setTimeout(() => setDebounced(search), 250)
     return () => clearTimeout(t)
   }, [search])
-
-  useEffect(() => {
-    let alive = true
-    loadBranchOrgMap().then((map) => alive && setOrgByBranch(map))
-    return () => {
-      alive = false
-    }
-  }, [])
 
   const hasFilter = Boolean(
     filters.orgId ||
@@ -217,7 +193,7 @@ export default function TabelListPage() {
               rows.map((r, i) => (
                 <tr key={r.id} onClick={() => navigate(`/tabel/${r.id}`)} className="cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={cn(TD, 'text-[#525252] dark:text-muted-foreground')}>{i + 1}</td>
-                  <td className={TD}>{r.orgName || orgByBranch[r.branchId] || ''}</td>
+                  <td className={TD}>{r.orgName || '—'}</td>
                   <td className={cn(TD, 'font-medium text-[#0052D2] dark:text-[#60A5FA]')}>{r.branchName}</td>
                   <td className={TD}>{r.year && r.year !== new Date().getFullYear() ? `${MONTHS[r.month]} ${r.year}` : MONTHS[r.month]}</td>
                   <td className={TD}>{r.employeesCount ?? 0}</td>
