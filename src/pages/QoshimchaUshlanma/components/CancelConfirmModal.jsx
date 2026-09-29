@@ -12,6 +12,7 @@ export default function CancelConfirmModal({
   document: doc,
   onConfirm,
   loading = false,
+  currencyMap = {},
 }) {
   const [reason, setReason] = useState('')
   const [file, setFile] = useState(null)
@@ -22,7 +23,7 @@ export default function CancelConfirmModal({
   const employeeName = doc.employee_info?.full_name || doc.employee_info?.name || doc.employeeName || '-'
   const branchName = doc.branch_info?.name || doc.branchName || '-'
   const typeName = doc.accrual_retention_info?.name || doc.accrualRetentionName || '-'
-  const valueDisplay = formatAccrualRetentionValue(doc)
+  const valueDisplay = formatAccrualRetentionValue(doc, currencyMap)
   const dateDisplay = doc.date ? formatDateTime(new Date(doc.date)) : (doc.createdAt || '-')
   const approvedDisplay = doc.approved_at
     ? formatDateTime(new Date(doc.approved_at))
@@ -33,7 +34,8 @@ export default function CancelConfirmModal({
   const isApproved = doc.status === 'approved'
 
   const handleConfirm = () => {
-    onConfirm({ reason: reason || "Ma'lumotlar noto'g'ri kiritilgan", file })
+    const finalReason = reason.trim() || "Ma'lumotlar noto'g'ri kiritilgan"
+    onConfirm({ reason: finalReason, attachment: file, file })
   }
 
   return (

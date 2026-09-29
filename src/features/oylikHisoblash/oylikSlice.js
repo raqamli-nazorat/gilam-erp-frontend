@@ -38,9 +38,9 @@ export const fetchSingleSalaryThunk = createAsyncThunk(
 // Filial va oy bo'yicha oylikni hisoblash (POST /calculate/)
 export const calculateSalariesThunk = createAsyncThunk(
   'oylikHisoblash/calculate',
-  async ({ branch, for_month, year }, { rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      const data = await calculateSalaries({ branch, for_month, year })
+      const data = await calculateSalaries(payload)
       return data
     } catch (err) {
       return rejectWithValue(err?.response?.data || err.message)
@@ -64,9 +64,9 @@ export const approveSalaryThunk = createAsyncThunk(
 // Bekor qilish
 export const cancelSalaryThunk = createAsyncThunk(
   'oylikHisoblash/cancel',
-  async ({ id, reason }, { rejectWithValue }) => {
+  async ({ id, reason, attachment, file }, { rejectWithValue }) => {
     try {
-      const data = await cancelCalculatingSalary(id, { reason })
+      const data = await cancelCalculatingSalary(id, { reason, attachment: attachment || file })
       return data
     } catch (err) {
       return rejectWithValue(err?.response?.data || err.message)

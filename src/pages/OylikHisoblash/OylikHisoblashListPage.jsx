@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useDispatch } from 'react-redux'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Filter, Loader2, Plus, Search } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
@@ -8,10 +7,9 @@ import { formatDateTime, formatNumber } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusTabs } from '@/pages/Xodimlar/components/statusTabs'
-import { useServerPagedList } from '@/hooks/useServerPagedList'
-import { getCalculatingSalariesPage } from '@/services/calculatingSalaryService'
-import { calculateSalariesThunk } from '@/features/oylikHisoblash/oylikSlice'
-import { MONTH_NAMES, MOCK_OYLIK_ITEMS } from '@/features/oylikHisoblash/oylikData'
+import { calculateSalaries, getAllCalculatingSalaries } from '@/services/calculatingSalaryService'
+import { groupSalaries, makeHisobId } from '@/features/oylikHisoblash/oylikGroups'
+import { MONTH_NAMES } from '@/features/oylikHisoblash/oylikData'
 import OylikStatusBadge from './components/OylikStatusBadge'
 import OylikFilterModal, { EMPTY_OYLIK_FILTERS } from './components/OylikFilterModal'
 import NewOylikModal from './components/NewOylikModal'
@@ -22,115 +20,97 @@ const TD =
   'h-[56px] border-b border-[#F0F0F0] px-4 text-[15px] whitespace-nowrap text-[#0A0A0A] dark:border-white/5 dark:text-white'
 const COLS = 9
 
-function dmyToIso(value) {
-  if (!value) return ''
-  const m = String(value ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : value
-}
+// Tab kaliti -> guruh holati (StatusTabs "confirmed" kalitini ishlatadi)
+const TAB_STATUS = { confirmed: 'approved', draft: 'draft', cancelled: 'cancelled' }
 
-function mapCalculatingSalary(r) {
-  const orgName =
-    r.branch_info?.organization?.name ||
-    r.branch_info?.organization_name ||
-    r.orgName ||
-    r.organization_name ||
-    ''
-  const branchName = r.branch_info?.name || r.branchName || r.branch_name || ''
-  const forMonth = r.for_month ?? r.forMonth
-  const employeeCount = r.employee_count ?? (r.employee_info ? 1 : 0)
-  const totalAmount = Number(r.amount ?? r.totalAmount ?? 0)
-  const createdAt = r.created_at ? formatDateTime(new Date(r.created_at)) : (r.createdAt || '')
-  const updatedAt = r.updated_at ? formatDateTime(new Date(r.updated_at)) : (r.updatedAt || '')
-  const status = r.status || 'draft'
-
-  return {
-    ...r,
-    id: r.id,
-    orgName,
-    branchName,
-    forMonth,
-    employeeCount,
-    totalAmount,
-    createdAt,
-    updatedAt,
-    status,
-  }
-}
-
-// Bitta sahifani so'rab, qatorlarni formatlovchi funksiya (scroll pagination uchun)
-async function fetchCalculatingSalariesPage(params) {
-  try {
-    const res = await getCalculatingSalariesPage(params)
-    return {
-      ...res,
-      results: (res?.results || []).map(mapCalculatingSalary),
-      count: res?.count ?? (res?.results?.length || 0),
-    }
-  } catch {
-    return {
-      results: [],
-      count: 0,
-      next: null,
-    }
-  }
-}
+const fold = (s) => String(s || '').toLocaleLowerCase('uz').replace(/[ʻʼ‘’`']/g, "'")
+const fmtDt = (iso) => (iso ? formatDateTime(new Date(iso)) : '')
+const isoDay = (iso) => (iso ? String(iso).slice(0, 10) : '')
 
 export default function OylikHisoblashListPage() {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const [tab, setTab] = useState('all') // all | confirmed (approved) | draft | cancelled
+  const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_OYLIK_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
 
+  const [rows, setRows] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [version, setVersion] = useState(0)
+
   usePageHeader('Oylik hisoblash')
 
-  // Search debounce
+  // Backend qo'llab-quvvatlaydigan filtrlar so'rovga, qolganlari (tashkilot, yangilangan) — frontendda
+  const apiParams = useMemo(() => {
+    const p = {}
+    if (filters.branch) p.branch = filters.branch
+    if (filters.employee) p.employee = filters.employee
+    if (filters.for_month) p.for_month = filters.for_month
+    if (filters.start_date) p.start_date = filters.start_date
+    if (filters.end_date) p.end_date = filters.end_date
+    return p
+  }, [filters.branch, filters.employee, filters.for_month, filters.start_date, filters.end_date])
+
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 250)
-    return () => clearTimeout(timer)
-  }, [search])
+    let active = true
+    setIsLoading(true)
+    setError(null)
+    getAllCalculatingSalaries(apiParams)
+      .then((data) => {
+        if (active) setRows(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => {
+        if (active) {
+          setRows([])
+          setError(err)
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [apiParams, version])
 
-  const statusParam = (currentTab) => {
-    if (currentTab === 'confirmed') return 'approved'
-    if (currentTab === 'all') return undefined
-    return currentTab // draft | cancelled
-  }
+  const reload = useCallback(() => setVersion((v) => v + 1), [])
 
-  // Backend so'rov parametrlari
-  const baseParams = useMemo(() => {
-    const params = {}
-    if (filters.orgId) params.organization = filters.orgId
-    if (filters.branch) params.branch = filters.branch
-    if (filters.employee) params.employee = filters.employee
-    if (filters.for_month) params.for_month = filters.for_month
-    if (filters.start_date) params.start_date = dmyToIso(filters.start_date)
-    if (filters.end_date) params.end_date = dmyToIso(filters.end_date)
-    if (filters.updated_dan) params.updated_from = dmyToIso(filters.updated_dan)
-    if (filters.updated_gacha) params.updated_to = dmyToIso(filters.updated_gacha)
-    const st = statusParam(tab)
-    if (st) params.status = st
-    if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
-    return params
-  }, [filters, tab, debouncedSearch])
+  // Qatorlarni hisoblarga guruhlash + frontend filtrlari
+  const groups = useMemo(() => {
+    let list = groupSalaries(rows)
+    if (filters.orgId) list = list.filter((g) => String(g.orgId) === String(filters.orgId))
+    if (filters.updated_dan) list = list.filter((g) => isoDay(g.updatedAt) >= filters.updated_dan)
+    if (filters.updated_gacha) list = list.filter((g) => isoDay(g.updatedAt) <= filters.updated_gacha)
+    const q = fold(search.trim())
+    if (q) {
+      list = list.filter(
+        (g) =>
+          fold(g.orgName).includes(q) ||
+          fold(g.branchName).includes(q) ||
+          fold(MONTH_NAMES[g.forMonth]).includes(q) ||
+          g.rows.some((r) => fold(r.employee_info?.full_name).includes(q))
+      )
+    }
+    return list
+  }, [rows, filters.orgId, filters.updated_dan, filters.updated_gacha, search])
 
-  // Scroll pagination hooki - sahifaga kirganda faqat 1-sahifani oladi, scroll bo'lganda keyingisini yuklaydi
-  const {
-    items: rows,
-    totalCount,
-    counts: serverCounts,
-    isLoading,
-    isLoadingMore,
-    error,
-    hasMore,
-    containerRef,
-    sentinelRef,
-    handleScroll,
-    reload,
-  } = useServerPagedList(fetchCalculatingSalariesPage, baseParams)
+  const counts = useMemo(
+    () => ({
+      all: groups.length,
+      confirmed: groups.filter((g) => g.status === 'approved').length,
+      draft: groups.filter((g) => g.status === 'draft').length,
+      cancelled: groups.filter((g) => g.status === 'cancelled').length,
+    }),
+    [groups]
+  )
+
+  const visible = useMemo(
+    () => (tab === 'all' ? groups : groups.filter((g) => g.status === TAB_STATUS[tab])),
+    [groups, tab]
+  )
 
   const hasFilter = [
     filters.orgId,
@@ -143,41 +123,12 @@ export default function OylikHisoblashListPage() {
     filters.updated_gacha,
   ].some(Boolean)
 
-  // StatusTabs hisoblagichlari
-  const counts = useMemo(() => {
-    if (serverCounts) {
-      return {
-        all: serverCounts.all ?? totalCount,
-        confirmed: serverCounts.approved ?? serverCounts.confirmed ?? 0,
-        draft: serverCounts.draft ?? 0,
-        cancelled: serverCounts.cancelled ?? 0,
-      }
-    }
-    const c = { all: totalCount || rows.length, confirmed: 0, draft: 0, cancelled: 0 }
-    rows.forEach((r) => {
-      if (r.status === 'approved' || r.status === 'confirmed') c.confirmed += 1
-      else if (r.status === 'draft') c.draft += 1
-      else if (r.status === 'cancelled') c.cancelled += 1
-    })
-    return c
-  }, [serverCounts, totalCount, rows])
-
-  // Yangi hisob yaratish handler
-  const handleCreateHisob = async (data) => {
-    const res = await dispatch(
-      calculateSalariesThunk({
-        branch: data.branchId,
-        for_month: data.forMonth,
-        year: data.year || new Date().getFullYear(),
-      })
-    ).unwrap()
-
+  // Yangi hisob — backend filial va oy bo'yicha ishlayotgan xodimlar oyligini hisoblaydi
+  const handleCreateHisob = async ({ branch, forMonth, year }) => {
+    await calculateSalaries({ branch, for_month: Number(forMonth), year: Number(year) })
     setNewOpen(false)
     reload()
-
-    if (res?.id) {
-      navigate(`/oylik-hisoblash/${res.id}`)
-    }
+    navigate(`/oylik-hisoblash/${makeHisobId(branch, forMonth, year)}`)
   }
 
   return (
@@ -187,7 +138,6 @@ export default function OylikHisoblashListPage() {
         <StatusTabs tab={tab} onChange={setTab} counts={counts} />
 
         <div className="flex flex-1 items-center justify-end gap-2.5">
-          {/* Qidirish inputi */}
           <div className="relative w-[280px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
             <Input
@@ -198,7 +148,6 @@ export default function OylikHisoblashListPage() {
             />
           </div>
 
-          {/* Filtr tugmasi */}
           <Button
             variant="outline"
             onClick={() => setFilterOpen(true)}
@@ -210,7 +159,6 @@ export default function OylikHisoblashListPage() {
             <Filter className="h-4 w-4" /> Filtr
           </Button>
 
-          {/* Yangi hisob tugmasi */}
           <Button
             onClick={() => setNewOpen(true)}
             className="h-9 gap-2 rounded-lg bg-[#0052D2] px-4 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
@@ -220,16 +168,11 @@ export default function OylikHisoblashListPage() {
         </div>
       </div>
 
-      {/* Jadval konteyneri - scroll pagination bilan */}
-      <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-auto rounded-xl bg-white shadow-sm dark:bg-card"
-      >
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white shadow-sm dark:bg-card">
         <table className="w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th className={cn(TH, 'w-12 text-center')}>#</th>
+              <th className={cn(TH, 'w-12')}>#</th>
               <th className={TH}>Tashkilot</th>
               <th className={TH}>Filial</th>
               <th className={TH}>Oy</th>
@@ -250,7 +193,7 @@ export default function OylikHisoblashListPage() {
                   </div>
                 </td>
               </tr>
-            ) : error && rows.length === 0 ? (
+            ) : error ? (
               <tr>
                 <td colSpan={COLS} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
@@ -265,57 +208,39 @@ export default function OylikHisoblashListPage() {
                   </div>
                 </td>
               </tr>
-            ) : rows.length === 0 ? (
+            ) : visible.length === 0 ? (
               <tr>
                 <td colSpan={COLS} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Hisob topilmadi
                 </td>
               </tr>
             ) : (
-              rows.map((row, idx) => (
+              visible.map((g, idx) => (
                 <tr
-                  key={row.id}
-                  onClick={() => navigate(`/oylik-hisoblash/${row.id}`)}
-                  className="cursor-pointer hover:bg-[#F9FAFB] transition-colors dark:hover:bg-white/5"
+                  key={g.id}
+                  onClick={() => navigate(`/oylik-hisoblash/${g.id}`)}
+                  className="cursor-pointer transition-colors hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                 >
-                  <td className={cn(TD, 'w-12 text-center text-[#525252] dark:text-muted-foreground')}>
-                    {idx + 1}
+                  <td className={cn(TD, 'w-12 text-[#525252] dark:text-muted-foreground')}>{idx + 1}</td>
+                  <td className={TD}>{g.orgName || '—'}</td>
+                  <td className={cn(TD, 'text-[#0052D2] dark:text-[#60A5FA]')}>
+                    <span className="hover:underline">{g.branchName || '—'}</span>
                   </td>
-                  <td className={TD}>{row.orgName || '-'}</td>
-                  <td className={cn(TD, 'font-medium text-[#0052D2] hover:underline dark:text-[#60A5FA]')}>
-                    {row.branchName || '-'}
-                  </td>
-                  <td className={TD}>{MONTH_NAMES[row.forMonth] || row.forMonth || '-'}</td>
-                  <td className={TD}>{row.employeeCount}</td>
-                  <td className={cn(TD, 'font-medium')}>{formatNumber(row.totalAmount, 2)}</td>
-                  <td className={TD}>{row.createdAt || '-'}</td>
-                  <td className={TD}>{row.updatedAt || '-'}</td>
+                  <td className={TD}>{MONTH_NAMES[g.forMonth] || g.forMonth}</td>
+                  <td className={TD}>{g.employeeCount}</td>
+                  <td className={TD}>{formatNumber(g.totalAmount, 2)}</td>
+                  <td className={TD}>{fmtDt(g.createdAt)}</td>
+                  <td className={TD}>{fmtDt(g.updatedAt)}</td>
                   <td className={TD}>
-                    <OylikStatusBadge status={row.status} />
+                    <OylikStatusBadge status={g.status} />
                   </td>
                 </tr>
               ))
-            )}
-            {rows.length > 0 && hasMore && !isLoading && (
-              <tr ref={sentinelRef} className="h-1 border-0 p-0">
-                <td colSpan={COLS} className="h-1 border-0 p-0" />
-              </tr>
-            )}
-            {isLoadingMore && (
-              <tr>
-                <td colSpan={COLS} className="py-4 text-center">
-                  <div className="inline-flex items-center gap-2 text-xs font-medium text-[#737373] dark:text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#0052D2]" />
-                    Ko‘proq ma’lumotlar yuklanmoqda…
-                  </div>
-                </td>
-              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Modallar */}
       <OylikFilterModal
         open={filterOpen}
         onOpenChange={setFilterOpen}
@@ -323,11 +248,7 @@ export default function OylikHisoblashListPage() {
         onApply={setFilters}
       />
 
-      <NewOylikModal
-        open={newOpen}
-        onOpenChange={setNewOpen}
-        onCreate={handleCreateHisob}
-      />
+      <NewOylikModal open={newOpen} onOpenChange={setNewOpen} onSubmit={handleCreateHisob} />
     </div>
   )
 }

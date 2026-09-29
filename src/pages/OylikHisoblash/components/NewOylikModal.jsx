@@ -1,77 +1,70 @@
 import { useEffect, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { CalendarDays, Check, X } from 'lucide-react'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { PagedSelect } from '@/components/ui/paged-select'
 import { Input } from '@/components/ui/input'
 import { MONTH_NAMES } from '@/features/oylikHisoblash/oylikData'
-import {
-  branchOptions,
-  monthOptions,
-  organizationOptions,
-} from '@/services/optionSources'
+import { parseDmyHm } from '@/features/oylikHisoblash/oylikGroups'
+import { branchOptions, monthOptions, organizationOptions } from '@/services/optionSources'
 import { extractErrorMessage } from '@/services/apiHelpers'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, maskDateTime } from '@/lib/format'
 
-export default function NewOylikModal({
-  open,
-  onOpenChange,
-  onCreate,
-}) {
+const LABEL = 'mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground'
+
+// Yangi hisob (mode="create") va Hisobni tahrirlash (mode="edit") oynasi.
+// `initial` (tahrirlashda): { date, orgId, orgName, branchId, branchName, forMonth }
+// `onSubmit({ date, year, orgId, branch, branchName, forMonth })` — xato bo'lsa throw qiladi.
+export default function NewOylikModal({ open, onOpenChange, onSubmit, mode = 'create', initial }) {
+  const navigate = useNavigate()
+  const isEdit = mode === 'edit'
+
   const [date, setDate] = useState('')
   const [orgId, setOrgId] = useState('')
   const [orgName, setOrgName] = useState('')
   const [branchId, setBranchId] = useState('')
   const [branchName, setBranchName] = useState('')
-  const [forMonth, setForMonth] = useState(String(new Date().getMonth() + 1))
-  const [monthName, setMonthName] = useState('')
+  const [forMonth, setForMonth] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (open) {
-      setDate(formatDateTime(new Date()))
-      setOrgId('')
-      setOrgName('')
-      setBranchId('')
-      setBranchName('')
-      const curMonth = String(new Date().getMonth() + 1)
-      setForMonth(curMonth)
-      setMonthName(MONTH_NAMES[curMonth] || '')
-      setError('')
-      setLoading(false)
-    }
-  }, [open])
+    if (!open) return
+    setDate(initial?.date || formatDateTime(new Date()))
+    setOrgId(initial?.orgId || '')
+    setOrgName(initial?.orgName || '')
+    setBranchId(initial?.branchId || '')
+    setBranchName(initial?.branchName || '')
+    setForMonth(initial?.forMonth ? String(initial.forMonth) : String(new Date().getMonth() + 1))
+    setError('')
+    setLoading(false)
+  }, [open, initial])
+
+  const parsedDate = parseDmyHm(date)
+  const canSubmit = Boolean(parsedDate && orgId && branchId && forMonth) && !loading
 
   const handleSubmit = async (e) => {
     e?.preventDefault()
-    if (!orgId) {
-      setError('Tashkilotni tanlang')
-      return
-    }
-    if (!branchId) {
-      setError('Filialni tanlang')
-      return
-    }
-    if (!forMonth) {
-      setError('Oyni tanlang')
-      return
-    }
+    if (!parsedDate) return setError('Sanani KK.OO.YYYY SS:MM ko‘rinishida kiriting')
+    if (!orgId) return setError('Tashkilotni tanlang')
+    if (!branchId) return setError('Filialni tanlang')
+    if (!forMonth) return setError('Oyni tanlang')
 
     setLoading(true)
     setError('')
-
     try {
-      await onCreate({
-        date,
+      await onSubmit({
+        date: parsedDate,
+        year: parsedDate.getFullYear(),
         orgId,
-        branchId,
+        branch: branchId,
+        branchName,
         forMonth: Number(forMonth),
-        year: 2026,
       })
       onOpenChange(false)
     } catch (err) {
-      setError(extractErrorMessage(err, 'Hisoblashda xatolik yuz berdi'))
+      setError(extractErrorMessage(err, isEdit ? 'Saqlashda xatolik yuz berdi' : 'Hisoblashda xatolik yuz berdi'))
     } finally {
       setLoading(false)
     }
@@ -83,10 +76,9 @@ export default function NewOylikModal({
         showCloseButton={false}
         className="w-full gap-0 overflow-hidden rounded-[16px] p-0 shadow-[0px_12px_24px_-6px_#01091C24] ring-0 sm:max-w-[560px] dark:bg-card"
       >
-        {/* Header */}
-        <div className="flex h-[60px] shrink-0 items-center justify-between border-b border-[#F0F0F0] px-6 dark:border-white/10">
+        <div className="flex h-[60px] shrink-0 items-center justify-between px-6">
           <DialogTitle className="text-[18px] font-semibold text-[#0A0A0A] dark:text-white">
-            Yangi hisob
+            {isEdit ? 'Hisobni tahrirlash' : 'Yangi hisob'}
           </DialogTitle>
           <DialogClose
             render={
@@ -101,40 +93,36 @@ export default function NewOylikModal({
           />
         </div>
 
-        {/* Forma (5-rasm) */}
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4 px-6 py-5">
+          <div className="space-y-4 px-6 pb-5 pt-1">
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400 whitespace-pre-line">
+              <div className="whitespace-pre-line rounded-lg bg-red-50 p-3 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
                 {error}
               </div>
             )}
 
-            {/* 1-qator: Sana va Tashkilot */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
-                  Sana
-                </label>
+                <label className={LABEL}>Sana</label>
                 <Input
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  placeholder="26.09.2026 09:00"
+                  onChange={(e) => setDate(maskDateTime(e.target.value))}
+                  placeholder="KK.OO.YYYY SS:MM"
+                  inputMode="numeric"
                   className="h-10 rounded-[10px] border-[#E5E5E5] bg-white text-sm text-[#0A0A0A] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
                 />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
-                  Tashkilot
-                </label>
+                <label className={LABEL}>Tashkilot</label>
                 <PagedSelect
                   value={orgId}
                   onChange={(val, item) => {
                     setOrgId(val)
                     setOrgName(item?.name ?? '')
-                    setBranchId('')
-                    setBranchName('')
+                    if (val !== orgId) {
+                      setBranchId('')
+                      setBranchName('')
+                    }
                   }}
                   fetchPage={organizationOptions}
                   selectedLabel={orgName}
@@ -144,12 +132,9 @@ export default function NewOylikModal({
               </div>
             </div>
 
-            {/* 2-qator: Filial va Oy uchun */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
-                  Filial
-                </label>
+                <label className={LABEL}>Filial</label>
                 <PagedSelect
                   value={branchId}
                   onChange={(val, item) => {
@@ -164,33 +149,40 @@ export default function NewOylikModal({
                   className="h-10 rounded-[10px]"
                 />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground">
-                  Oy uchun
-                </label>
+                <label className={LABEL}>Oy uchun</label>
                 <PagedSelect
                   value={forMonth}
-                  onChange={(val, item) => {
-                    setForMonth(val)
-                    setMonthName(item?.name ?? '')
-                  }}
+                  onChange={(val) => setForMonth(val)}
                   fetchPage={monthOptions}
-                  selectedLabel={monthName || MONTH_NAMES[forMonth]}
+                  selectedLabel={MONTH_NAMES[forMonth] || ''}
                   placeholder="Oy tanlang"
                   className="h-10 rounded-[10px]"
                 />
               </div>
             </div>
 
-            {/* Eslatma matni */}
-            <p className="pt-2 text-[13px] leading-5 text-[#737373] dark:text-muted-foreground">
-              Xodimlar, Tab. raqami va soatlar tasdiqlangan tabeldan avtomatik to‘ldiriladi.
-            </p>
+            {isEdit && (
+              <p className="text-[13px] leading-5 text-[#737373] dark:text-muted-foreground">
+                Xodimlar, Tab. raqami va soatlar tasdiqlangan tabeldan avtomatik to‘ldiriladi.
+              </p>
+            )}
           </div>
 
-          {/* Footer (5-rasm) */}
-          <div className="flex h-[72px] shrink-0 items-center justify-end gap-3 border-t border-[#F0F0F0] bg-[#F9FAFB] px-6 dark:border-white/10 dark:bg-white/5">
+          <div className="flex h-[76px] shrink-0 items-center justify-end gap-3 bg-[#F5F5F5] px-6 dark:bg-white/5">
+            {!isEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  onOpenChange(false)
+                  navigate('/tabel')
+                }}
+                className="h-10 gap-2 rounded-[10px] px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
+              >
+                <CalendarDays className="size-4" /> Tabelga o‘tish
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -201,10 +193,11 @@ export default function NewOylikModal({
             </Button>
             <Button
               type="submit"
-              disabled={loading}
-              className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-6 text-[14px] font-medium text-white shadow-sm hover:bg-[#0047B8]"
+              disabled={!canSubmit}
+              className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-6 text-[14px] font-medium text-white shadow-sm hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10 dark:disabled:text-white/40"
             >
-              <Check className="size-4" /> {loading ? 'Hisoblanmoqda...' : 'Yaratish'}
+              <Check className="size-4" />
+              {loading ? (isEdit ? 'Saqlanmoqda...' : 'Hisoblanmoqda...') : isEdit ? 'Saqlash' : 'Yaratish'}
             </Button>
           </div>
         </form>
