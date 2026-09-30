@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ChevronDown, ChevronLeft, ChevronRight, QrCode, X } from 'lucide-react'
+import dayjs from 'dayjs'
 import { cn } from '@/lib/utils'
 import { maskDate } from '@/components/ui/filter-modal'
 import { dmyToNum, maskMoney, unmaskMoney } from '@/lib/format'
@@ -10,6 +11,7 @@ import { fetchBranches } from '@/features/filiallar/filiallarSlice'
 import { positionSlice } from '@/features/malumotnomalar/referenceEntities'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -341,12 +343,12 @@ export default function RecruitmentFieldsGrid({ draft, set, orgs, branches, posi
 
       <div className="col-span-2">
         <Label className={lCls}>Ishga olingan sana</Label>
-        <Input
+        <DatePicker
           value={draft.ishgaOlinganSana}
-          onChange={(e) => set('ishgaOlinganSana', maskDate(e.target.value))}
+          onChange={(d) => set('ishgaOlinganSana', d ? dayjs(d).format('DD.MM.YYYY') : '')}
           placeholder="DD.MM.YYYY"
-          inputMode="numeric"
-          className={cn(fCls, 'w-full')}
+          className="w-full"
+          inputClassName={cn(fCls, 'w-full pr-10')}
         />
       </div>
       <div>

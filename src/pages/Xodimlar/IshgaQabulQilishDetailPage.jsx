@@ -21,6 +21,7 @@ import { Panel, InfoRow, surface } from './components/InfoPanel'
 import RecruitmentModal from './components/RecruitmentModal'
 import TerminateEmployeeModal from './components/TerminateEmployeeModal'
 import RehireEmployeeModal from './components/RehireEmployeeModal'
+import StatusBanner from '@/components/ui/StatusBanner'
 
 const THb =
   'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
@@ -162,7 +163,7 @@ export default function IshgaQabulQilishDetailPage() {
       .unwrap()
       // Hujjatni "Bekor qilingan"ga o'tkazish — ixtiyoriy qadam: backend ishdan chiqarishda uni
       // o'zi bekor qilgan bo'lsa, bu so'rov xato berishi mumkin, lekin ishdan chiqarish bajarilgan.
-      .then(() => dispatch(setRecruitmentStatus({ id: rec.id, status: 'cancelled' })).unwrap().catch(() => {}))
+      .then(() => dispatch(setRecruitmentStatus({ id: rec.id, status: 'cancelled' })).unwrap().catch(() => { }))
       .then(() => {
         setDetail((d) => (d ? { ...d, status: 'cancelled' } : d))
         setToast('Xodim ishdan chiqarildi')
@@ -203,7 +204,20 @@ export default function IshgaQabulQilishDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-3">
+      <div className="flex h-full flex-col gap-2">
+        {employeeTerminated && lastDismissal && (
+          <StatusBanner variant="danger">
+            Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}. Chiqardi:{' '}
+            {currentUser?.fullName || ''}.
+          </StatusBanner>
+        )}
+        {justRehired && latestDoc && (
+          <StatusBanner variant="success">
+            Xodim qayta ishga olindi, {latestDoc.yaratilgan}. Ishga oldi: {currentUser?.fullName || ''}. Avvalgi ishdan
+            chiqarish sababi tarixda saqlangan.
+          </StatusBanner>
+        )}
+
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className={cn('rounded-xl p-5 text-left', STATUS_CARD_CLS[rec.status])}>
             <div className="text-[12px] font-semibold uppercase tracking-[0.4px]">HOLATI</div>
@@ -222,19 +236,6 @@ export default function IshgaQabulQilishDetailPage() {
             <p className="mt-3 text-[22px] font-bold leading-tight min-h-[1.25em]">{formatDate(rec.sana)}</p>
           </div>
         </div>
-
-        {employeeTerminated && lastDismissal && (
-          <div className="shrink-0 rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
-            Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}. Chiqardi:{' '}
-            {currentUser?.fullName || ''}.
-          </div>
-        )}
-        {justRehired && latestDoc && (
-          <div className="shrink-0 rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
-            Xodim qayta ishga olindi, {latestDoc.yaratilgan}. Ishga oldi: {currentUser?.fullName || ''}. Avvalgi ishdan
-            chiqarish sababi tarixda saqlangan.
-          </div>
-        )}
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>

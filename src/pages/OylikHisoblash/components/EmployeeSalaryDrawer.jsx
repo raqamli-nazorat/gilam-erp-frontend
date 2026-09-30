@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Loader2, Plus, Trash2, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowUpRight, Check, Loader2, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { PagedSelect } from '@/components/ui/paged-select'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { accrualRetentionOptions } from '@/services/optionSources'
 import { extractErrorMessage } from '@/services/apiHelpers'
 import { computeAdjustment } from '@/features/oylikHisoblash/oylikGroups'
+
 
 // Xodim hisobi paneli. Qo'shimcha/ushlanmalar — haqiqiy "Qo'shimcha va ushlanma" hujjatlari
 // (finance/accrual-retention-documents); qo'shish/o'chirish darhol backendga yuboriladi.
@@ -133,10 +136,12 @@ export default function EmployeeSalaryDrawer({
 }
 
 function AdjustmentSection({ title, isRetention, items, employee, currencyMap, readOnly, onAdd, onRemove }) {
+  const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
   const [picked, setPicked] = useState(null)
   const [busy, setBusy] = useState(false)
   const [removingId, setRemovingId] = useState(null)
+  const [itemToDelete, setItemToDelete] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -211,7 +216,7 @@ function AdjustmentSection({ title, isRetention, items, employee, currencyMap, r
               value={picked?.id || ''}
               onChange={(_, item) => setPicked(item || null)}
               fetchPage={accrualRetentionOptions}
-              params={{ is_retention: isRetention }}
+              // params={{ is_retention: isRetention }}
               selectedLabel={picked?.name || ''}
               placeholder="Turini tanlang"
               className="h-10 rounded-[10px] bg-white"
@@ -278,14 +283,22 @@ function AdjustmentSection({ title, isRetention, items, employee, currencyMap, r
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className={cn('text-[14px] font-bold', color)}>
-                {sign}
-                {formatNumber(item.amount, 2)}
-              </span>
+              <button
+                type="button"
+                onClick={() => item.id && navigate(`/qoshimcha-va-ushlanma/${item.id}`)}
+                className="group/link inline-flex items-center gap-1 transition-opacity hover:opacity-80"
+                title="Hujjat sahifasiga o‘tish"
+              >
+                <span className={cn('text-[14px] font-bold', color)}>
+                  {sign}
+                  {formatNumber(item.amount, 2)}
+                </span>
+                <ArrowUpRight className="size-4 shrink-0 text-[#0052D2] transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 dark:text-blue-400" />
+              </button>
               {!readOnly && (
                 <button
                   type="button"
-                  onClick={() => remove(item)}
+                  onClick={() => setItemToDelete(item)}
                   disabled={removingId === item.id}
                   className="p-1 text-gray-400 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100 disabled:opacity-100"
                   title="O‘chirish"
@@ -297,6 +310,88 @@ function AdjustmentSection({ title, isRetention, items, employee, currencyMap, r
           </div>
         ))}
       </div>
+
+      {/* O'chirishni tasdiqlash modali */}
+      <Dialog open={!!itemToDelete} onOpenChange={(o) => !o && !removingId && setItemToDelete(null)}>
+        <DialogContent
+          showCloseButton={false}
+          className="w-full gap-0 overflow-hidden rounded-[20px] p-0 shadow-2xl ring-0 sm:max-w-[420px] border-none dark:bg-[#18181B]"
+        >
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#F0F0F0] px-6 dark:border-white/10">
+            <DialogTitle className="text-[18px] font-bold text-[#0A0A0A] dark:text-white">
+              O‘chirishni tasdiqlaysizmi?
+            </DialogTitle>
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  aria-label="Yopish"
+                  disabled={removingId === itemToDelete?.id}
+                  className="flex size-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-black dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+                >
+                  <X className="size-5" />
+                </button>
+              }
+            />
+          </div>
+
+          <div className="p-6 space-y-4">
+            <p className="text-[14px] text-[#525252] dark:text-gray-300">
+              Ushbu qo‘shimcha/ushlanma hujjatini hisobdan o‘chirishni xohlaysizmi?
+            </p>
+
+            {itemToDelete && (
+              <div className="rounded-2xl bg-[#F5F5F7] p-4 space-y-2 text-sm dark:bg-white/5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#737373] dark:text-gray-400">Nomi</span>
+                  <span className="font-semibold text-[#0A0A0A] dark:text-white">{itemToDelete.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#737373] dark:text-gray-400">Turi</span>
+                  <span className="text-[#737373] dark:text-gray-300">{itemToDelete.info}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#737373] dark:text-gray-400">Summa</span>
+                  <span className={cn('font-bold', color)}>
+                    {sign}
+                    {formatNumber(itemToDelete.amount, 2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex h-[72px] shrink-0 items-center justify-end gap-3 border-t border-[#F0F0F0] bg-[#F9FAFB] px-6 dark:border-white/10 dark:bg-white/5">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={removingId === itemToDelete?.id}
+              onClick={() => setItemToDelete(null)}
+              className="h-10 rounded-[10px] px-5 text-sm font-medium"
+            >
+              Bekor qilish
+            </Button>
+            <Button
+              type="button"
+              disabled={removingId === itemToDelete?.id}
+              onClick={async () => {
+                if (!itemToDelete) return
+                const target = itemToDelete
+                await remove(target)
+                setItemToDelete(null)
+              }}
+              className="h-10 rounded-[10px] bg-[#DC2626] px-5 text-sm font-semibold text-white hover:bg-[#B91C1C]"
+            >
+              {removingId === itemToDelete?.id ? (
+                <Loader2 className="mr-1.5 size-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-1.5 size-4" />
+              )}
+              Ha, o‘chirish
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -70,7 +70,7 @@ export default function TabelListFilterModal({ open, onOpenChange, filters, onAp
           className={SELECT}
         />
       </FilterField>
-      <FilterField label="Oy">
+      <FilterField label="Oy" className="col-span-2">
         <FilterSelect value={draft.period} onChange={(v) => set({ period: v })} options={periodOptions()} />
       </FilterField>
       <FilterDateRange

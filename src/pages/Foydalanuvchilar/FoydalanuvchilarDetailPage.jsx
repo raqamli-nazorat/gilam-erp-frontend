@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/foydalanuvchilar/foydalanuvchilarData'
@@ -13,6 +14,7 @@ import { getAuditLogs } from '@/services/auditService'
 import { getActionInfo, formatAuditDateTime } from '@/features/audit/auditData'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
+import StatusBanner from '@/components/ui/StatusBanner'
 import StatCards from './components/StatCards'
 import UserFooter from './components/UserFooter'
 import { Panel, InfoRow, surface, headBg } from './components/InfoPanel'
@@ -20,12 +22,6 @@ import { Panel, InfoRow, surface, headBg } from './components/InfoPanel'
 const THb =
   'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-4 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
 
-// Backend User modelida bloklash/faollashtirishni KIM va AYNAN QACHON bajargani (blokdan
-// chiqarishda) saqlanmaydi (faqat is_blocked/blocked_reason/blocked_at/blocked_by bor, ular
-// ham faqat "hozir bloklanganmi" holatiga tegishli — API sxemasi bilan tekshirildi). Xuddi
-// TashkilotDetailPage.jsx'dagi kabi, harakat bajarilgan payt localStorage'ga yozib, sahifa
-// darhol (refresh kutmasdan) va keyingi safar ochilganda ham banner to'g'ri ko'rinishini
-// ta'minlaymiz.
 function statusMetaKey(userId) {
   return `gilam:userStatusMeta:${userId}`
 }
@@ -67,9 +63,21 @@ export default function FoydalanuvchilarDetailPage() {
   // bilan bir xil naqsh).
   const history = xodim?.history || []
 
-  // Foydalanuvchining audit jurnali — haqiqiy /audits/logs/?actor=<id> orqali
-  const [audit, setAudit] = useState([])
-  const [auditStatus, setAuditStatus] = useState('idle')
+  // Foydalanuvchining audit jurnali — scroll pagination bilan /audits/logs/?actor=<id>
+  const fetchUserAuditPage = useCallback((params) => getAuditLogs(params), [])
+  const {
+    items: auditLogs,
+    isLoading: auditLoading,
+    isLoadingMore: auditLoadingMore,
+    hasMore: auditHasMore,
+    containerRef: auditScrollRef,
+    sentinelRef: auditSentinelRef,
+    handleScroll: handleAuditScroll,
+  } = useServerPagedList(
+    fetchUserAuditPage,
+    { actor: id, ordering: '-timestamp' },
+    { enabled: Boolean(id) }
+  )
 
   usePageHeader(user ? [{ label: 'Foydalanuvchilar', to: '/foydalanuvchilar' }, { label: user.name }] : 'Foydalanuvchilar')
 
@@ -82,24 +90,6 @@ export default function FoydalanuvchilarDetailPage() {
       dispatch(fetchXodimDetail(user.employeeId))
     }
   }, [user?.employeeId, xodim?.id, dispatch])
-
-  useEffect(() => {
-    let cancelled = false
-    setAuditStatus('loading')
-    getAuditLogs({ actor: id, page: 1, ordering: '-timestamp' })
-      .then((res) => {
-        if (cancelled) return
-        const payload = res?.data || res
-        setAudit(payload?.results ?? [])
-        setAuditStatus('succeeded')
-      })
-      .catch(() => {
-        if (!cancelled) setAuditStatus('failed')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [id])
 
   useEffect(() => {
     if (!toast) return undefined
@@ -151,7 +141,7 @@ export default function FoydalanuvchilarDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-3">
+      <div className="flex h-full flex-col gap-2">
         <StatCards
           items={[
             { title: 'SAVDOLARI', value: `${formatNumber(d.stats.savdolar, 0)} ta` },
@@ -165,35 +155,35 @@ export default function FoydalanuvchilarDetailPage() {
             yopildi" tilida ko'rsatiladi (Foydalanuvchilar sahifasi uchun asosiy ma'no — hisobga
             kirish yopilgani), garchi tagida bir xil TerminateEmployeeModal ishlatilsa ham. */}
         {xodim?.holat === 'boshagan' && lastDismissal && (
-          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+          <StatusBanner variant="danger">
             Foydalanuvchi bloklangan, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}. Kirish yopildi.
             Blokladi: {currentUser?.fullName || ''}.
-          </div>
+          </StatusBanner>
         )}
         {xodim && justRehired && lastRecord && (
-          <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
+          <StatusBanner variant="success">
             Foydalanuvchi faollashtirilgan, {lastRecord.yaratilgan}. Faollashtirdi: {currentUser?.fullName || ''}. Avvalgi
             bloklash sababi audit jurnalida saqlangan.
-          </div>
+          </StatusBanner>
         )}
         {blocked && (
-          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+          <StatusBanner variant="danger">
             Foydalanuvchi bloklangan, {(statusMeta?.type === 'block' && statusMeta.at) || user.block?.at || ''}. Sabab:{' '}
             {(statusMeta?.type === 'block' && statusMeta.reason) || user.block?.reason || ''}. Blokladi:{' '}
             {(statusMeta?.type === 'block' && statusMeta.by) || user.block?.by || ''}.
-          </div>
+          </StatusBanner>
         )}
         {!blocked && !xodim && statusMeta?.type === 'activate' && (
-          <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
+          <StatusBanner variant="success">
             Foydalanuvchi faollashtirilgan, {statusMeta.at}. Faollashtirdi: {statusMeta.by || ''}. Avvalgi bloklash sababi audit
             jurnalida saqlangan.
-          </div>
+          </StatusBanner>
         )}
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           {/* Audit jadvali */}
-          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>
-            <div className="min-h-0 flex-1 overflow-auto">
+          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-sm', surface)}>
+            <div ref={auditScrollRef} onScroll={handleAuditScroll} className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
                   <tr>
@@ -205,14 +195,18 @@ export default function FoydalanuvchilarDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {auditStatus === 'loading' ? (
+                  {auditLoading && auditLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Yuklanmoqda…</td>
+                      <td colSpan={5} className="py-14 text-center">
+                        <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#0052D2]" />
+                      </td>
                     </tr>
-                  ) : audit.length === 0 ? (
-                    <tr><td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Amallar yo‘q</td></tr>
+                  ) : auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-14 text-center text-sm text-[#737373]">Amallar yo‘q</td>
+                    </tr>
                   ) : (
-                    audit.map((row, i) => {
+                    auditLogs.map((row, i) => {
                       const info = getActionInfo(row.action)
                       const obyekt = row.object_repr || row.content_type_name || ''
                       return (
@@ -230,13 +224,25 @@ export default function FoydalanuvchilarDetailPage() {
                       )
                     })
                   )}
+                  {auditLogs.length > 0 && auditHasMore && !auditLoading && (
+                    <tr ref={auditSentinelRef} className="h-1">
+                      <td colSpan={5} className="h-1 p-0" />
+                    </tr>
+                  )}
+                  {auditLoadingMore && (
+                    <tr>
+                      <td colSpan={5} className="py-3 text-center">
+                        <Loader2 className="mx-auto h-4 w-4 animate-spin text-[#0052D2]" />
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
           {/* O'ng panel */}
-          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
+          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px] overflow-y-auto">
             <Panel title="FOYDALANUVCHI MA’LUMOTLARI" className="shrink-0">
               <InfoRow label="Tashkiloti" value={user.tashkilot?.name} />
               <InfoRow label="Filiali" value={user.filial?.name} />
@@ -263,7 +269,7 @@ export default function FoydalanuvchilarDetailPage() {
               />
             </Panel>
 
-            <Panel title="Oxirgi savdolari:" className="min-h-0 flex-1">
+            <Panel title="Oxirgi savdolari:" className="flex-1 overflow-y-auto min-h-[200px] max-h-[calc(100vh-480px)]">
               {d.lastSales.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
                   Bu ma’lumot hali mavjud emas

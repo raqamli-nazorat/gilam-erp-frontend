@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { isValidUzPhone } from '@/lib/format'
 import { PagedSelect } from '@/components/ui/paged-select'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
+import BranchLocationMap, { findCoordsByRegionName } from '@/components/BranchLocationMap'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,9 @@ const EMPTY = {
   tuman: '',
   tumanName: '',
   manzil: '',
+  latitude: '41.2995',
+  longitude: '69.2401',
+  radius: 150,
   phone: '',
 }
 
@@ -39,6 +43,9 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
   useEffect(() => {
     if (!open) return
     if (branch) {
+      const lat = branch.latitude && Number(branch.latitude) !== 0 ? String(branch.latitude) : '41.2995'
+      const lng = branch.longitude && Number(branch.longitude) !== 0 ? String(branch.longitude) : '69.2401'
+      const rad = Number(branch.radius) || 150
       setDraft({
         name: branch.name ?? '',
         tashkilot: branch.tashkilotId ?? '',
@@ -48,6 +55,9 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
         tuman: branch.tumanId ?? '',
         tumanName: typeof branch.tuman === 'object' ? branch.tuman?.name ?? '' : branch.tuman ?? '',
         manzil: branch.manzil ?? '',
+        latitude: lat,
+        longitude: lng,
+        radius: rad,
         phone: branch.phone ?? '',
       })
     } else {
@@ -72,6 +82,9 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
       draft.viloyat !== (branch.viloyatId ?? '') ||
       draft.tuman !== (branch.tumanId ?? '') ||
       draft.manzil !== (branch.manzil ?? '') ||
+      draft.latitude !== (branch.latitude ?? '') ||
+      draft.longitude !== (branch.longitude ?? '') ||
+      draft.radius !== (branch.radius ?? 150) ||
       draft.phone !== (branch.phone ?? '')
     )
   }, [draft, branch])
@@ -83,6 +96,15 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
     !!draft.viloyat &&
     !!draft.tuman &&
     (!draft.phone || isValidUzPhone(draft.phone))
+
+  const handleMapChange = useCallback(({ latitude, longitude, radius }) => {
+    setDraft((d) => ({
+      ...d,
+      latitude,
+      longitude,
+      radius,
+    }))
+  }, [])
 
   function handleSave() {
     onSave({ ...draft, name: draft.name.trim() })
@@ -98,7 +120,7 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-5 px-6 pb-4 pt-2">
+        <div className="grid max-h-[calc(85vh-130px)] grid-cols-2 gap-x-6 gap-y-4 overflow-y-auto px-6 pb-4 pt-2">
           <div className="col-span-2">
             <Label className={labelCls}>Filial nomi</Label>
             <Input
@@ -131,14 +153,17 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             <Label className={labelCls}>Viloyat</Label>
             <PagedSelect
               value={draft.viloyat}
-              onChange={(v, item) =>
+              onChange={(v, item) => {
+                const regName = item?.name ?? ''
+                const coords = findCoordsByRegionName(regName)
                 setDraft((d) => ({
                   ...d,
                   viloyat: v,
-                  viloyatName: item?.name ?? '',
+                  viloyatName: regName,
+                  ...(coords ? { latitude: coords[0].toFixed(7), longitude: coords[1].toFixed(7) } : {}),
                   ...(v !== d.viloyat && { tuman: '', tumanName: '' }),
                 }))
-              }
+              }}
               fetchPage={regionOptions}
               selectedLabel={draft.viloyatName}
               placeholder="Viloyatni tanlang"
@@ -149,13 +174,16 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
             <Label className={labelCls}>Tuman</Label>
             <PagedSelect
               value={draft.tuman}
-              onChange={(v, item) =>
+              onChange={(v, item) => {
+                const tumName = item?.name ?? ''
+                const coords = findCoordsByRegionName(tumName)
                 setDraft((d) => ({
                   ...d,
                   tuman: v,
-                  tumanName: item?.name ?? '',
+                  tumanName: tumName,
+                  ...(coords ? { latitude: coords[0].toFixed(7), longitude: coords[1].toFixed(7) } : {}),
                 }))
-              }
+              }}
               fetchPage={districtOptions}
               params={draft.viloyat ? { region: draft.viloyat } : undefined}
               disabled={!draft.viloyat}
@@ -168,6 +196,18 @@ export default function BranchModal({ open, onOpenChange, branch, onSave }) {
           <div className="col-span-2">
             <Label className={labelCls}>Manzil</Label>
             <Input value={draft.manzil} onChange={(e) => set('manzil', e.target.value)} placeholder="Ko‘cha, uy" className={fieldCls} />
+          </div>
+
+          <div className="col-span-2">
+            <Label className={labelCls}>Joylashuv (xarita)</Label>
+            <BranchLocationMap
+              latitude={draft.latitude}
+              longitude={draft.longitude}
+              radius={draft.radius}
+              interactive
+              onChange={handleMapChange}
+              className="h-[180px] w-full rounded-lg border border-[#E5E5E5] dark:border-white/10"
+            />
           </div>
 
           <div className="col-span-2">

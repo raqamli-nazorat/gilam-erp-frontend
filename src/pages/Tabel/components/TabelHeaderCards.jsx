@@ -9,9 +9,9 @@ import { TABEL_STATUS, fmtDateTime, fmtHours, periodOption, periodOptions } from
 
 // Figma: 5 ta rangli karta — Sana · Tashkilot · Filial · Oy uchun · Holati.
 // Tashkilot / filial / oy faqat qoralama holatida o'zgartiriladi.
-const CARD = 'flex min-h-[110px] flex-col justify-between rounded-xl p-5 text-left text-[#0A0A0A]'
+const CARD = 'flex min-h-[80px] flex-col justify-between rounded-sm px-4 py-3 text-left text-[#0A0A0A]'
 const LABEL = 'text-[12px] font-semibold uppercase tracking-[0.4px]'
-const VALUE = 'truncate text-[24px] font-semibold leading-8'
+const VALUE = 'truncate text-[20px] font-semibold leading-8'
 
 async function loadOrgBranches(orgId) {
   const list = await fetchAllPages('organization/branches/', { organization: orgId })
@@ -73,7 +73,7 @@ export default function TabelHeaderCards({ tabel, summary, onChange, onError, bu
         <span className={LABEL}>Sana</span>
         <span className={cn(VALUE, 'flex items-center gap-2')}>
           {fmtDateTime(tabel.createdAt)}
-          <Calendar03Icon size={20} className="shrink-0 text-[#0052D2]" />
+          <Calendar03Icon size={16} className="shrink-0 text-[#0052D2]" />
         </span>
       </div>
 
@@ -132,7 +132,7 @@ function PickerCard({ label, bg, value, currentLabel, options, onOpen, onChange,
       <span className={LABEL}>{label}</span>
       <span className="flex w-full items-center justify-between gap-2">
         <span className={cn(VALUE, uppercase && 'uppercase')}>{current || ''}</span>
-        {!disabled && <ChevronDown className={cn('size-5 shrink-0 text-[#0052D2] transition-transform', open && 'rotate-180')} />}
+        {!disabled && <ChevronDown className={cn('size-4 shrink-0 text-[#0052D2] transition-transform', open && 'rotate-180')} />}
       </span>
     </>
   )

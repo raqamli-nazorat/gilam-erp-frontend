@@ -51,7 +51,7 @@ export default function NewTabelModal({ open, onOpenChange, onSave }) {
       open={open}
       onOpenChange={onOpenChange}
       title="Tabel"
-      width={780}
+      width={560}
       footer={
         <>
           <ModalButton variant="outline" onClick={() => onOpenChange(false)}>

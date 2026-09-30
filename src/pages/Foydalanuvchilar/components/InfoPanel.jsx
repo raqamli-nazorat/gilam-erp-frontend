@@ -9,10 +9,10 @@ export const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 // jadval bilan bir xil qilish uchun), panel qolgan bo'sh joyni to'ldirib o'sadi.
 export function Panel({ title, children, className }) {
   return (
-    <div className={cn('flex flex-col rounded-xl', surface, className)}>
+    <div className={cn('flex flex-col rounded-sm', surface, className)}>
       <div
         className={cn(
-          'sticky top-0 z-10 flex h-10 shrink-0 items-center rounded-t-xl px-4 text-[13px] font-semibold text-[#0A0A0A] dark:text-white',
+          'sticky top-0 z-10 flex h-10 shrink-0 items-center rounded-t-sm px-4 text-[13px] font-semibold text-[#0A0A0A] dark:text-white',
           headBg
         )}
       >

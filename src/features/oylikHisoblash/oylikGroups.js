@@ -78,9 +78,13 @@ export function groupSalaries(rows) {
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
 }
 
-// Bitta hisobga tegishli barcha qatorlar
-export async function getHisobRows({ branchId, forMonth, year }) {
-  const rows = await fetchAllPages('hr/calculating-salaries/', { branch: branchId, for_month: forMonth })
+// Bitta hisobga tegishli barcha qatorlar (backend filtrlari: employee, currency, search)
+export async function getHisobRows({ branchId, forMonth, year, employee, currency, search }) {
+  const params = { branch: branchId, for_month: forMonth }
+  if (employee) params.employee = employee
+  if (currency) params.currency = currency
+  if (search?.trim()) params.search = search.trim()
+  const rows = await fetchAllPages('hr/calculating-salaries/', params)
   return rows.filter((r) => rowYear(r) === Number(year))
 }
 

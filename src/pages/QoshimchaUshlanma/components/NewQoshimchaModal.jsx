@@ -3,15 +3,13 @@ import { Check, X } from 'lucide-react'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { PagedSelect } from '@/components/ui/paged-select'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   accrualRetentionOptions,
   branchOptions,
   employeeOptions,
   organizationOptions,
 } from '@/services/optionSources'
-import { formatDateTime, maskDateTime } from '@/lib/format'
-import { parseDmyHm } from '@/features/oylikHisoblash/oylikGroups'
 import { extractErrorMessage } from '@/services/apiHelpers'
 
 const LABEL = 'mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground'
@@ -22,7 +20,7 @@ const LABEL = 'mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-mut
 export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initialData, mode = 'create' }) {
   const isEdit = mode === 'edit'
 
-  const [date, setDate] = useState('')
+  const [dateVal, setDateVal] = useState(null)
   const [orgId, setOrgId] = useState('')
   const [orgName, setOrgName] = useState('')
   const [branchId, setBranchId] = useState('')
@@ -37,9 +35,12 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
   useEffect(() => {
     if (!open) return
     const d = initialData
-    setDate(isEdit && d?.date ? formatDateTime(new Date(d.date)) : formatDateTime(new Date()))
-    setOrgId('')
-    setOrgName('')
+    const dt = isEdit && d?.date ? new Date(d.date) : new Date()
+    setDateVal(dt)
+    const initialOrgId = d?.organization_info?.id || d?.branch_info?.organization_info?.id || d?.branch_info?.organization || ''
+    const initialOrgName = d?.organization_info?.name || d?.branch_info?.organization_info?.name || ''
+    setOrgId(initialOrgId)
+    setOrgName(initialOrgName)
     setBranchId(d?.branch_info?.id || '')
     setBranchName(d?.branch_info?.name || '')
     setEmployeeId(d?.employee_info?.id || '')
@@ -50,14 +51,14 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
     setLoading(false)
   }, [open, initialData, isEdit])
 
-  const parsedDate = parseDmyHm(date)
+  const parsedDate = dateVal || null
 
   const handleSubmit = async (e) => {
     e?.preventDefault()
-    if (!parsedDate) return setError('Sanani KK.OO.YYYY SS:MM ko‘rinishida kiriting')
+    if (!parsedDate) return setError('Sanani tanlang')
     if (!branchId) return setError('Filialni tanlang')
     if (!employeeId) return setError('Xodimni tanlang')
-    if (!arId) return setError('Qo‘shimcha va ushlanma turini tanlang')
+    if (!arId) return setError('Qo\'shimcha va ushlanma turini tanlang')
 
     setLoading(true)
     setError('')
@@ -84,7 +85,7 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
       >
         <div className="flex h-[60px] shrink-0 items-center justify-between px-6">
           <DialogTitle className="text-[18px] font-semibold text-[#0A0A0A] dark:text-white">
-            {isEdit ? 'Hujjatni tahrirlash' : 'Yangi qo‘shimcha yoki ushlanma'}
+            {isEdit ? 'Hujjatni tahrirlash' : 'Yangi qo\'shimcha yoki ushlanma'}
           </DialogTitle>
           <DialogClose
             render={
@@ -108,13 +109,12 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
             )}
 
             <div>
-              <label className={LABEL}>Sana</label>
-              <Input
-                value={date}
-                onChange={(e) => setDate(maskDateTime(e.target.value))}
-                placeholder="KK.OO.YYYY SS:MM"
-                inputMode="numeric"
-                className="h-10 rounded-[10px] border-[#E5E5E5] bg-white text-sm text-[#0A0A0A] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+              <label className={LABEL}>Sana va vaqt</label>
+              <DatePicker
+                value={dateVal}
+                onChange={setDateVal}
+                showTime
+                className="h-10"
               />
             </div>
 
@@ -139,6 +139,7 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
                   className="h-10 rounded-[10px]"
                 />
               </div>
+
               <div>
                 <label className={LABEL}>Filial</label>
                 <PagedSelect
@@ -154,7 +155,8 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
                   fetchPage={branchOptions}
                   params={orgId ? { organization: orgId } : undefined}
                   selectedLabel={branchName}
-                  placeholder="Filial tanlang"
+                  placeholder={orgId ? 'Filial tanlang' : 'Avval tashkilotni tanlang'}
+                  disabled={!orgId}
                   className="h-10 rounded-[10px]"
                 />
               </div>
@@ -178,7 +180,7 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
                 />
               </div>
               <div>
-                <label className={LABEL}>Qo‘shimcha va ushlanma</label>
+                <label className={LABEL}>Qo'shimcha va ushlanma</label>
                 <PagedSelect
                   value={arId}
                   onChange={(val, item) => {
@@ -209,7 +211,7 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
               className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-6 text-[14px] font-medium text-white shadow-sm hover:bg-[#0047B8]"
             >
               <Check className="size-4" />
-              {loading ? (isEdit ? 'Saqlanmoqda...' : 'Qo‘shilmoqda...') : isEdit ? 'Saqlash' : 'Qo‘shish'}
+              {loading ? (isEdit ? 'Saqlanmoqda...' : 'Qo\'shilmoqda...') : isEdit ? 'Saqlash' : 'Qo\'shish'}
             </Button>
           </div>
         </form>
