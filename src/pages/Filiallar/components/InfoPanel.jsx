@@ -7,7 +7,7 @@ export const surface = 'bg-[#EFF1F7] dark:bg-white/[0.04]'
 
 // `className`ga `flex-1 min-h-0` berilsa (masalan bo'sh holatda pastki chetini yonidagi
 // jadval bilan bir xil qilish uchun), panel qolgan bo'sh joyni to'ldirib o'sadi.
-export function Panel({ title, children, className }) {
+export function Panel({ title, children, footer, className }) {
   return (
     <div className={cn('flex flex-col rounded-xl', surface, className)}>
       <div
@@ -18,9 +18,10 @@ export function Panel({ title, children, className }) {
       >
         {title}
       </div>
-      <div className="flex-1 divide-y divide-[#DFE4EF] overflow-auto [&>*:last-child]:rounded-b-xl dark:divide-white/5">
+      <div className={cn('flex-1 divide-y divide-[#DFE4EF] overflow-auto dark:divide-white/5', !footer && '[&>*:last-child]:rounded-b-xl')}>
         {children}
       </div>
+      {footer && <div className="shrink-0">{footer}</div>}
     </div>
   )
 }

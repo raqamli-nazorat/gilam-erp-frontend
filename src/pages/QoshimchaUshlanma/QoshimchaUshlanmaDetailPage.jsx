@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Check, ChevronLeft, Loader2, Pencil, Plus, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, FileText, Loader2, Pencil, Plus, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { cn } from '@/lib/utils'
@@ -15,15 +15,17 @@ import {
   getAccrualRetentionDocumentsPage,
   patchAccrualRetentionDocument,
 } from '@/services/accrualRetentionDocumentService'
+import { calculateSalaries } from '@/services/calculatingSalaryService'
 import { getEmployee } from '@/services/employeeService'
 import { getRecruitmentDismissal } from '@/services/recruitmentService'
 import { formatAccrualRetentionValue } from '@/features/accrualRetention/accrualRetentionData'
-import { getCurrencyMap } from '@/features/oylikHisoblash/oylikGroups'
+import { getCurrencyMap, makeHisobId } from '@/features/oylikHisoblash/oylikGroups'
 import { ishHaqiTuriLabel } from '@/features/xodimlar/xodimlarData'
 import QoshimchaStatusBadge from './components/QoshimchaStatusBadge'
 import ApproveConfirmModal from './components/ApproveConfirmModal'
 import CancelConfirmModal from './components/CancelConfirmModal'
 import NewQoshimchaModal from './components/NewQoshimchaModal'
+import StatusBanner from '@/components/ui/StatusBanner'
 
 const TH =
   'sticky top-0 z-10 h-11 bg-[#93C5FD] px-4 text-left text-[13px] font-semibold uppercase tracking-wider text-[#1E3A8A] dark:bg-blue-950 dark:text-blue-200'
@@ -48,16 +50,16 @@ async function loadCurrentRecruitment(employeeId) {
 
 function InfoRow({ label, children }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <div className="flex items-center justify-between gap-3 px-4 py-[11px]">
       <span className="shrink-0 text-[#737373] dark:text-muted-foreground">{label}</span>
       <span className="truncate text-right font-semibold text-[#0A0A0A] dark:text-white">{children || '—'}</span>
     </div>
   )
 }
 
-function InfoCard({ title, children }) {
+function InfoCard({ title, children, className }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#EFF1F7] dark:border-white/10 dark:bg-card">
+    <div className={cn(className, "overflow-hidden rounded-sm border border-[#E5E5E5] bg-[#EFF1F7] dark:border-white/10 dark:bg-card")}>
       <div className="bg-[#93C5FD] px-4 py-2.5 dark:bg-blue-900/60">
         <h3 className="text-[13px] font-semibold uppercase tracking-wider text-[#1E3A8A] dark:text-blue-100">{title}</h3>
       </div>
@@ -82,6 +84,7 @@ export default function QoshimchaUshlanmaDetailPage() {
   const [newOpen, setNewOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  const [hisobotLoading, setHisobotLoading] = useState(false)
   const [actionError, setActionError] = useState('')
   const [toast, setToast] = useState('')
 
@@ -211,6 +214,57 @@ export default function QoshimchaUshlanmaDetailPage() {
     if (created?.id) navigate(`/qoshimcha-va-ushlanma/${created.id}`)
   }
 
+  const handleOpenHisobot = async () => {
+    const targetBranchId =
+      doc?.branch_info?.id ||
+      doc?.branch ||
+      employee?.branch_info?.id ||
+      employee?.branch
+    if (!targetBranchId) {
+      setActionError('Filial maʼlumoti topilmadi')
+      return
+    }
+
+    // Eng birinchi sana (jadvaldagi 1-qator sanasi yoki joriy hujjat sanasi)
+    const firstDateStr =
+      historyItems?.[0]?.raw?.date ||
+      historyItems?.[0]?.raw?.created_at ||
+      doc?.date ||
+      doc?.created_at ||
+      new Date().toISOString()
+    const targetDate = new Date(firstDateStr)
+    const forMonth = !isNaN(targetDate.getTime()) ? targetDate.getMonth() + 1 : new Date().getMonth() + 1
+    const year = !isNaN(targetDate.getTime()) ? targetDate.getFullYear() : new Date().getFullYear()
+
+    setHisobotLoading(true)
+    setActionError('')
+    try {
+      // Oylik hisobot oldin yaratilganligini tekshirish
+      const existingSalaries = await fetchAllPages('hr/calculating-salaries/', {
+        branch: targetBranchId,
+        for_month: forMonth,
+      })
+
+      const hasHisobot = (existingSalaries || []).some((r) => {
+        const d = r?.created_at ? new Date(r.created_at) : null
+        const y = d && !isNaN(d.getTime()) ? d.getFullYear() : new Date().getFullYear()
+        return y === Number(year)
+      })
+
+      if (!hasHisobot) {
+        // Fonda userga ko'rsatmagan holda hisobot yaratish
+        await calculateSalaries({ branch: targetBranchId, for_month: forMonth, year })
+      }
+
+      const hisobId = makeHisobId(targetBranchId, forMonth, year)
+      navigate(`/oylik-hisoblash/${hisobId}`)
+    } catch (err) {
+      setActionError(extractErrorMessage(err, 'Hisobotni ochish yoki yaratishda xatolik yuz berdi'))
+    } finally {
+      setHisobotLoading(false)
+    }
+  }
+
   if (loading && !doc) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -238,23 +292,67 @@ export default function QoshimchaUshlanmaDetailPage() {
         : ishHaqiTuriLabel(recruitment.salary_type)
     : ''
 
-  const banner = isDraft
-    ? { text: 'Tasdiqlangandan so‘ng hujjatni o‘zgartirib bo‘lmaydi.', cls: 'bg-[#FFF8E6] text-[#B45309] border-[#FDE68A] dark:bg-[#78350F]/20 dark:border-[#B45309]/30 dark:text-[#FDE68A]' }
-    : isApproved
-      ? { text: 'Hujjat tasdiqlangan. Uni o‘zgartirib bo‘lmaydi.', cls: 'bg-[#E6FAF1] text-[#047A47] border-[#A7F3D0] dark:bg-[#064E3B]/20 dark:border-[#047A47]/30 dark:text-[#A7F3D0]' }
-      : {
-          text: `Hujjat bekor qilingan.${doc.cancel_reason ? ` Sabab: ${doc.cancel_reason}` : ''}`,
-          cls: 'bg-[#FEECEC] text-[#DC2626] border-[#FECACA] dark:bg-[#7F1D1D]/20 dark:border-[#DC2626]/30 dark:text-[#FECACA]',
-        }
+  const orgName =
+    doc?.branch_info?.organization_info?.name ||
+    doc?.organization_info?.name ||
+    employee?.organization_info?.name ||
+    ''
+  const branchName = doc?.branch_info?.name || employee?.branch_info?.name || ''
+  const scheduleName =
+    recruitment?.schedule_info?.name ||
+    recruitment?.work_schedule_info?.name ||
+    employee?.schedule_info?.name ||
+    employee?.work_schedule_info?.name ||
+    recruitment?.schedule?.name ||
+    employee?.schedule?.name ||
+    ''
 
-  const cards = [
-    { label: 'Holati', value: STATUS_TEXT[currentStatus], cls: 'bg-[#EDE9FE] dark:bg-[#5B21B6]/20' },
-    { label: 'Xodim', value: employeeName, cls: 'bg-[#E0F2FE] dark:bg-[#0369A1]/20' },
-    { label: 'Qo‘shimcha va ushlanma', value: typeName, cls: 'bg-[#FFEDD5] dark:bg-[#C2410C]/20' },
+  const bannerVariant = isDraft ? 'warning' : isApproved ? 'success' : 'danger'
+  const bannerText = isDraft
+    ? 'Tasdiqlangandan so‘ng hujjatni o‘zgartirib bo‘lmaydi.'
+    : isApproved
+      ? 'Hujjat tasdiqlangan. Uni o‘zgartirib bo‘lmaydi.'
+      : `Hujjat bekor qilingan.${doc.cancel_reason ? ` Sabab: ${doc.cancel_reason}` : ''}`
+
+  const orgId =
+    doc?.branch_info?.organization_info?.id ||
+    doc?.organization_info?.id ||
+    employee?.organization_info?.id ||
+    doc?.branch_info?.organization ||
+    employee?.organization ||
+    null
+  const branchId = doc?.branch_info?.id || doc?.branch || employee?.branch_info?.id || employee?.branch || null
+  const currentEmpId = doc?.employee_info?.id || doc?.employee || employee?.id || null
+
+  const headerCards = [
     {
-      label: 'Qiymat',
-      value: `${isRetention ? '−' : '+'}${valueDisplay}`,
-      cls: 'bg-[#DCFCE7] dark:bg-[#15803D]/20',
+      label: 'Tashkilot',
+      value: orgName,
+      bg: '#F8C3B3',
+      onClick: orgId ? () => window.open(`/tashkilotlar/${orgId}`, '_blank') : undefined,
+    },
+    {
+      label: 'Filial',
+      value: branchName,
+      bg: '#B3F8C5',
+      onClick: branchId ? () => window.open(`/filiallar/${branchId}`, '_blank') : undefined,
+    },
+    {
+      label: 'Xodim',
+      value: employeeName,
+      bg: '#CDE7FE',
+      onClick: currentEmpId ? () => window.open(`/malumotnomalar/xodimlar/${currentEmpId}`, '_blank') : undefined,
+    },
+    {
+      label: 'Ish grafigi',
+      value: scheduleName,
+      bg: '#CDE7FE',
+      onClick: () => window.open('/malumotnomalar/ish-grafigi', '_blank'),
+    },
+    {
+      label: 'Holati',
+      value: STATUS_TEXT[currentStatus],
+      bg: '#DDD8FE',
     },
   ]
 
@@ -266,36 +364,46 @@ export default function QoshimchaUshlanmaDetailPage() {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col space-y-3 overflow-hidden">
-        <div className={cn('flex shrink-0 items-center gap-2.5 rounded-xl border px-4 py-1 text-[12px] font-medium', banner.cls)}>
-          <span>{banner.text}</span>
+      <div className="flex min-h-0 flex-1 flex-col space-y-2 overflow-hidden">
+        <StatusBanner variant={bannerVariant}>
+          <span className="mr-2">{bannerText}</span>
           {doc.cancel_attachment && (
-            <a href={doc.cancel_attachment} target="_blank" rel="noreferrer" className="underline">
+            <a href={doc.cancel_attachment} target="_blank" rel="noreferrer" className="underline font-semibold">
               Hujjat
             </a>
           )}
-        </div>
+        </StatusBanner>
 
         {actionError && (
-          <div className="shrink-0 whitespace-pre-line rounded-xl border border-[#FECACA] bg-[#FEECEC] px-4 py-1.5 text-[12px] font-medium text-[#DC2626]">
-            {actionError}
-          </div>
+          <StatusBanner variant="danger" text={actionError} />
         )}
 
-        <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((c) => (
-            <div key={c.label} className={cn('rounded-xl p-3 text-[#0A0A0A] dark:text-white', c.cls)}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider">{c.label}</p>
-              <p className="mt-1 truncate text-[18px] font-bold" title={c.value}>
-                {c.value || '—'}
-              </p>
+        <div className="grid shrink-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          {headerCards.map((c) => (
+            <div
+              key={c.label}
+              onClick={c.onClick}
+              className={cn(
+                'flex min-h-[72px] flex-col justify-between rounded-sm px-4 py-3 text-left text-[#0A0A0A]',
+                c.onClick && 'cursor-pointer transition-[filter] hover:brightness-[0.97]'
+              )}
+              style={{ backgroundColor: c.bg }}
+            >
+              <span className="text-[12px] font-semibold uppercase tracking-[0.4px] text-[#0A0A0A]/80">
+                {c.label}
+              </span>
+              <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-[20px] font-semibold leading-tight text-[#0A0A0A]" title={c.value}>
+                  {c.value || ''}
+                </span>
+              </span>
             </div>
           ))}
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-4 overflow-hidden lg:grid-cols-12">
+        <div className="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-2 overflow-hidden lg:grid-cols-12">
           {/* Xodimning barcha qo'shimcha/ushlanmalari */}
-          <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#EFF1F7] lg:col-span-8 dark:border-white/10 dark:bg-card">
+          <div className="flex h-full flex-col overflow-hidden rounded-sm border border-[#E5E5E5] bg-[#EFF1F7] lg:col-span-8 dark:border-white/10 dark:bg-card">
             <div ref={historyContainerRef} onScroll={handleHistoryScroll} className="flex-1 overflow-auto">
               <table className="w-full border-collapse text-left">
                 <thead>
@@ -326,7 +434,6 @@ export default function QoshimchaUshlanmaDetailPage() {
                       return (
                         <tr
                           key={h.id}
-                          onClick={() => !isCurrent && navigate(`/qoshimcha-va-ushlanma/${h.id}`)}
                           className={cn(
                             'transition-colors hover:bg-[#F9FAFB] dark:hover:bg-white/5',
                             isCurrent ? 'bg-[#F0F7FF]/70 font-medium dark:bg-blue-950/40' : 'cursor-pointer'
@@ -381,7 +488,7 @@ export default function QoshimchaUshlanmaDetailPage() {
               </div>
             </InfoCard>
 
-            <InfoCard title="Xodim ma'lumotlari">
+            <InfoCard title="Xodim ma'lumotlari" className={cn(!isDraft || !isApproved ? "h-[calc(100vh-557px)]" : "h-[calc(100vh-580px)]")}>
               <InfoRow label="Tashkiloti">{employee?.organization_info?.name}</InfoRow>
               <InfoRow label="Karta raqami">{recruitment?.card_number}</InfoRow>
               <InfoRow label="Ishga olingan sana">
@@ -396,48 +503,49 @@ export default function QoshimchaUshlanmaDetailPage() {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-3 rounded-xl border border-[#E5E5E5] bg-white p-4 dark:border-white/10 dark:bg-card">
-        {!isDraft && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/qoshimcha-va-ushlanma')}
-            className="h-10 gap-2 rounded-[10px] border-[#E5E5E5] bg-white px-5 text-sm font-medium text-[#0A0A0A] dark:border-white/10 dark:bg-card dark:text-white"
-          >
-            <ChevronLeft className="h-4 w-4" /> Jurnalga qaytish
-          </Button>
-        )}
-        {(isDraft || isApproved) && (
-          <Button
-            type="button"
-            onClick={() => setCancelOpen(true)}
-            disabled={actionLoading}
-            className="h-10 gap-2 rounded-[10px] bg-[#DC2626] px-5 text-sm font-medium text-white hover:bg-[#B91C1C]"
-          >
-            <X className="h-4 w-4 stroke-[2.5]" /> Bekor qilish
-          </Button>
-        )}
-        {isDraft && (
-          <>
+      <div className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-[#E5E5E5] bg-white p-4 dark:border-white/10 dark:bg-card">
+        <Button
+          type="button"
+          onClick={handleOpenHisobot}
+          disabled={actionLoading || hisobotLoading}
+          className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-5 text-sm font-medium text-white hover:bg-[#0047B8]"
+        >
+          {hisobotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} Hisobot
+        </Button>
+        <div className='flex items-center gap-2'>
+          {(isDraft || isApproved) && (
             <Button
               type="button"
-              onClick={() => setEditOpen(true)}
-              disabled={actionLoading}
-              className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-5 text-sm font-medium text-white hover:bg-[#0047B8]"
+              onClick={() => setCancelOpen(true)}
+              disabled={actionLoading || hisobotLoading}
+              className="h-10 gap-2 rounded-[10px] bg-[#DC2626] px-5 text-sm font-medium text-white hover:bg-[#B91C1C]"
             >
-              <Pencil className="h-4 w-4" /> Tahrirlash
+              <X className="h-4 w-4 stroke-[2.5]" /> Bekor qilish
             </Button>
-            <Button
-              type="button"
-              onClick={() => setApproveOpen(true)}
-              disabled={actionLoading}
-              className="h-10 gap-2 rounded-[10px] bg-[#00A34D] px-5 text-sm font-medium text-white hover:bg-[#008A41]"
-            >
-              <Check className="h-4 w-4 stroke-[2.5]" /> Tasdiqlash
-            </Button>
-          </>
-        )}
+          )}
+          {isDraft && (
+            <>
+              <Button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                disabled={actionLoading || hisobotLoading}
+                className="h-10 gap-2 rounded-[10px] bg-[#0052D2] px-5 text-sm font-medium text-white hover:bg-[#0047B8]"
+              >
+                <Pencil className="h-4 w-4" /> Tahrirlash
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setApproveOpen(true)}
+                disabled={actionLoading || hisobotLoading}
+                className="h-10 gap-2 rounded-[10px] bg-[#00A34D] px-5 text-sm font-medium text-white hover:bg-[#008A41]"
+              >
+                <Check className="h-4 w-4 stroke-[2.5]" /> Tasdiqlash
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+
 
       <ApproveConfirmModal
         open={approveOpen}

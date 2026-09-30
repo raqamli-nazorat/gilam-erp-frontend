@@ -45,6 +45,9 @@ export function mapBranch(b) {
     tuman: b.district_info?.name ?? '',
     tumanId: b.district_info?.id ?? '',
     manzil: b.address ?? '',
+    latitude: b.latitude ?? '',
+    longitude: b.longitude ?? '',
+    radius: b.radius !== undefined && b.radius !== null ? Number(b.radius) : 150,
     phone: b.phone ?? '',
     director: '', // Backend Branch modelida direktor maydoni yo'q
     openedAt: b.created_at ? formatDateTime(new Date(b.created_at)) : '',
@@ -61,7 +64,7 @@ export function mapBranch(b) {
 }
 
 function buildBranchPayload(draft) {
-  return {
+  const payload = {
     name: (draft.name ?? '').trim(),
     phone: draft.phone ? draft.phone.replace(/[\s-]/g, '') : '',
     address: draft.manzil ?? '',
@@ -69,6 +72,16 @@ function buildBranchPayload(draft) {
     region: draft.viloyat || undefined,
     district: draft.tuman || undefined,
   }
+  if (draft.latitude !== undefined && draft.latitude !== null && draft.latitude !== '') {
+    payload.latitude = String(draft.latitude)
+  }
+  if (draft.longitude !== undefined && draft.longitude !== null && draft.longitude !== '') {
+    payload.longitude = String(draft.longitude)
+  }
+  if (draft.radius !== undefined && draft.radius !== null && draft.radius !== '') {
+    payload.radius = Number(draft.radius)
+  }
+  return payload
 }
 
 const initialState = {

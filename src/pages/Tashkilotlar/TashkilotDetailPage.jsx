@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CheckCircle2, FileBarChart2, Loader2, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
+import { useServerPagedList } from '@/hooks/useServerPagedList'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
@@ -11,8 +12,11 @@ import {
   suspendOrganization,
   updateOrganization,
 } from '@/features/tashkilotlar/tashkilotlarSlice'
+import { mapBranch } from '@/features/filiallar/filiallarSlice'
+import { getBranchesPage } from '@/services/branchService'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
+import StatusBanner from '@/components/ui/StatusBanner'
 import OrgModal from './components/OrgModal'
 import SuspendOrgModal from './components/SuspendOrgModal'
 import ActivateOrgModal from './components/ActivateOrgModal'
@@ -69,11 +73,33 @@ export default function TashkilotDetailPage() {
   const [suspendOpen, setSuspendOpen] = useState(false)
   const [activateOpen, setActivateOpen] = useState(false)
   const [toast, setToast] = useState('')
-  // Shu renderda hozir bajarilgan harakat natijasi ({ orgId, type, at, by }) — orgId joriy
-  // `id`ga mos kelmasa (boshqa tashkilotga o'tilgan), localStorage'dagi qiymat ishlatiladi.
   const [actionMeta, setActionMeta] = useState(null)
   const statusMeta = actionMeta?.orgId === id ? actionMeta : loadStatusMeta(id)
   const orgUsers = useOrgUsers(org?.id)
+
+  const fetchOrgBranchesPage = useCallback(
+    (params) =>
+      getBranchesPage(params).then((res) => ({
+        ...res,
+        results: res.results.map(mapBranch),
+      })),
+    []
+  )
+
+  const {
+    items: branches,
+    totalCount: branchesTotalCount,
+    isLoading: branchesLoading,
+    isLoadingMore: branchesLoadingMore,
+    hasMore: branchesHasMore,
+    containerRef: branchesScrollRef,
+    sentinelRef: branchesSentinelRef,
+    handleScroll: handleBranchesScroll,
+  } = useServerPagedList(
+    fetchOrgBranchesPage,
+    { organization: id },
+    { enabled: Boolean(id) }
+  )
 
   usePageHeader(org ? [{ label: 'Tashkilotlar', to: '/tashkilotlar' }, { label: org.name }] : 'Tashkilotlar')
 
@@ -115,7 +141,11 @@ export default function TashkilotDetailPage() {
 
   const suspended = org.status === 'suspended'
   const userRoles = groupByRole(orgUsers.users)
-  const stats = { ...org.stats, foydalanuvchilar: orgUsers.loaded && !orgUsers.failed ? orgUsers.users.length : org.stats.foydalanuvchilar }
+  const stats = {
+    ...org.stats,
+    filiallar: branchesTotalCount ?? org.stats.filiallar,
+    foydalanuvchilar: orgUsers.loaded && !orgUsers.failed ? orgUsers.users.length : org.stats.foydalanuvchilar,
+  }
 
   function copy(text, label) {
     navigator.clipboard?.writeText(String(text))
@@ -124,16 +154,16 @@ export default function TashkilotDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-3">
+      <div className="flex h-full flex-col gap-2">
         {/* Statistika kartalari */}
-        <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid shrink-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {STAT_META.map((c) => (
             <button
               key={c.key}
               type="button"
               onClick={() => window.open(`/tashkilotlar/${org.id}/${c.key}`, '_blank', 'noopener')}
               style={{ backgroundColor: c.bg }}
-              className="cursor-pointer rounded-lg p-5 text-left text-[#0A0A0A] transition-[filter] duration-150 hover:brightness-95"
+              className="cursor-pointer rounded-sm p-4 text-left text-[#0A0A0A] transition-[filter] duration-150 hover:brightness-95"
             >
               <div className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.4px]">
                 {c.title} <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={3} size={20} className="text-[#0052D2]" />
@@ -146,23 +176,23 @@ export default function TashkilotDetailPage() {
         </div>
 
         {suspended && org.suspend && (
-          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+          <StatusBanner variant="danger">
             Tashkilot to‘xtatilgan, {(statusMeta?.type === 'suspend' && statusMeta.at) || org.suspend.at || ''}. Sabab:{' '}
             {org.suspend.reason || ''}
             {statusMeta?.type === 'suspend' && statusMeta.by ? `. To‘xtatdi: ${statusMeta.by}` : ''}.
-          </div>
+          </StatusBanner>
         )}
         {!suspended && statusMeta?.type === 'activate' && (
-          <div className="rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-[19px] text-[#047A47] dark:bg-[#047A47]/15">
+          <StatusBanner variant="success">
             Tashkilot faollashtirildi, {statusMeta.at}. To‘xtatish sababi audit jurnalida saqlanib qoldi
             {statusMeta.by ? `. Faollashtirdi: ${statusMeta.by}` : ''}.
-          </div>
+          </StatusBanner>
         )}
 
         <div className="flex min-h-0 flex-1 flex-row gap-2">
           {/* Filiallar jadvali */}
-          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg', surface)}>
-            <div className="min-h-0 flex-1 overflow-auto">
+          <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-sm', surface)}>
+            <div ref={branchesScrollRef} onScroll={handleBranchesScroll} className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
                   <tr>
@@ -175,12 +205,18 @@ export default function TashkilotDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {!org.branches || org.branches.length === 0 ? (
+                  {branchesLoading && branches.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-14 text-center text-sm text-[#737373]">Filial yo‘q</td>
+                      <td colSpan={6} className="py-14 text-center">
+                        <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#0052D2]" />
+                      </td>
+                    </tr>
+                  ) : branches.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-14 text-center text-sm text-[#737373]">Filial yo‘q</td>
                     </tr>
                   ) : (
-                    org.branches.map((b, i) => (
+                    branches.map((b, i) => (
                       <tr key={b.id || i} className="h-10 hover:bg-[#E3E9F6] dark:hover:bg-white/5">
                         <td className="px-3 text-[13px] text-[#737373]">{i + 1}</td>
                         <td
@@ -210,10 +246,22 @@ export default function TashkilotDetailPage() {
                           )}
                         </td>
                         <td className="px-3 text-[13px] text-[#737373] dark:text-muted-foreground">{b.manzil || b.address || ''}</td>
-                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{`${b.xodim ?? 0} ta`}</td>
+                        <td className="px-3 text-right text-[13px] text-[#0A0A0A] dark:text-white">{`${b.stats?.xodimlar ?? b.xodim ?? 0} ta`}</td>
                         <td className="px-3 pr-4 text-right text-[13px] text-[#0A0A0A] dark:text-white">{`${b.ombor ?? 0} ta`}</td>
                       </tr>
                     ))
+                  )}
+                  {branches.length > 0 && branchesHasMore && !branchesLoading && (
+                    <tr ref={branchesSentinelRef} className="h-1">
+                      <td colSpan={6} className="h-1 p-0" />
+                    </tr>
+                  )}
+                  {branchesLoadingMore && (
+                    <tr>
+                      <td colSpan={6} className="py-3 text-center">
+                        <Loader2 className="mx-auto h-4 w-4 animate-spin text-[#0052D2]" />
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -221,7 +269,7 @@ export default function TashkilotDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
+          <div className="flex w-full min-h-0 shrink-0 flex-col gap-2 lg:w-[400px] overflow-y-auto">
             <Panel title="Tashkilot ma’lumotlari:" className="shrink-0">
               <InfoRow label="INN" value={org.inn} onCopy={() => copy(org.inn, 'INN')} />
               <InfoRow label="Direktor" value={org.director} />
@@ -248,7 +296,18 @@ export default function TashkilotDetailPage() {
               />
             </Panel>
 
-            <Panel title="Foydalanuvchilar:" className="min-h-0 flex-1">
+            <Panel
+              title="Foydalanuvchilar:"
+              className="min-h-[200px] max-h-[calc(100vh-480px)] overflow-y-auto flex-1"
+              footer={
+                orgUsers.loaded && userRoles.length > 0 ? (
+                  <div className={cn('flex items-center justify-between border-t border-[#DFE4EF] px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] rounded-b-lg dark:border-white/5 dark:text-white', headBg)}>
+                    <span>JAMI</span>
+                    <span>{formatNumber(orgUsers.users.length, 0)} ta</span>
+                  </div>
+                ) : null
+              }
+            >
               {!orgUsers.loaded ? (
                 <div className="flex h-full items-center justify-center px-4 py-3">
                   <Loader2 className="h-5 w-5 animate-spin text-[#0052D2]" />
@@ -258,18 +317,12 @@ export default function TashkilotDetailPage() {
                   {orgUsers.failed ? 'Foydalanuvchilarni yuklab bo‘lmadi' : 'Foydalanuvchi yo‘q'}
                 </div>
               ) : (
-                <>
-                  {userRoles.map((u) => (
-                    <div key={u.role} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
-                      <span className="text-[#525252] dark:text-muted-foreground">{u.role}</span>
-                      <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 0)} ta</span>
-                    </div>
-                  ))}
-                  <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
-                    <span>JAMI</span>
-                    <span>{formatNumber(orgUsers.users.length, 0)} ta</span>
+                userRoles.map((u) => (
+                  <div key={u.role} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
+                    <span className="text-[#525252] dark:text-muted-foreground">{u.role}</span>
+                    <span className="font-medium text-[#0A0A0A] dark:text-white">{formatNumber(u.count, 0)} ta</span>
                   </div>
-                </>
+                ))
               )}
             </Panel>
           </div>
@@ -361,15 +414,16 @@ export default function TashkilotDetailPage() {
 
 // `className`ga `flex-1 min-h-0` berilsa (masalan bo'sh holatda pastki chetini yonidagi
 // jadval bilan bir xil qilish uchun), panel qolgan bo'sh joyni to'ldirib o'sadi.
-function Panel({ title, children, className }) {
+function Panel({ title, children, footer, className }) {
   return (
-    <div className={cn('flex flex-col rounded-lg', surface, className)}>
+    <div className={cn('flex flex-col rounded-sm', surface, className)}>
       <div className={cn('sticky top-0 z-10 flex h-10 shrink-0 items-center rounded-t-lg px-4 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
         {title}
       </div>
-      <div className="flex-1 divide-y divide-[#DFE4EF] overflow-auto [&>*:last-child]:rounded-b-lg dark:divide-white/5">
+      <div className={cn('flex-1 divide-y divide-[#DFE4EF] overflow-auto dark:divide-white/5', !footer && '[&>*:last-child]:rounded-b-lg')}>
         {children}
       </div>
+      {footer && <div className="shrink-0">{footer}</div>}
     </div>
   )
 }

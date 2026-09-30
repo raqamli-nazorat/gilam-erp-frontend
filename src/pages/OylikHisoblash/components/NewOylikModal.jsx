@@ -170,19 +170,6 @@ export default function NewOylikModal({ open, onOpenChange, onSubmit, mode = 'cr
           </div>
 
           <div className="flex h-[76px] shrink-0 items-center justify-end gap-3 bg-[#F5F5F5] px-6 dark:bg-white/5">
-            {!isEdit && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  onOpenChange(false)
-                  navigate('/tabel')
-                }}
-                className="h-10 gap-2 rounded-[10px] px-4 text-[14px] font-medium text-[#0A0A0A] hover:bg-black/5 dark:text-white dark:hover:bg-white/10"
-              >
-                <CalendarDays className="size-4" /> Tabelga o‘tish
-              </Button>
-            )}
             <Button
               type="button"
               variant="outline"

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Check, ChevronLeft, Filter, Loader2, RefreshCw, Search, X } from 'lucide-react'
 import { usePageHeader } from '@/hooks/usePageHeader'
@@ -23,6 +23,7 @@ import DayDetailModal from './components/DayDetailModal'
 import TabelConfirmModal from './components/TabelConfirmModal'
 import TabelCancelModal from './components/TabelCancelModal'
 import { CELL_STYLE, farqColor } from './components/tabelStyles'
+import StatusBanner from '@/components/ui/StatusBanner'
 
 // Ustun o'lchamlari — chap/o'ng yopishqoq ustunlar ofsetlari shularga bog'liq
 const W_NUM = 48
@@ -64,17 +65,22 @@ export default function TabelDetailPage() {
 export function PageState({ loading, error, onRetry }) {
   return (
     <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-3 rounded-xl bg-white text-sm text-[#737373] dark:bg-card dark:text-muted-foreground">
-      {loading || !error ? (
+      {loading ? (
         <>
           <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
           Yuklanmoqda...
         </>
-      ) : (
+      ) : error ? (
         <>
           <p className="text-[#DC2626]">{extractErrorMessage(error, 'Xatolik yuz berdi')}</p>
           <Button variant="outline" onClick={onRetry} className="h-8 border-[#E5E5E5] bg-white px-3 text-[13px]">
             Qayta urinish
           </Button>
+        </>
+      ) : (
+        <>
+          <Loader2 className="h-6 w-6 animate-spin text-[#0052D2]" />
+          Yuklanmoqda...
         </>
       )}
     </div>
@@ -116,11 +122,7 @@ const NOTICE_CLS = {
   cancelled: 'bg-[#FEECEC] text-[#DC2626] dark:bg-[#2A1111] dark:text-[#F87171]',
 }
 
-const BTN = 'h-10 gap-2 rounded-lg px-5 text-[15px] font-medium shadow-[0px_1px_2px_0px_#0000001A]'
-const BTN_OUTLINE = cn(
-  BTN,
-  'border-[#E5E5E5] bg-white text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-white'
-)
+const BTN = 'h-10 gap-2 rounded-xl px-4 text-[14px] font-medium shadow-[0px_1px_2px_0px_#0000001A]'
 
 function TabelDetail({ data, reload }) {
   const navigate = useNavigate()
@@ -141,6 +143,14 @@ function TabelDetail({ data, reload }) {
   // Saqlanmagan kunlik o'zgarishlar: { [empId]: { [day]: entry } } — "Saqlash" bilan yoziladi
   const [pending, setPending] = useState({})
   const dirty = Object.keys(pending).length > 0
+
+  const scrollBodyRef = useRef(null)
+  const scrollFooterRef = useRef(null)
+  const syncScroll = () => {
+    if (scrollFooterRef.current && scrollBodyRef.current) {
+      scrollFooterRef.current.scrollLeft = scrollBodyRef.current.scrollLeft
+    }
+  }
 
   const sheet = useMemo(() => buildSheet({ year, month, items, employees, pending }), [year, month, items, employees, pending])
   const { days, rows } = sheet
@@ -237,12 +247,15 @@ function TabelDetail({ data, reload }) {
 
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className={cn('shrink-0 rounded-lg px-5 py-2 text-[13px] font-medium', NOTICE_CLS[status])}>
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <StatusBanner variant={status}>
         {status === 'cancelled' && tabel.cancelReason
           ? `Bekor qilingan${tabel.cancelledAt ? ` (${fmtDateTime(tabel.cancelledAt)})` : ''}: ${tabel.cancelReason}`
-          : 'Tasdiqlangandan so‘ng kunlik ma’lumotlarni o‘zgartirib bo‘lmaydi.'}
-      </div>
+          : status === 'confirmed'
+            ? 'Tabel tasdiqlangan. Kunlik ma’lumotlarni o‘zgartirib bo‘lmaydi.'
+            : 'Tasdiqlangandan so‘ng kunlik ma’lumotlarni o‘zgartirib bo‘lmaydi.'}
+      </StatusBanner>
+
 
       <TabelHeaderCards
         tabel={tabel}
@@ -259,50 +272,68 @@ function TabelDetail({ data, reload }) {
         }
       />
 
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-[280px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Qidirish"
-              className="h-9 w-[280px] rounded-lg border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
-            />
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setFilterOpen(true)}
-            className={cn(
-              'h-9 gap-2 rounded-lg border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
-              hasFilter && 'border-[#0052D2] text-[#0052D2]'
-            )}
-          >
-            <Filter className="h-4 w-4" /> Filtr
-          </Button>
-          {editable && (
-            <Button
-              variant="outline"
-              onClick={() => setSyncOpen(true)}
-              disabled={refreshing}
-              className="h-9 gap-2 rounded-lg border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-100 dark:border-white/10 dark:bg-card dark:text-foreground"
-            >
-              <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} /> Yangilash
-            </Button>
-          )}
+      <div
+        className={cn(
+          'grid shrink-0 items-center gap-4',
+          status === 'confirmed'
+            ? 'grid-cols-2 lg:grid-cols-4'
+            : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'
+        )}
+      >
+        <div className="relative w-full">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Qidirish"
+            className="h-9 w-full rounded-lg border-[#E5E5E5] bg-white pl-9 pr-3 text-sm text-[#0A0A0A] placeholder:text-[#737373] focus-visible:ring-[#0052D2] dark:border-white/10 dark:bg-card dark:text-white"
+          />
         </div>
 
-        <div className="flex flex-wrap items-center gap-5 text-[14px] text-[#525252] dark:text-muted-foreground">
-          {LEGEND.map(([label, cls]) => (
-            <span key={label} className="inline-flex items-center gap-2">
-              <span className={cn('size-4 rounded', cls)} />
-              {label}
-            </span>
-          ))}
+        <div
+          className={cn(
+            'flex flex-wrap items-center justify-between gap-3',
+            status === 'confirmed'
+              ? 'lg:col-span-3'
+              : 'md:col-span-2 xl:col-span-4'
+          )}
+        >
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="outline"
+              onClick={() => setFilterOpen(true)}
+              className={cn(
+                'h-9 gap-2 rounded-lg border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] dark:border-white/10 dark:bg-card dark:text-foreground',
+                hasFilter && 'border-[#0052D2] text-[#0052D2]'
+              )}
+            >
+              <Filter className="h-4 w-4" /> Filtr
+            </Button>
+            {editable && (
+              <Button
+                variant="outline"
+                onClick={() => setSyncOpen(true)}
+                disabled={refreshing}
+                className="h-9 gap-2 rounded-lg border-[#E5E5E5] bg-white px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] disabled:opacity-100 dark:border-white/10 dark:bg-card dark:text-foreground"
+              >
+                <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} /> Yangilash
+              </Button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-5 text-[14px] text-[#525252] dark:text-muted-foreground">
+            {LEGEND.map(([label, cls]) => (
+              <span key={label} className="inline-flex items-center gap-2">
+                <span className={cn('size-4 rounded', cls)} />
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-white dark:bg-card">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white dark:bg-card">
+      <div className="flex-1 overflow-auto" ref={scrollBodyRef} onScroll={syncScroll}>
         <table className="w-max min-w-full border-separate border-spacing-0">
           <thead className="sticky top-0 z-[3]">
             <tr>
@@ -326,7 +357,7 @@ function TabelDetail({ data, reload }) {
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={days.length + 6} className="py-16 text-center text-sm text-[#737373] dark:text-muted-foreground">
+                <td colSpan={days.length + 6} className="h-[calc(100vh-500px)] text-center text-sm text-[#737373] dark:text-muted-foreground">
                   Xodim topilmadi
                 </td>
               </tr>
@@ -359,56 +390,59 @@ function TabelDetail({ data, reload }) {
             )}
           </tbody>
 
-          <tfoot className="sticky bottom-0 z-[3]">
-            <tr>
-              <td colSpan={3} className={cn(TF, STICKY_L, EDGE_L, 'px-4 font-semibold')} style={{ left: 0 }}>
-                Jami ({visible.length} ta xodim)
-              </td>
-              {totals.perDay.map((v, i) => (
-                <td key={days[i].day} className={cn(TF, 'px-1 text-center font-normal')}>{fmtHours(v)}</td>
-              ))}
-              <td className={cn(TF, STICKY_R, EDGE_R, 'px-3 text-right font-semibold')} style={{ right: W_SUM * 2 }}>{fmtHours(totals.plan)}</td>
-              <td className={cn(TF, STICKY_R, 'px-3 text-right font-semibold')} style={{ right: W_SUM }}>{fmtHours(totals.fakt)}</td>
-              <td className={cn(TF, STICKY_R, 'px-3 text-right font-semibold', farqColor(totals.farq))} style={{ right: 0 }}>{fmtHours(totals.farq)}</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-2.5 rounded-xl bg-[#F5F5F5] px-4 py-3 dark:bg-white/5">
-        {status === 'draft' ? (
-          <>
-            <Button onClick={() => setConfirm('cancel')} disabled={busy} className={cn(BTN, 'bg-[#DC2626] text-white hover:bg-[#B91C1C]')}>
-              <X className="h-4 w-4" /> Bekor qilish
-            </Button>
-            <Button
-              onClick={() =>
-                run(async () => {
-                  if (await savePending()) setToast('Tabel saqlandi')
-                }, 'Tabelni saqlab bo‘lmadi')
-              }
-              disabled={!dirty || busy}
-              className={cn(BTN, 'bg-[#0052D2] text-white hover:bg-[#0047B8] disabled:opacity-50')}
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Saqlash
-            </Button>
-            <Button onClick={() => setConfirm('approve')} disabled={busy} className={cn(BTN, 'bg-[#16A34A] text-white hover:bg-[#15803D]')}>
-              <Check className="h-4 w-4" /> Tasdiqlash
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="outline" onClick={() => navigate('/tabel')} className={BTN_OUTLINE}>
-              <ChevronLeft className="h-4 w-4" /> Jurnalga qaytish
-            </Button>
-            {status === 'confirmed' && (
-              <Button variant="outline" onClick={() => setConfirm('cancelConfirmed')} disabled={busy} className={BTN_OUTLINE}>
+        {/* Totals footer — always visible at the bottom */}
+        <div ref={scrollFooterRef} className="overflow-x-hidden border-t border-[#E5E5E5] dark:border-white/10">
+          <table className="w-max min-w-full border-separate border-spacing-0">
+            <tfoot>
+              <tr>
+                <td className={cn(TF, STICKY_L, EDGE_L, 'px-4 font-semibold')} style={{ left: 0, width: W_NUM + W_NAME + W_SCHED, minWidth: W_NUM + W_NAME + W_SCHED }} colSpan={3}>
+                  Jami ({visible.length} ta xodim)
+                </td>
+                {totals.perDay.map((v, i) => (
+                  <td key={days[i].day} className={cn(TF, 'min-w-[61px] px-1 text-center font-normal')}>{fmtHours(v)}</td>
+                ))}
+                <td className={cn(TF, STICKY_R, EDGE_R, 'px-3 text-right font-semibold')} style={{ right: W_SUM * 2, width: W_SUM, minWidth: W_SUM }}>{fmtHours(totals.plan)}</td>
+                <td className={cn(TF, STICKY_R, 'px-3 text-right font-semibold')} style={{ right: W_SUM, width: W_SUM, minWidth: W_SUM }}>{fmtHours(totals.fakt)}</td>
+                <td className={cn(TF, STICKY_R, 'px-3 text-right font-semibold', farqColor(totals.farq))} style={{ right: 0, width: W_SUM, minWidth: W_SUM }}>{fmtHours(totals.farq)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {(status === 'draft' || status === 'confirmed') && (
+        <div className="flex shrink-0 items-center justify-end gap-2.5 rounded-xl bg-[#F5F5F5] px-4 py-3 dark:bg-white/5">
+          {status === 'draft' ? (
+            <>
+              <Button onClick={() => setConfirm('cancel')} disabled={busy} className={cn(BTN, 'bg-[#DC2626] text-white hover:bg-[#B91C1C]')}>
                 <X className="h-4 w-4" /> Bekor qilish
               </Button>
-            )}
-          </>
-        )}
-      </div>
+              <Button
+                onClick={() =>
+                  run(async () => {
+                    if (await savePending()) setToast('Tabel saqlandi')
+                }, "Tabelni saqlab bo'lmadi")
+                }
+                disabled={!dirty || busy}
+                className={cn(BTN, 'bg-[#0052D2] text-white hover:bg-[#0047B8] disabled:opacity-50')}
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Saqlash
+              </Button>
+              <Button onClick={() => setConfirm('approve')} disabled={busy} className={cn(BTN, 'bg-[#16A34A] text-white hover:bg-[#15803D]')}>
+                <Check className="h-4 w-4" /> Tasdiqlash
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" onClick={() => setConfirm('cancelConfirmed')} disabled={busy} className={cn(BTN, 'bg-[#DC2626] text-white hover:bg-[#B91C1C]')}>
+              <X className="h-4 w-4" /> Bekor qilish
+            </Button>
+          )}
+        </div>
+      )}
+
 
       <TabelFilterModal
         open={filterOpen}

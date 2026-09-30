@@ -15,6 +15,7 @@ import { Panel, InfoRow, surface } from './components/InfoPanel'
 import RecruitmentModal from './components/RecruitmentModal'
 import TerminateEmployeeModal from './components/TerminateEmployeeModal'
 import RehireEmployeeModal from './components/RehireEmployeeModal'
+import StatusBanner from '@/components/ui/StatusBanner'
 
 const THb =
   'sticky top-0 z-10 h-11 bg-[#9AC2FF] px-3 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
@@ -178,7 +179,7 @@ export default function IshdanChiqarishDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-3">
+      <div className="flex h-full flex-col gap-2">
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map(([label, value, bg]) => (
             <div key={label} className={cn('rounded-xl p-5 text-left text-[#0A0A0A]', bg)}>
@@ -189,15 +190,16 @@ export default function IshdanChiqarishDetailPage() {
         </div>
 
         {terminated && lastDismissal && (
-          <div className="shrink-0 rounded-[8px] bg-[#FEECEC] px-4 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+          <StatusBanner variant="danger">
             Xodim ishdan chiqarildi, {lastDismissal.yaratilgan}. Sabab: {lastDismissal.dismissalReason || ''}.
-          </div>
+          </StatusBanner>
         )}
         {rehired && (
-          <div className="shrink-0 rounded-lg bg-[#E6FAF1] px-4 py-3 text-[13px] font-medium leading-5 text-[#047A47] dark:bg-[#047A47]/15 dark:text-[#34D399]">
+          <StatusBanner variant="success">
             Xodim qayta ishga olindi, {latest.yaratilgan}. Avvalgi ishdan chiqarish sababi tarixda saqlangan.
-          </div>
+          </StatusBanner>
         )}
+
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
           <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl', surface)}>

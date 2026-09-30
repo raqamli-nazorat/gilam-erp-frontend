@@ -40,8 +40,14 @@ export function useServerPagedList(fetchFn, params, options = {}) {
       }
       try {
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        const { results, count, next, counts: resCounts } = await fetchFnRef.current({ ...JSON.parse(paramsKey), page: pageNum })
-        setItems((prev) => (append ? [...prev, ...results] : results))
+        const rawRes = await fetchFnRef.current({ ...JSON.parse(paramsKey), page: pageNum })
+        const res = rawRes && typeof rawRes === 'object' && 'results' in rawRes ? rawRes : (rawRes?.data ?? rawRes)
+        const results = Array.isArray(res) ? res : (Array.isArray(res?.results) ? res.results : [])
+        const count = typeof res?.count === 'number' ? res.count : results.length
+        const next = res?.next ?? null
+        const resCounts = res?.counts ?? rawRes?.counts ?? null
+
+        setItems((prev) => (append ? [...(prev || []), ...results] : results))
         setTotalCount(count)
         setCounts(resCounts ?? null)
         setHasMore(Boolean(next))
@@ -69,18 +75,20 @@ export function useServerPagedList(fetchFn, params, options = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load, enabled])
 
+  const safeItems = items || []
+
   const loadMore = useCallback(() => {
-    if (isFetchingRef.current || isLoading || isLoadingMore || !hasMore || items.length === 0) return
+    if (isFetchingRef.current || isLoading || isLoadingMore || !hasMore || safeItems.length === 0) return
     const nextPage = page + 1
     setPage(nextPage)
     load(nextPage, { append: true })
-  }, [isLoading, isLoadingMore, hasMore, items.length, page, load])
+  }, [isLoading, isLoadingMore, hasMore, safeItems.length, page, load])
 
   // IntersectionObserver orqali scroll pagination (asosiy usul)
   useEffect(() => {
     const sentinel = sentinelRef.current
     const container = containerRef.current
-    if (!sentinel || !container || !hasMore || isLoading || isLoadingMore || items.length === 0) return undefined
+    if (!sentinel || !container || !hasMore || isLoading || isLoadingMore || safeItems.length === 0) return undefined
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && container.scrollHeight > container.clientHeight) loadMore()
@@ -89,7 +97,7 @@ export function useServerPagedList(fetchFn, params, options = {}) {
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [loadMore, hasMore, isLoading, isLoadingMore, items.length])
+  }, [loadMore, hasMore, isLoading, isLoadingMore, safeItems.length])
 
   // Fallback: konteyner scroll hodisasi (IntersectionObserver ishlamagan holatlar uchun)
   const handleScroll = useCallback(

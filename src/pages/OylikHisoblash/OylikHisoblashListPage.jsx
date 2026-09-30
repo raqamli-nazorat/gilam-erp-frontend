@@ -222,9 +222,9 @@ export default function OylikHisoblashListPage() {
                   className="cursor-pointer transition-colors hover:bg-[#F9FAFB] dark:hover:bg-white/5"
                 >
                   <td className={cn(TD, 'w-12 text-[#525252] dark:text-muted-foreground')}>{idx + 1}</td>
-                  <td className={TD}>{g.orgName || '—'}</td>
-                  <td className={cn(TD, 'text-[#0052D2] dark:text-[#60A5FA]')}>
-                    <span className="hover:underline">{g.branchName || '—'}</span>
+                  <td  className={cn(TD, 'max-w-[280px] truncate')}>{g.orgName || ''}</td>
+                  <td  className={cn(TD, 'max-w-[280px] truncate text-[#0052D2] dark:text-[#60A5FA]')}>
+                    <span className="hover:underline">{g.branchName || ''}</span>
                   </td>
                   <td className={TD}>{MONTH_NAMES[g.forMonth] || g.forMonth}</td>
                   <td className={TD}>{g.employeeCount}</td>

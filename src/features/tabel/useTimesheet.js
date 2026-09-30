@@ -26,9 +26,12 @@ async function loadScheduleName(branchId) {
 export function useTimesheet(id) {
   const [state, setState] = useState({ data: null, loading: true, error: null })
   const reqId = useRef(0)
+  const running = useRef(false)
 
   const load = useCallback(
     async ({ silent = false } = {}) => {
+      if (running.current) return          // oldingi so'rov tugamagan bo'lsa, qayta yo'q
+      running.current = true
       const req = ++reqId.current
       if (!silent) setState((s) => ({ ...s, loading: true, error: null }))
       try {
@@ -59,6 +62,8 @@ export function useTimesheet(id) {
       } catch (error) {
         if (req !== reqId.current) return
         setState((s) => ({ ...s, loading: false, error }))
+      } finally {
+        running.current = false
       }
     },
     [id]

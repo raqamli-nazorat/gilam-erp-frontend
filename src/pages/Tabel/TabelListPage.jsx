@@ -154,7 +154,6 @@ export default function TabelListPage() {
           <thead>
             <tr>
               <th className={cn(TH, 'w-12')}>#</th>
-              <th className={TH}>Tashkilot</th>
               <th className={TH}>Filial</th>
               <th className={TH}>Oy</th>
               <th className={TH}>Xodimlar</th>
@@ -193,7 +192,6 @@ export default function TabelListPage() {
               rows.map((r, i) => (
                 <tr key={r.id} onClick={() => navigate(`/tabel/${r.id}`)} className="cursor-pointer hover:bg-[#F9FAFB] dark:hover:bg-white/5">
                   <td className={cn(TD, 'text-[#525252] dark:text-muted-foreground')}>{i + 1}</td>
-                  <td className={TD}>{r.orgName || '—'}</td>
                   <td className={cn(TD, 'font-medium text-[#0052D2] dark:text-[#60A5FA]')}>{r.branchName}</td>
                   <td className={TD}>{r.year && r.year !== new Date().getFullYear() ? `${MONTHS[r.month]} ${r.year}` : MONTHS[r.month]}</td>
                   <td className={TD}>{r.employeesCount ?? 0}</td>

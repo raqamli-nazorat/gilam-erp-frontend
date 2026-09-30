@@ -10,11 +10,13 @@ import { cn } from '@/lib/utils'
 import { holatLabel } from '@/features/filiallar/filiallarData'
 import { Button } from '@/components/ui/button'
 import Toast from '@/components/Toast'
+import StatusBanner from '@/components/ui/StatusBanner'
 import { useBranch } from './useBranch'
 import { useBranchStaff } from './useBranchStaff'
 import StatCards from './components/StatCards'
 import FilialFooter from './components/FilialFooter'
 import { Panel, InfoRow, headBg, surface } from './components/InfoPanel'
+import BranchLocationMap from '@/components/BranchLocationMap'
 
 const THb =
   'sticky top-0 z-10 h-10 bg-[#9AC2FF] px-4 text-[12px] font-semibold uppercase leading-[18px] text-[#0A0A0A] dark:bg-[#0052D2]/40 dark:text-white'
@@ -81,7 +83,7 @@ export default function FilialDetailPage() {
 
   return (
     <>
-      <div className="flex h-full flex-col gap-3">
+      <div className="flex h-full flex-col gap-2">
         <StatCards
           items={[
             { title: 'XODIMLAR', value: `${formatNumber(branch.stats.xodimlar, 0)} ta`, to: `/filiallar/${branch.id}/xodimlar` },
@@ -92,9 +94,9 @@ export default function FilialDetailPage() {
         />
 
         {closed && branch.close && (
-          <div className="rounded-[8px] bg-[#FEECEC] px-3.5 py-3 text-[13px] font-medium leading-5 text-[#B42318] dark:bg-[#DC2626]/15 dark:text-[#F87171]">
+          <StatusBanner variant="danger">
             Filial yopilgan, {branch.close.at}. Sabab: {branch.close.reason}. Yopdi: {branch.close.by}.
-          </div>
+          </StatusBanner>
         )}
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
@@ -172,13 +174,21 @@ export default function FilialDetailPage() {
           </div>
 
           {/* O'ng panel */}
-          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px]">
+          <div className="flex w-full min-h-0 shrink-0 flex-col gap-4 lg:w-[400px] overflow-y-auto">
             <Panel title="Filial ma’lumotlari:" className="shrink-0">
               <InfoRow label="Tashkilot" value={branch.tashkilot} />
               <InfoRow label="Telefon" value={branch.phone} onCopy={() => copy(branch.phone, 'Telefon')} />
               <InfoRow label="Viloyat" value={branch.viloyat} />
               <InfoRow label="Tuman" value={branch.tuman} />
               <InfoRow label="Manzil" value={branch.manzil} />
+              <div className="p-3">
+                <BranchLocationMap
+                  latitude={branch.latitude}
+                  longitude={branch.longitude}
+                  radius={branch.radius}
+                  className="h-[150px] w-full rounded-lg"
+                />
+              </div>
               <InfoRow label="Ochilgan sana" value={branch.openedAt} />
               <InfoRow
                 label="Holat"
@@ -197,26 +207,31 @@ export default function FilialDetailPage() {
               />
             </Panel>
 
-            <Panel title="Oxirgi savdolar:" className="min-h-0 flex-1">
+            <Panel
+              title="Oxirgi savdolar:"
+              className="min-h-[200px] max-h-[calc(100vh-480px)] overflow-y-auto flex-1"
+              footer={
+                d.lastSales.length > 0 ? (
+                  <div className={cn('flex items-center justify-between border-t border-[#DFE4EF] px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] rounded-b-xl dark:border-white/5 dark:text-white', headBg)}>
+                    <span>JAMI, 7 kun</span>
+                    <span>{formatNumber(salesTotal, 2)}</span>
+                  </div>
+                ) : null
+              }
+            >
               {d.lastSales.length === 0 ? (
                 <div className="flex h-full items-center justify-center px-4 py-3 text-center text-[13px] text-[#737373] dark:text-muted-foreground">
                   Bu ma’lumot hali mavjud emas
                 </div>
               ) : (
-                <>
-                  {d.lastSales.map((r, i) => (
-                    <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
-                      <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
-                      <span className="font-medium text-[#0A0A0A] dark:text-white">
-                        {formatNumber(r.amount, 2)}{i === 0 ? ' UZS' : ''}
-                      </span>
-                    </div>
-                  ))}
-                  <div className={cn('flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white', headBg)}>
-                    <span>JAMI, 7 kun</span>
-                    <span>{formatNumber(salesTotal, 2)}</span>
+                d.lastSales.map((r, i) => (
+                  <div key={r.date} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
+                    <span className="text-[#525252] dark:text-muted-foreground">{r.date}</span>
+                    <span className="font-medium text-[#0A0A0A] dark:text-white">
+                      {formatNumber(r.amount, 2)}{i === 0 ? ' UZS' : ''}
+                    </span>
                   </div>
-                </>
+                ))
               )}
             </Panel>
           </div>
