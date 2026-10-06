@@ -1,5 +1,6 @@
 import { designApi } from '@/services/catalogReferenceService'
 import { buildDesignPayload, mapDesign } from '@/features/malumotnomalar/catalogReferenceData'
+import { qualityOptions } from '@/services/optionSources'
 import ReferenceListPage from './components/ReferenceListPage'
 import DizaynModal from './components/DizaynModal'
 
@@ -8,6 +9,9 @@ const COLUMNS = [
   { key: 'name', label: 'Nomi', className: 'max-w-[480px]', headClassName: 'w-[39%]' },
   { key: 'sifat', label: 'Sifat' },
 ]
+
+// Backend filtri: catalog/designs/?quality=<id>
+const EXTRA_FILTERS = [{ key: 'quality', label: 'Sifat', fetchPage: qualityOptions }]
 
 const deleteSummary = (r) => ({ label: 'Nomi', value: r.name })
 
@@ -24,6 +28,7 @@ export default function DizaynlarPage() {
       FormModal={DizaynModal}
       deleteTitle="Dizaynni o‘chirish?"
       deleteSummary={deleteSummary}
+      extraFilters={EXTRA_FILTERS}
     />
   )
 }

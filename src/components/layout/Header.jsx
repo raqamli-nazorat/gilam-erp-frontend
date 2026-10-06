@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { ChevronDown, Moon, Sun } from 'lucide-react'
 import { toggleTheme } from '@/features/ui/uiSlice'
 import { formatNumber } from '@/lib/format'
-import { WAREHOUSES, EXCHANGE_RATE } from '@/features/receipts/mockData'
+import { WAREHOUSES } from '@/features/receipts/mockData'
+import { loadExchangeRate } from '@/features/receipts/receiptsSlice'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -66,12 +67,18 @@ function renderHeaderTitle(title) {
 export default function Header({ title, badge }) {
   const dispatch = useDispatch()
   const theme = useSelector((state) => state.ui.theme)
+  // USD kursi — finance/currency-ledgers/ dan (topilmasa standart qiymat qoladi)
+  const exchangeRate = useSelector((state) => state.receipts.exchangeRate)
   const { pathname } = useLocation()
   // Bron hujjati sahifasida ombor "Bron ombori", ro'yxatda esa odatiy MAGAZIN
   const isBookingDoc = pathname.startsWith('/bron-tovarlar/')
   const [warehouse, setWarehouse] = useState(WAREHOUSES[0])
   const [language, setLanguage] = useState('UZ')
   const warehouseOptions = isBookingDoc ? [BOOKING_WAREHOUSE, ...WAREHOUSES] : WAREHOUSES
+
+  useEffect(() => {
+    dispatch(loadExchangeRate())
+  }, [dispatch])
 
   useEffect(() => {
     setWarehouse(isBookingDoc ? BOOKING_WAREHOUSE : WAREHOUSES[0])
@@ -106,7 +113,7 @@ export default function Header({ title, badge }) {
         <div className={cn('flex h-9 w-[160px] items-center gap-2 pl-3 pr-2', pillTrigger)}>
           <span>USD</span>
           <span className="text-white/40">|</span>
-          <span className="leading-[18px]">{formatNumber(EXCHANGE_RATE)}</span>
+          <span className="leading-[18px]">{formatNumber(exchangeRate)}</span>
           <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-white/70" />
         </div>
 

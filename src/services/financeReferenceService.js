@@ -22,6 +22,18 @@ export const currencyLedgerApi = {
   },
 }
 
+// Valyutaning eng so'nggi kursi (masalan USD → UZS). Topilmasa null.
+export async function fetchLatestRate(shortName = 'USD') {
+  const response = await axiosAPI.get('finance/currency-ledgers/', {
+    params: { short_name: shortName, ordering: '-day', page: 1 },
+  })
+  const payload = unwrapData(response)
+  const list = Array.isArray(payload) ? payload : payload?.results ?? []
+  const match = list.find((r) => r.currency_info?.short_name === shortName) ?? list[0]
+  const value = Number(match?.value)
+  return Number.isFinite(value) && value > 0 ? value : null
+}
+
 // Hisoblash va ushlab qolish turlari — backend "finance/accrual-retentions/"
 // ({ name, type: percent | fix_summa, currency, value }).
 export const accrualRetentionApi = createReferenceApi('finance/accrual-retentions/')
