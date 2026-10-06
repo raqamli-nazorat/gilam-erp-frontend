@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { PagedSelect } from '@/components/ui/paged-select'
+import { PickerField } from '@/components/ui/picker-modal'
 import { DatePicker } from '@/components/ui/date-picker'
 import {
   accrualRetentionOptions,
@@ -11,8 +11,18 @@ import {
   organizationOptions,
 } from '@/services/optionSources'
 import { extractErrorMessage } from '@/services/apiHelpers'
+import { formatUzPhone } from '@/lib/format'
+import { formatAccrualRetentionValue } from '@/features/accrualRetention/accrualRetentionData'
+import { getCurrencyMap } from '@/features/oylikHisoblash/oylikGroups'
 
 const LABEL = 'mb-1.5 block text-[13px] font-medium text-[#525252] dark:text-muted-foreground'
+
+const describeOrg = (o) => ({ subtitle: o.address, right: o.inn })
+const describeBranch = (b) => ({ subtitle: b.address, right: b.phone ? formatUzPhone(b.phone) || b.phone : '' })
+const describeEmployee = (e) => ({
+  subtitle: [e.regionName, e.districtName].filter(Boolean).join(', '),
+  right: e.phone ? formatUzPhone(e.phone) || e.phone : '',
+})
 
 // Yangi qo'shimcha/ushlanma (mode="create") yoki mavjud qoralama hujjatni tahrirlash (mode="edit").
 // `initialData` — backend hujjati (branch_info, employee_info, accrual_retention_info, date).
@@ -31,6 +41,11 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
   const [arName, setArName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [currencyMap, setCurrencyMap] = useState({})
+
+  useEffect(() => {
+    if (open) getCurrencyMap().then(setCurrencyMap)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -121,7 +136,7 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={LABEL}>Tashkilot</label>
-                <PagedSelect
+                <PickerField
                   value={orgId}
                   onChange={(val, item) => {
                     setOrgId(val)
@@ -134,6 +149,11 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
                     }
                   }}
                   fetchPage={organizationOptions}
+                  title="Tashkilot tanlang"
+                  searchPlaceholder="Nomi yoki INN"
+                  emptyText="Tashkilot topilmadi"
+                  describe={describeOrg}
+                  avatar
                   selectedLabel={orgName}
                   placeholder="Tashkilot tanlang"
                   className="h-10 rounded-[10px]"
@@ -142,7 +162,7 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
 
               <div>
                 <label className={LABEL}>Filial</label>
-                <PagedSelect
+                <PickerField
                   value={branchId}
                   onChange={(val, item) => {
                     setBranchId(val)
@@ -153,6 +173,11 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
                     }
                   }}
                   fetchPage={branchOptions}
+                  title="Filial tanlang"
+                  searchPlaceholder="Filial nomi"
+                  emptyText="Filial topilmadi"
+                  describe={describeBranch}
+                  avatar
                   params={orgId ? { organization: orgId } : undefined}
                   selectedLabel={branchName}
                   placeholder={orgId ? 'Filial tanlang' : 'Avval tashkilotni tanlang'}
@@ -165,13 +190,18 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={LABEL}>Xodim</label>
-                <PagedSelect
+                <PickerField
                   value={employeeId}
                   onChange={(val, item) => {
                     setEmployeeId(val)
                     setEmployeeName(item?.name ?? '')
                   }}
                   fetchPage={employeeOptions}
+                  title="Xodim tanlang"
+                  searchPlaceholder="Ism sharif, shaxsiy hisob yoki tabel"
+                  emptyText="Xodim topilmadi"
+                  describe={describeEmployee}
+                  avatar
                   params={branchId ? { branch: branchId } : undefined}
                   selectedLabel={employeeName}
                   placeholder={branchId ? 'Xodim tanlang' : 'Avval filialni tanlang'}
@@ -181,13 +211,17 @@ export default function NewQoshimchaModal({ open, onOpenChange, onCreate, initia
               </div>
               <div>
                 <label className={LABEL}>Qo'shimcha va ushlanma</label>
-                <PagedSelect
+                <PickerField
                   value={arId}
                   onChange={(val, item) => {
                     setArId(val)
                     setArName(item?.name ?? '')
                   }}
                   fetchPage={accrualRetentionOptions}
+                  title="Qo‘shimcha va ushlanmalar tanlang"
+                  searchPlaceholder="Nomi bo‘yicha"
+                  emptyText="Qo‘shimcha va ushlanma topilmadi"
+                  describe={(ar) => ({ right: formatAccrualRetentionValue({ accrual_retention_info: ar }, currencyMap) })}
                   selectedLabel={arName}
                   placeholder="Turini tanlang"
                   className="h-10 rounded-[10px]"
