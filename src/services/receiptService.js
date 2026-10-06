@@ -3,8 +3,8 @@ import { productPartyApi } from './productPartyService'
 
 // Tovarlar kirimi uchun backend chaqiruvlari.
 // DIQQAT: backendda kirim HUJJATI uchun endpoint yo'q (faqat catalog/product-parties/) —
-// shuning uchun hujjatning o'zi (jurnal, holat, tasdiqlash) hozircha Redux'da saqlanadi,
-// partiyalar esa haqiqiy API orqali yaratiladi.
+// shuning uchun hujjatning o'zi (jurnal, holat, tasdiqlash) Redux + localStorage'da saqlanadi,
+// partiyalar esa haqiqiy API orqali yaratiladi, tahrirlanadi va o'chiriladi.
 
 function normalize(value) {
   return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
@@ -45,15 +45,7 @@ export async function createPartiesForRows(rows, { branchId, unitId, warehouseNa
     const payload = {
       branch: branchId,
       unit: unitId,
-      quality: row.qualityId,
-      color: row.colorId,
-      design: row.designId || null,
-      party_number: partyNumber,
-      barcode: partyNumber,
-      name: rollName(row),
-      description: `${receiptNumber} · ${warehouseName} · ${row.widthM} × ${row.heightM} m = ${row.m2} m²`,
-      price_per_sqm_purchase: Number(row.priceIn || 0).toFixed(2),
-      price_per_sqm_sale: Number(row.priceSale || 0).toFixed(2),
+      ...partyFields(row, { partyNumber, warehouseName, receiptNumber }),
       is_runner: false,
     }
     try {
@@ -69,6 +61,50 @@ export async function createPartiesForRows(rows, { branchId, unitId, warehouseNa
     }
   }
   return results
+}
+
+// Qatordan partiyaning tahrirlanadigan maydonlari (yaratish va PATCH uchun umumiy)
+function partyFields(row, { partyNumber, warehouseName, receiptNumber }) {
+  return {
+    quality: row.qualityId,
+    color: row.colorId,
+    design: row.designId || null,
+    party_number: partyNumber,
+    barcode: partyNumber,
+    name: rollName(row),
+    description: `${receiptNumber} · ${warehouseName} · ${row.widthM} × ${row.heightM} m = ${row.m2} m²`,
+    price_per_sqm_purchase: Number(row.priceIn || 0).toFixed(2),
+    price_per_sqm_sale: Number(row.priceSale || 0).toFixed(2),
+  }
+}
+
+// Partiyasi yaratilgan qator tahrirlanganda — backenddagi partiya ham yangilanadi (PATCH).
+export async function updatePartyFromRow(row, { warehouseName, receiptNumber }) {
+  const invalid = validateRowForParty(row)
+  if (invalid) throw new Error(invalid)
+  return productPartyApi.update(
+    row.partyId,
+    partyFields(row, { partyNumber: row.partiya, warehouseName, receiptNumber })
+  )
+}
+
+// Partiyalarni ketma-ket o'chiradi; birinchi rad etilganda to'xtaydi (qolganlari tegilmaydi).
+// 404 — partiya allaqachon o'chirilgan, muvaffaqiyat deb hisoblanadi.
+export async function removeParties(partyIds) {
+  const removed = []
+  for (const id of partyIds) {
+    try {
+      await productPartyApi.remove(id)
+      removed.push(id)
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        removed.push(id)
+        continue
+      }
+      return { removed, failed: error }
+    }
+  }
+  return { removed, failed: null }
 }
 
 // Excel'dagi nomlarni (sifat, rang, dizayn) backend ID'lariga moslaydi.

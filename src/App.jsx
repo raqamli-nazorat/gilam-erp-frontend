@@ -36,6 +36,8 @@ import ValyutalarPage from '@/pages/Malumotnomalar/ValyutalarPage'
 import KontragentlarPage from '@/pages/Malumotnomalar/KontragentlarPage'
 import DizaynlarPage from '@/pages/Malumotnomalar/DizaynlarPage'
 import OmborlarPage from '@/pages/Malumotnomalar/OmborlarPage'
+import RejaNarxListPage from '@/pages/RejaNarx/RejaNarxListPage'
+import RejaNarxDetailPage from '@/pages/RejaNarx/RejaNarxDetailPage'
 import XodimlarListPage from '@/pages/Xodimlar/XodimlarListPage'
 import XodimlarDetailPage from '@/pages/Xodimlar/XodimlarDetailPage'
 import IshgaQabulQilishListPage from '@/pages/Xodimlar/IshgaQabulQilishListPage'
@@ -102,6 +104,9 @@ function App() {
           <Route path="/tovarlar-qaytarishi" element={<ReturnsListPage />} />
           <Route path="/tovarlar-qaytarishi/yangi" element={<ReturnDetailPage isNew />} />
           <Route path="/tovarlar-qaytarishi/:id" element={<ReturnDetailPage />} />
+          <Route path="/rejalashtirilgan-narx" element={<RejaNarxListPage />} />
+          <Route path="/rejalashtirilgan-narx/yangi" element={<RejaNarxDetailPage isNew />} />
+          <Route path="/rejalashtirilgan-narx/:id" element={<RejaNarxDetailPage />} />
           <Route path="/qaytarish-kirimi" element={<QaytarishKirimiListPage />} />
           <Route path="/qaytarish-kirimi/yangi" element={<QaytarishKirimiDetailPage isNew />} />
           <Route path="/qaytarish-kirimi/:id" element={<QaytarishKirimiDetailPage />} />
@@ -141,6 +146,7 @@ function App() {
           <Route path="/malumotnomalar/kontragentlar" element={<KontragentlarPage />} />
           <Route path="/malumotnomalar/dizaynlar" element={<DizaynlarPage />} />
           <Route path="/malumotnomalar/omborlar" element={<OmborlarPage />} />
+          <Route path="/malumotnomalar/rejalashtirilgan-narx/*" element={<RejaNarxRedirect />} />
           <Route path="/malumotnomalar/:slug" element={<MalumotnomaDetailPage />} />
           <Route path="/tashkilotlar" element={<TashkilotlarListPage />} />
           <Route path="/tashkilotlar/:id" element={<TashkilotDetailPage />} />
@@ -184,3 +190,9 @@ function KadrlarRedirect() {
 }
 
 export default App
+
+// Rejalashtirilgan narx avval Ma'lumotnomalar ichida edi — eski havolalar yangi bo'limga yo'naltiriladi.
+function RejaNarxRedirect() {
+  const { '*': rest } = useParams()
+  return <Navigate to={rest ? `/rejalashtirilgan-narx/${rest}` : '/rejalashtirilgan-narx'} replace />
+}

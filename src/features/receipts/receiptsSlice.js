@@ -1,10 +1,29 @@
 import { createAsyncThunk, createSlice, nanoid } from '@reduxjs/toolkit'
 import { fetchLatestRate } from '@/services/financeReferenceService'
-import { EXCHANGE_RATE, initialReceipts, nextReceiptNumber } from './mockData'
+import { extractErrorMessage } from '@/services/apiHelpers'
+import { removeParties } from '@/services/receiptService'
+import { EXCHANGE_RATE } from './mockData'
 
-// DIQQAT: backendda kirim hujjati uchun endpoint yo'q — hujjatlar shu slice'da saqlanadi.
-// Kurs (finance/currency-ledgers/), ma'lumotnomalar va partiyalar (catalog/product-parties/)
-// esa haqiqiy API'dan olinadi / yaratiladi.
+// DIQQAT: backendda kirim HUJJATI uchun endpoint yo'q (Swagger: 94 ta yo'l, ularning birortasi
+// kirim emas). Shuning uchun hujjatlar shu slice'da turadi va brauzerda (localStorage) saqlanadi —
+// sahifa yangilansa ham yo'qolmaydi. Kurs (finance/currency-ledgers/), ma'lumotnomalar va
+// partiyalar (catalog/product-parties/ — yaratish, tahrirlash, o'chirish) haqiqiy API orqali.
+export const RECEIPTS_STORAGE_KEY = 'gilam-receipts-v1'
+
+function loadStored() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECEIPTS_STORAGE_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+// KR-0001, KR-0002 … — mavjud hujjatlarning eng kattasidan keyingisi
+function nextNumber(list) {
+  const max = list.reduce((m, r) => Math.max(m, Number(String(r.number).replace(/\D/g, '')) || 0), 0)
+  return `KR-${String(max + 1).padStart(4, '0')}`
+}
 
 function recalcTotals(receipt, rate) {
   const sumUsd = Number(
@@ -27,8 +46,46 @@ export const loadExchangeRate = createAsyncThunk('receipts/loadExchangeRate', as
   return fetchLatestRate('USD')
 })
 
+// O'chirish / bekor qilish: avval hujjat partiyalari backenddan o'chiriladi. Backend rad etsa
+// (masalan partiyadan sotuv bo'lgan), amal to'xtatiladi; o'chirib ulgurilganlari hujjatdan uziladi.
+async function dropParties(receipt, dispatch) {
+  const rows = receipt.rows.filter((r) => r.partyId)
+  const { removed, failed } = await removeParties(rows.map((r) => r.partyId))
+  if (removed.length) dispatch(receiptsSlice.actions.partiesDetached({ id: receipt.id, partyIds: removed }))
+  if (failed) {
+    throw new Error(
+      `${removed.length ? `${removed.length} ta partiya o'chirildi, lekin ` : ''}partiyani o'chirib bo'lmadi: ${extractErrorMessage(failed)}`
+    )
+  }
+}
+
+export const deleteReceipt = createAsyncThunk('receipts/delete', async (id, { getState, dispatch, rejectWithValue }) => {
+  const receipt = getState().receipts.list.find((r) => r.id === id)
+  if (!receipt) return id
+  try {
+    await dropParties(receipt, dispatch)
+  } catch (error) {
+    return rejectWithValue(error.message)
+  }
+  return id
+})
+
+export const cancelReceipt = createAsyncThunk(
+  'receipts/cancel',
+  async ({ id, reason }, { getState, dispatch, rejectWithValue }) => {
+    const receipt = getState().receipts.list.find((r) => r.id === id)
+    if (!receipt) return { id, reason }
+    try {
+      await dropParties(receipt, dispatch)
+    } catch (error) {
+      return rejectWithValue(error.message)
+    }
+    return { id, reason }
+  }
+)
+
 const initialState = {
-  list: initialReceipts,
+  list: loadStored(),
   exchangeRate: EXCHANGE_RATE,
   rateSource: 'fallback', // 'api' — kurs backenddan olingan
 }
@@ -39,15 +96,14 @@ const receiptsSlice = createSlice({
   reducers: {
     draftCreated: {
       reducer(state, action) {
-        state.list.unshift(action.payload)
+        state.list.unshift({ ...action.payload, number: nextNumber(state.list) })
       },
       prepare({ warehouse, author }) {
-        const number = nextReceiptNumber()
         const date = new Date().toISOString().slice(0, 10)
         return {
           payload: {
-            id: number,
-            number,
+            id: nanoid(10),
+            number: '', // reducer'da beriladi (mavjud hujjatlarga qarab)
             date,
             warehouse: warehouse?.name ?? '',
             warehouseId: warehouse?.id ?? '',
@@ -146,19 +202,31 @@ const receiptsSlice = createSlice({
       const receipt = findReceipt(state, action.payload)
       if (receipt?.status === 'confirmed') receipt.status = 'draft'
     },
-    receiptCancelled(state, action) {
-      const { id, reason } = action.payload
+    // Backenddan o'chirilgan partiyalar qatordan uziladi (qator qayta "partiyasiz" bo'ladi)
+    partiesDetached(state, action) {
+      const { id, partyIds } = action.payload
       const receipt = findReceipt(state, id)
-      if (receipt && receipt.status !== 'cancelled') {
-        receipt.status = 'cancelled'
-        receipt.cancelReason = reason
-      }
-    },
-    receiptDeleted(state, action) {
-      state.list = state.list.filter((r) => r.id !== action.payload)
+      if (!receipt) return
+      receipt.rows.forEach((row) => {
+        if (partyIds.includes(row.partyId)) {
+          row.partyId = null
+          row.partiya = ''
+          row.ready = false
+        }
+      })
     },
   },
   extraReducers: (builder) => {
+    builder.addCase(deleteReceipt.fulfilled, (state, action) => {
+      state.list = state.list.filter((r) => r.id !== action.payload)
+    })
+    builder.addCase(cancelReceipt.fulfilled, (state, action) => {
+      const receipt = findReceipt(state, action.payload.id)
+      if (receipt && receipt.status !== 'cancelled') {
+        receipt.status = 'cancelled'
+        receipt.cancelReason = action.payload.reason
+      }
+    })
     builder.addCase(loadExchangeRate.fulfilled, (state, action) => {
       if (!action.payload) return
       state.exchangeRate = action.payload
@@ -183,8 +251,7 @@ export const {
   partiyaCreated,
   receiptConfirmed,
   receiptReverted,
-  receiptCancelled,
-  receiptDeleted,
+  partiesDetached,
 } = receiptsSlice.actions
 
 export default receiptsSlice.reducer

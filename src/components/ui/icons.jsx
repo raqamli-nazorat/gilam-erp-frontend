@@ -2,6 +2,7 @@ import React from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Add01Icon as Add01Raw,
+  DiscountTag01Icon as DiscountTag01Raw,
   BalanceScaleIcon as BalanceScaleRaw,
   Book01Icon as Book01Raw,
   Briefcase01Icon as Briefcase01Raw,
@@ -60,6 +61,11 @@ export function FilterIcon({ className, size = 16, ...props }) {
 // Sidebar navigatsiyasi uchun ikonalar (Figma bilan bir xil ikonalar oilasi)
 export function ShoppingCartCheckIn01Icon({ className, size = 18, ...props }) {
   return <HugeiconsIcon icon={ShoppingCartCheckIn01Raw} size={size} className={className} strokeWidth={2} {...props} />
+}
+
+// Rejalashtirilgan narx (sidebar)
+export function PriceTagIcon({ className, size = 18, ...props }) {
+  return <HugeiconsIcon icon={DiscountTag01Raw} size={size} className={className} strokeWidth={2} {...props} />
 }
 
 export function Tag01Icon({ className, size = 18, ...props }) {
