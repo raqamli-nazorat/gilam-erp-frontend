@@ -6,7 +6,12 @@ function source(url, toOption = (r) => ({ id: r.id, name: r.name ?? '' })) {
   return (params) => fetchPage(url, params).then((res) => ({ ...res, results: res.results.map(toOption) }))
 }
 
-export const organizationOptions = source('organization/organizations/')
+export const organizationOptions = source('organization/organizations/', (r) => ({
+  id: r.id,
+  name: r.name ?? '',
+  inn: r.inn ?? '',
+  address: r.address ?? '',
+}))
 
 export const branchOptions = async (params = {}) => {
   const cleanParams = {}
@@ -34,6 +39,8 @@ export const branchOptions = async (params = {}) => {
       id: r.id,
       name: r.name ?? '',
       orgId: r.organization ?? r.organization_info?.id ?? '',
+      address: r.address ?? '',
+      phone: r.phone ?? '',
     })),
   }
 }

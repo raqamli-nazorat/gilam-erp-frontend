@@ -503,7 +503,7 @@ export default function ValyutalarPage() {
               <tr>
                 <th className={cn(TH, 'w-12')}>#</th>
                 <th className={cn(TH, 'w-[28%]')}>Valyuta</th>
-                <th className={cn(TH, 'w-[18%]')}>Kurs</th>
+                <th className={cn(TH, 'w-[18%] text-right')}>Kurs</th>
                 <th className={cn(TH, 'w-[18%]')}>Kun</th>
                 <th className={cn(TH, 'w-[18%]')}>Yaratilgan</th>
                 <th className={TH}>Yangilangan</th>
@@ -554,7 +554,7 @@ export default function ValyutalarPage() {
                     <td className={cn(TD, 'font-medium text-[#0052D2] dark:text-[#60A5FA]')}>
                       <div className="truncate">{r.valyuta}</div>
                     </td>
-                    <td className={cn(TD, 'font-normal text-[#0A0A0A] dark:text-white')}>{r.kursFormatted}</td>
+                    <td className={cn(TD, 'text-right tabular-nums text-[#737373] dark:text-muted-foreground')}>{r.kursFormatted}</td>
                     <td className={TD}>{r.day}</td>
                     <td className={TD}>{r.yaratilgan}</td>
                     <td className={TD}>{r.ozgartirilgan}</td>
