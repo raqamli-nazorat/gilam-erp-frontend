@@ -16,6 +16,7 @@ import foydalanuvchilarReducer from '@/features/foydalanuvchilar/foydalanuvchila
 import xodimlarReducer from '@/features/xodimlar/xodimlarSlice'
 import ishGrafigiReducer from '@/features/ishGrafigi/ishGrafigiSlice'
 import oylikHisoblashReducer from '@/features/oylikHisoblash/oylikSlice'
+import rejaNarxReducer from '@/features/rejaNarx/rejaNarxSlice'
 import accrualRetentionReducer from '@/features/accrualRetention/accrualRetentionSlice'
 import {
   qualitySlice,
@@ -48,6 +49,7 @@ export const store = configureStore({
     ishGrafigi: ishGrafigiReducer,
     oylikHisoblash: oylikHisoblashReducer,
     accrualRetention: accrualRetentionReducer,
+    rejaNarx: rejaNarxReducer,
     sifatlar: qualitySlice.reducer,
     birliklar: unitSlice.reducer,
     ranglar: colorSlice.reducer,
