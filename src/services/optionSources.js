@@ -124,6 +124,27 @@ export const designOptions = source('catalog/designs/', (r) => ({
   sifat: r.quality_info?.name ?? '',
 }))
 
+// Omborlar — filiali ham qaytadi (partiya yaratishda `branch` majburiy, u ombordan olinadi).
+export const warehouseOptions = source('warehouse/warehouses/', (r) => ({
+  id: r.id,
+  name: r.name ?? '',
+  branchId: r.branch_info?.id ?? r.branch ?? '',
+  branchName: r.branch_info?.name ?? '',
+}))
+
+// Kontragentlar (Tovarlar kirimida "Kimdan").
+export const counterpartyOptions = source('finance/counterparties/', (r) => ({
+  id: r.id,
+  name: r.name ?? '',
+  phone: r.phone_number ?? '',
+}))
+
+// Foydalanuvchilar (hujjat muallifi bo'yicha filtr).
+export const userOptions = source('accounts/users/', (r) => ({
+  id: r.id,
+  name: r.full_name || r.phone_number || '',
+}))
+
 // Hisoblash va ushlab qolish turlari — PagedSelect uchun
 export const accrualRetentionOptions = source('finance/accrual-retentions/', (r) => ({
   id: r.id,

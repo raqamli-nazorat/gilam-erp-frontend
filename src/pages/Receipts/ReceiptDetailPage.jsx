@@ -2,18 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePageHeader } from '@/hooks/usePageHeader'
-import { buildSampleReadyRows, EXCEL_TEMPLATE, WAREHOUSES } from '@/features/receipts/mockData'
 import {
   draftCreated,
   excelCleared,
   excelImported,
   partiyaCreated,
+  receiptCancelled,
   receiptConfirmed,
   receiptDeleted,
   receiptHeaderUpdated,
+  receiptReverted,
   rowAdded,
   rowUpdated,
 } from '@/features/receipts/receiptsSlice'
+import { warehouseOptions } from '@/services/optionSources'
 import ReceiptHeaderForm from './components/ReceiptHeaderForm'
 import RowsStep from './components/RowsStep'
 import RowEditModal from './components/RowEditModal'
@@ -21,23 +23,29 @@ import BatchCreateModal from './components/BatchCreateModal'
 import LabelsModal from './components/LabelsModal'
 import ConfirmSubmitModal from './components/ConfirmSubmitModal'
 import ConfirmDeleteModal from './components/ConfirmDeleteModal'
+import CancelReceiptModal from './components/CancelReceiptModal'
 import ExcelUploadModal from './components/ExcelUploadModal'
 import Toast from '@/components/Toast'
 
 export default function ReceiptDetailPage({ isNew }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const user = useSelector((state) => state.auth.user)
   const hasCreated = useRef(false)
 
-  // Yangi hujjat: darhol qoralama sifatida yaratamiz va shu hujjatning
-  // o'zi sahifasiga o'tamiz — "Yangi" va mavjud hujjat bitta komponentda ishlaydi.
+  // Yangi hujjat: birinchi omborni (backenddan) standart qilib qoralama yaratamiz va
+  // shu hujjatning o'zi sahifasiga o'tamiz — "Yangi" va mavjud hujjat bitta komponentda ishlaydi.
   useEffect(() => {
-    if (isNew && !hasCreated.current) {
-      hasCreated.current = true
-      const action = dispatch(draftCreated({ warehouse: WAREHOUSES[0] }))
-      navigate(`/tovarlar-kirimi/${action.payload.id}`, { replace: true })
-    }
-  }, [isNew, dispatch, navigate])
+    if (!isNew || hasCreated.current) return
+    hasCreated.current = true
+    warehouseOptions({ page: 1 })
+      .then((res) => res.results[0] ?? null)
+      .catch(() => null)
+      .then((warehouse) => {
+        const action = dispatch(draftCreated({ warehouse, author: user?.fullName ?? '' }))
+        navigate(`/tovarlar-kirimi/${action.payload.id}`, { replace: true })
+      })
+  }, [isNew, dispatch, navigate, user?.fullName])
 
   if (isNew) return null
   return <ReceiptWorkspace />
@@ -56,19 +64,23 @@ function ReceiptWorkspace() {
   const [labelRows, setLabelRows] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   const [excelOpen, setExcelOpen] = useState(false)
   const [toast, setToast] = useState('')
 
-  const isConfirmed = receipt?.status === 'confirmed'
+  const status = receipt?.status
+  const readOnly = status === 'confirmed' || status === 'cancelled'
 
   usePageHeader(
     'Tovarlar kirimi',
     receipt
-      ? isConfirmed
+      ? status === 'confirmed'
         ? { label: 'Tasdiqlangan', variant: 'confirmed' }
-        : receipt.status === 'new'
-          ? { label: 'Yangi', variant: 'new' }
-          : { label: receipt.number, variant: 'new' }
+        : status === 'cancelled'
+          ? { label: 'Bekor qilingan', variant: 'rejected' }
+          : status === 'new'
+            ? { label: 'Yangi', variant: 'new' }
+            : { label: receipt.number, variant: 'new' }
       : null
   )
 
@@ -83,6 +95,11 @@ function ReceiptWorkspace() {
   }, [toast])
 
   if (!receipt) return null
+
+  // Batch modal ochiq turganda qatorlar yangilansa (partiya yaratildi) — eng so'nggi holatini ko'rsatamiz
+  const batchRowsLive = batchRows
+    ? batchRows.map((b) => receipt.rows.find((r) => r.id === b.id) ?? b)
+    : []
 
   const doc = {
     number: receipt.number,
@@ -108,24 +125,28 @@ function ReceiptWorkspace() {
         <ReceiptHeaderForm
           receipt={receipt}
           exchangeRate={exchangeRate}
-          readOnly={isConfirmed}
+          readOnly={readOnly}
           onChange={(patch) => dispatch(receiptHeaderUpdated({ id: receipt.id, patch }))}
         />
 
         <RowsStep
           doc={doc}
           rows={receipt.rows}
-          readOnly={isConfirmed}
+          status={status}
+          cancelReason={receipt.cancelReason}
+          readOnly={readOnly}
           excelInfo={excelInfo}
           onClearExcelInfo={() => dispatch(excelCleared({ id: receipt.id }))}
           onOpenExcelUpload={() => setExcelOpen(true)}
-          onRevert={() => dispatch(receiptHeaderUpdated({ id: receipt.id, patch: { status: 'draft' } }))}
+          onRevert={() => dispatch(receiptReverted(receipt.id))}
+          onCancelReceipt={() => setCancelOpen(true)}
           onAddRow={() => setRowModal({ open: true, row: null })}
           onRowClick={(row) => setRowModal({ open: true, row })}
           onCreatePartiya={(selectedRows) => setBatchRows(selectedRows)}
           onOpenLabels={(targetRows) => setLabelRows(targetRows)}
           onConfirm={() => setConfirmOpen(true)}
           onCancel={() => navigate('/tovarlar-kirimi')}
+          onDelete={() => setDeleteOpen(true)}
         />
       </div>
 
@@ -145,11 +166,11 @@ function ReceiptWorkspace() {
       <BatchCreateModal
         open={!!batchRows}
         onOpenChange={(open) => !open && setBatchRows(null)}
-        rows={batchRows ?? []}
-        warehouse={receipt.warehouse}
-        onConfirm={() => {
-          dispatch(partiyaCreated({ id: receipt.id, rowIds: batchRows.map((r) => r.id) }))
-          setBatchRows(null)
+        rows={batchRowsLive}
+        receipt={receipt}
+        onCreated={(created) => {
+          dispatch(partiyaCreated({ id: receipt.id, created }))
+          setToast(`${created.length} ta partiya yaratildi`)
         }}
       />
 
@@ -164,16 +185,16 @@ function ReceiptWorkspace() {
       <ExcelUploadModal
         open={excelOpen}
         onOpenChange={setExcelOpen}
-        warehouse={receipt.warehouse}
-        onUploaded={() => {
-          dispatch(
-            excelImported({
-              id: receipt.id,
-              rows: buildSampleReadyRows(),
-              meta: EXCEL_TEMPLATE,
-            })
-          )
+        receipt={receipt}
+        onUploaded={({ rows, meta, warehouse }) => {
+          dispatch(excelImported({ id: receipt.id, rows, meta, warehouse }))
           setExcelOpen(false)
+          const unresolved = rows.filter((r) => !r.qualityId || !r.colorId).length
+          setToast(
+            unresolved
+              ? `${rows.length} qator yuklandi · ${unresolved} tasida sifat/rang ma'lumotnomada topilmadi`
+              : `${rows.length} qator yuklandi`
+          )
         }}
       />
 
@@ -185,6 +206,17 @@ function ReceiptWorkspace() {
           dispatch(receiptConfirmed(receipt.id))
           setConfirmOpen(false)
           setToast(`Hujjat tasdiqlandi · ${receipt.number}`)
+        }}
+      />
+
+      <CancelReceiptModal
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        receipt={receipt}
+        onConfirm={(reason) => {
+          dispatch(receiptCancelled({ id: receipt.id, reason }))
+          setCancelOpen(false)
+          setToast(`Kirim bekor qilindi · ${receipt.number}`)
         }}
       />
 

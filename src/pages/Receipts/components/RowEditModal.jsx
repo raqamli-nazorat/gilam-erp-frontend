@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react'
-import {
-  COLORS,
-  DESIGNS,
-  MATERIALS,
-  QUALITIES,
-  SHAPES,
-} from '@/features/receipts/mockData'
+import { MATERIALS, SHAPES } from '@/features/receipts/mockData'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { colorOptions, currencyOptions, designOptions, qualityOptions } from '@/services/optionSources'
 import { Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,10 +23,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+// Sifat, dizayn, rang va valyuta — backend ma'lumotnomalaridan; id + nom birga saqlanadi
+// (nom jadval/yorliqda ko'rsatish uchun, id — partiya yaratishda API'ga yuborish uchun).
+// Material va shakl uchun backendda ma'lumotnoma yo'q — ular mahalliy ro'yxatdan.
 const EMPTY_ROW = {
-  quality: QUALITIES[0],
-  design: DESIGNS[0],
-  color: COLORS[0],
+  quality: '',
+  qualityId: '',
+  design: '',
+  designId: '',
+  color: '',
+  colorId: '',
   material: MATERIALS[0],
   shape: SHAPES[0].value,
   partiya: '',
@@ -40,6 +42,12 @@ const EMPTY_ROW = {
   markupPct: 20,
   priceSale: 0,
   currency: 'USD',
+  currencyId: '',
+}
+
+// Mock/Excel qatorlarida nom bor, id yo'q bo'lishi mumkin — nomni ko'rsatib turish uchun.
+function pickedValue(id, name) {
+  return id || (name ? '__legacy' : '')
 }
 
 export default function RowEditModal({ open, onOpenChange, row, onSave }) {
@@ -67,8 +75,10 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
   }
 
   const m2 = Number((Number(form.widthM || 0) * Number(form.heightM || 0)).toFixed(2))
+  const missing = !form.qualityId ? 'Sifat' : !form.colorId ? 'Rang' : !(m2 > 0) ? "O'lcham" : null
 
   function handleSave() {
+    if (missing) return
     onSave({
       ...form,
       widthM: Number(form.widthM),
@@ -82,7 +92,7 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
     onOpenChange(false)
   }
 
-  const title = row ? `Qator tahriri · ${row.quality} ${row.design}` : 'Yangi rulon qo‘shish'
+  const title = row ? `Qator tahriri · ${row.quality} ${row.design}`.trim() : 'Yangi rulon qo‘shish'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,30 +111,55 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="mb-1.5">Sifat</Label>
-                <Select value={form.quality} onValueChange={(v) => set('quality', v)}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {QUALITIES.map((q) => <SelectItem key={q} value={q}>{q}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <PagedSelect
+                  value={pickedValue(form.qualityId, form.quality)}
+                  selectedLabel={form.quality}
+                  fetchPage={qualityOptions}
+                  placeholder="Sifat tanlang"
+                  className="h-9"
+                  onChange={(id, item) =>
+                    setForm((f) => ({
+                      ...f,
+                      qualityId: id,
+                      quality: item?.name ?? '',
+                      // Dizayn sifatga bog'liq — sifat o'zgarsa dizayn tozalanadi
+                      ...(id !== f.qualityId ? { designId: '', design: '' } : {}),
+                    }))
+                  }
+                />
               </div>
               <div>
                 <Label className="mb-1.5">Dizayn</Label>
-                <Select value={form.design} onValueChange={(v) => set('design', v)}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {DESIGNS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <PagedSelect
+                  value={pickedValue(form.designId, form.design)}
+                  selectedLabel={form.design}
+                  fetchPage={designOptions}
+                  params={form.qualityId ? { quality: form.qualityId } : undefined}
+                  placeholder="Dizayn tanlang"
+                  allowAll
+                  allLabel="Tanlanmagan"
+                  className="h-9"
+                  onChange={(id, item) =>
+                    setForm((f) => ({
+                      ...f,
+                      designId: id,
+                      design: id ? item?.name ?? '' : '',
+                      // Dizayn sifatga bog'liq — sifat tanlanmagan bo'lsa dizaynnikidan olinadi
+                      ...(!f.qualityId && item?.sifatId ? { qualityId: item.sifatId, quality: item.sifat } : {}),
+                    }))
+                  }
+                />
               </div>
               <div>
                 <Label className="mb-1.5">Rang</Label>
-                <Select value={form.color} onValueChange={(v) => set('color', v)}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {COLORS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <PagedSelect
+                  value={pickedValue(form.colorId, form.color)}
+                  selectedLabel={form.color}
+                  fetchPage={colorOptions}
+                  placeholder="Rang tanlang"
+                  className="h-9"
+                  onChange={(id, item) => setForm((f) => ({ ...f, colorId: id, color: item?.name ?? '' }))}
+                />
               </div>
               <div>
                 <Label className="mb-1.5">Material</Label>
@@ -211,19 +246,23 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
               </div>
               <div>
                 <Label className="mb-1.5">Valyuta</Label>
-                <Select value={form.currency} onValueChange={(v) => set('currency', v)}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="UZS">UZS</SelectItem>
-                  </SelectContent>
-                </Select>
+                <PagedSelect
+                  value={pickedValue(form.currencyId, form.currency)}
+                  selectedLabel={form.currency}
+                  fetchPage={currencyOptions}
+                  placeholder="Valyuta"
+                  className="h-9"
+                  onChange={(id, item) => setForm((f) => ({ ...f, currencyId: id, currency: item?.name ?? '' }))}
+                />
               </div>
             </div>
           </div>
         </div>
 
         <DialogFooter className="mt-2 gap-2 border-t border-[#E5E5E5] pt-4 dark:border-white/10">
+          {missing && (
+            <p className="mr-auto self-center text-[12px] text-[#B45309]">{missing} kiritilishi shart</p>
+          )}
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -233,6 +272,7 @@ export default function RowEditModal({ open, onOpenChange, row, onSave }) {
           </Button>
           <Button
             onClick={handleSave}
+            disabled={!!missing}
             className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
           >
             <Check className="h-4 w-4" /> Saqlash

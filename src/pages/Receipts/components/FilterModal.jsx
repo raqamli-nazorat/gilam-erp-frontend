@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { FilterResetIcon } from '@/components/ui/icons'
-import { AUTHORS, COUNTERPARTIES, WAREHOUSES } from '@/features/receipts/mockData'
 import { Button } from '@/components/ui/button'
 import { NumberInput } from '@/components/ui/number-input'
 import { DatePicker, toISODate, fromISODate } from '@/components/ui/date-picker'
@@ -14,7 +13,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { SearchSelect } from '@/components/ui/search-select'
+import { PagedSelect } from '@/components/ui/paged-select'
+import { counterpartyOptions, userOptions, warehouseOptions } from '@/services/optionSources'
+
+// Jurnal nomlar bo'yicha filtrlanadi — PagedSelect'da faqat nom saqlanadi (id shart emas).
+function NameSelect({ value, onChange, fetchPage }) {
+  return (
+    <PagedSelect
+      value={value ? '__name' : ''}
+      selectedLabel={value}
+      fetchPage={fetchPage}
+      allowAll
+      placeholder="Barchasi"
+      className="h-9"
+      onChange={(id, item) => onChange(id ? item?.name ?? '' : '')}
+    />
+  )
+}
 
 export const EMPTY_FILTERS = {
   from: '',
@@ -86,13 +101,13 @@ export default function FilterModal({ open, onOpenChange, filters, onApply }) {
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">
                 Ombor
               </Label>
-              <SearchSelect value={draft.warehouse} onChange={(v) => set('warehouse', v)} options={WAREHOUSES} />
+              <NameSelect value={draft.warehouse} onChange={(v) => set('warehouse', v)} fetchPage={warehouseOptions} />
             </div>
             <div>
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">
                 Kontragent (kimdan)
               </Label>
-              <SearchSelect value={draft.counterparty} onChange={(v) => set('counterparty', v)} options={COUNTERPARTIES} />
+              <NameSelect value={draft.counterparty} onChange={(v) => set('counterparty', v)} fetchPage={counterpartyOptions} />
             </div>
           </div>
 
@@ -102,7 +117,7 @@ export default function FilterModal({ open, onOpenChange, filters, onApply }) {
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">
                 Muallif
               </Label>
-              <SearchSelect value={draft.author} onChange={(v) => set('author', v)} options={AUTHORS} />
+              <NameSelect value={draft.author} onChange={(v) => set('author', v)} fetchPage={userOptions} />
             </div>
             <div>
               <Label className="mb-1.5 block text-[12px] font-normal leading-[16px] text-[#737373] dark:text-muted-foreground">

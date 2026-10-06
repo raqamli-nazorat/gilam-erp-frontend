@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, PackageSearch, Plus, RotateCcw, Tag, Upload, X } from 'lucide-react'
+import { Ban, CheckCircle2, PackageSearch, Plus, RotateCcw, Tag, Trash2, Upload, X } from 'lucide-react'
 import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,8 @@ import RollLabel from './RollLabel'
 export default function RowsStep({
   doc,
   rows,
+  status,
+  cancelReason,
   readOnly,
   excelInfo,
   onClearExcelInfo,
@@ -29,6 +31,8 @@ export default function RowsStep({
   onOpenLabels,
   onConfirm,
   onCancel,
+  onCancelReceipt,
+  onDelete,
 }) {
   const [selected, setSelected] = useState(() =>
     rows.filter((r) => r.partiya).slice(0, 2).map((r) => r.id)
@@ -43,7 +47,9 @@ export default function RowsStep({
   )
   const previewRow =
     selectedRows.find((r) => r.partiya) ?? rows.find((r) => r.partiya) ?? null
-  const labelCount = selectedRows.length
+  // Yorliq faqat partiyasi bor (backendda yaratilgan) qatorlar uchun chop etiladi
+  const labelRows = selectedRows.filter((r) => r.partiya)
+  const labelCount = labelRows.length
 
   function toggleRow(id) {
     if (readOnly) return
@@ -52,20 +58,40 @@ export default function RowsStep({
 
   return (
     <div className="flex flex-col gap-4">
-      {readOnly && (
+      {status === 'confirmed' && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[#0052D2]/25 bg-[#EAF1FE] px-4 py-3 text-[13px] font-medium text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4" />
             Hujjat tasdiqlangan · faqat ko'rish. Tovar ombor qoldig'iga qo'shildi.
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRevert}
-            className="h-8 gap-1.5 border-[#0052D2]/30 bg-white text-[13px] font-medium text-[#0052D2] hover:bg-white/70 dark:bg-transparent"
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> Qaytarish
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRevert}
+              className="h-8 gap-1.5 border-[#0052D2]/30 bg-white text-[13px] font-medium text-[#0052D2] hover:bg-white/70 dark:bg-transparent"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Qaytarish
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancelReceipt}
+              className="h-8 gap-1.5 border-[#0052D2]/30 bg-white text-[13px] font-medium text-[#0A0A0A] hover:bg-white/70 dark:bg-transparent dark:text-white"
+            >
+              <X className="h-3.5 w-3.5" /> Bekor qilish
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {status === 'cancelled' && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400">
+          <Ban className="h-4 w-4 shrink-0" />
+          <span>
+            Hujjat bekor qilingan · faqat ko'rish.
+            {cancelReason && <span className="font-normal"> Sabab: {cancelReason}</span>}
+          </span>
         </div>
       )}
 
@@ -280,11 +306,11 @@ export default function RowsStep({
           <Button
             type="button"
             disabled={labelCount === 0}
-            onClick={() => onOpenLabels(selectedRows.filter((r) => r.partiya))}
+            onClick={() => onOpenLabels(labelRows)}
             className="h-9 w-full gap-2 rounded-md bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:bg-[#E5E5E5] disabled:text-[#A3A3A3] disabled:opacity-100 dark:disabled:bg-white/10 dark:disabled:text-muted-foreground"
           >
             <Upload className="h-4 w-4 rotate-180" />
-            {labelCount || 2} ta yorliq chop etish
+            {labelCount} ta yorliq chop etish
           </Button>
         </div>
       </div>
@@ -295,6 +321,14 @@ export default function RowsStep({
             Tasdiqlangach ombor qoldigʻi va yetkazib beruvchi qarzi yangilanadi.
           </p>
           <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onDelete}
+              className="h-9 gap-1.5 border-red-200 bg-white px-4 text-[14px] font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:bg-card"
+            >
+              <Trash2 className="h-4 w-4" /> O'chirish
+            </Button>
             <Button
               type="button"
               variant="outline"
