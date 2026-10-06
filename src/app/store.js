@@ -2,7 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import authReducer from '@/features/auth/authSlice'
 import uiReducer from '@/features/ui/uiSlice'
 import geoReducer from '@/features/geo/geoSlice'
-import receiptsReducer from '@/features/receipts/receiptsSlice'
+import receiptsReducer, { RECEIPTS_STORAGE_KEY } from '@/features/receipts/receiptsSlice'
 import bookingsReducer from '@/features/bookings/bookingsSlice'
 import saleDocsReducer from '@/features/sales/salesSlice'
 import returnsReducer from '@/features/returns/returnsSlice'
@@ -60,3 +60,22 @@ export const store = configureStore({
     valyutalar: currencySlice.reducer,
   },
 })
+
+// Tovarlar kirimi hujjatlari brauzerda saqlanadi (backendda kirim endpointi yo'q) —
+// o'zgarishlardan keyin 300 ms kutib yoziladi; ro'yxat o'zgarmagan bo'lsa yozilmaydi.
+let lastReceipts = store.getState().receipts.list
+let persistTimer = null
+store.subscribe(() => {
+  const list = store.getState().receipts.list
+  if (list === lastReceipts) return
+  lastReceipts = list
+  clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(RECEIPTS_STORAGE_KEY, JSON.stringify(list))
+    } catch {
+      // Xotira to'lgan yoki brauzer saqlashni bloklagan — ish davom etadi, faqat saqlanmaydi
+    }
+  }, 300)
+})
+

@@ -3,19 +3,22 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePageHeader } from '@/hooks/usePageHeader'
 import {
+  cancelReceipt,
+  deleteReceipt,
   draftCreated,
   excelCleared,
   excelImported,
   partiyaCreated,
-  receiptCancelled,
+  partiesDetached,
   receiptConfirmed,
-  receiptDeleted,
   receiptHeaderUpdated,
   receiptReverted,
   rowAdded,
   rowUpdated,
 } from '@/features/receipts/receiptsSlice'
 import { warehouseOptions } from '@/services/optionSources'
+import { extractErrorMessage } from '@/services/apiHelpers'
+import { removeParties, updatePartyFromRow } from '@/services/receiptService'
 import ReceiptHeaderForm from './components/ReceiptHeaderForm'
 import RowsStep from './components/RowsStep'
 import RowEditModal from './components/RowEditModal'
@@ -67,6 +70,7 @@ function ReceiptWorkspace() {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [excelOpen, setExcelOpen] = useState(false)
   const [toast, setToast] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const status = receipt?.status
   const readOnly = status === 'confirmed' || status === 'cancelled'
@@ -95,6 +99,44 @@ function ReceiptWorkspace() {
   }, [toast])
 
   if (!receipt) return null
+
+  const showError = (message) => setToast({ variant: 'error', message })
+  const partyCtx = { warehouseName: receipt.warehouse, receiptNumber: receipt.number }
+
+  // Qatorni saqlash: partiyasi bor qator bo'lsa, avval backenddagi partiya yangilanadi (PATCH)
+  async function saveRow(data) {
+    if (!rowModal.row) {
+      dispatch(rowAdded({ id: receipt.id, row: data }))
+      return
+    }
+    const merged = { ...rowModal.row, ...data }
+    if (merged.partyId) {
+      merged.m2 = Number((merged.widthM * merged.heightM).toFixed(2))
+      try {
+        await updatePartyFromRow(merged, partyCtx)
+      } catch (error) {
+        showError(`Partiya yangilanmadi: ${extractErrorMessage(error)}`)
+        return
+      }
+    }
+    dispatch(rowUpdated({ id: receipt.id, rowId: rowModal.row.id, patch: data }))
+  }
+
+  // Qatorlarni tozalash: yaratilgan partiyalar backenddan ham o'chiriladi
+  async function clearRows() {
+    const partyIds = receipt.rows.map((r) => r.partyId).filter(Boolean)
+    if (partyIds.length) {
+      setBusy(true)
+      const { removed, failed } = await removeParties(partyIds)
+      setBusy(false)
+      if (removed.length) dispatch(partiesDetached({ id: receipt.id, partyIds: removed }))
+      if (failed) {
+        showError(`Partiyani o'chirib bo'lmadi: ${extractErrorMessage(failed)}`)
+        return
+      }
+    }
+    dispatch(excelCleared({ id: receipt.id }))
+  }
 
   // Batch modal ochiq turganda qatorlar yangilansa (partiya yaratildi) — eng so'nggi holatini ko'rsatamiz
   const batchRowsLive = batchRows
@@ -136,7 +178,7 @@ function ReceiptWorkspace() {
           cancelReason={receipt.cancelReason}
           readOnly={readOnly}
           excelInfo={excelInfo}
-          onClearExcelInfo={() => dispatch(excelCleared({ id: receipt.id }))}
+          onClearExcelInfo={busy ? undefined : clearRows}
           onOpenExcelUpload={() => setExcelOpen(true)}
           onRevert={() => dispatch(receiptReverted(receipt.id))}
           onCancelReceipt={() => setCancelOpen(true)}
@@ -154,13 +196,7 @@ function ReceiptWorkspace() {
         open={rowModal.open}
         onOpenChange={(open) => setRowModal((m) => ({ ...m, open }))}
         row={rowModal.row}
-        onSave={(data) => {
-          if (rowModal.row) {
-            dispatch(rowUpdated({ id: receipt.id, rowId: rowModal.row.id, patch: data }))
-          } else {
-            dispatch(rowAdded({ id: receipt.id, row: data }))
-          }
-        }}
+        onSave={saveRow}
       />
 
       <BatchCreateModal
@@ -213,10 +249,11 @@ function ReceiptWorkspace() {
         open={cancelOpen}
         onOpenChange={setCancelOpen}
         receipt={receipt}
-        onConfirm={(reason) => {
-          dispatch(receiptCancelled({ id: receipt.id, reason }))
+        onConfirm={async (reason) => {
+          const result = await dispatch(cancelReceipt({ id: receipt.id, reason }))
           setCancelOpen(false)
-          setToast(`Kirim bekor qilindi · ${receipt.number}`)
+          if (cancelReceipt.fulfilled.match(result)) setToast(`Kirim bekor qilindi · ${receipt.number}`)
+          else showError(result.payload ?? 'Bekor qilib bo‘lmadi')
         }}
       />
 
@@ -224,9 +261,11 @@ function ReceiptWorkspace() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         receipt={receipt}
-        onConfirm={() => {
-          dispatch(receiptDeleted(receipt.id))
-          navigate('/tovarlar-kirimi')
+        onConfirm={async () => {
+          const result = await dispatch(deleteReceipt(receipt.id))
+          setDeleteOpen(false)
+          if (deleteReceipt.fulfilled.match(result)) navigate('/tovarlar-kirimi')
+          else showError(result.payload ?? 'O‘chirib bo‘lmadi')
         }}
       />
 
