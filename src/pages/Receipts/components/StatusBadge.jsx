@@ -9,6 +9,10 @@ const CONFIG = {
     label: 'Qoralama',
     className: 'bg-[#FFF8E6] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24] border-0',
   },
+  cancelled: {
+    label: 'Bekor qilingan',
+    className: 'bg-[#FEECEC] text-[#B91C1C] dark:bg-[#B91C1C]/20 dark:text-[#F87171] border-0',
+  },
   new: {
     label: 'Yangi',
     className: 'bg-[#F5F5F5] text-[#737373] border-0',

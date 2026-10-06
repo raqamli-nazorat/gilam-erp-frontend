@@ -32,7 +32,8 @@ export default function ReceiptsListPage() {
     () => ({
       all: receipts.length,
       confirmed: receipts.filter((r) => r.status === 'confirmed').length,
-      draft: receipts.filter((r) => r.status !== 'confirmed').length,
+      draft: receipts.filter((r) => r.status === 'draft' || r.status === 'new').length,
+      cancelled: receipts.filter((r) => r.status === 'cancelled').length,
     }),
     [receipts]
   )
@@ -65,7 +66,8 @@ export default function ReceiptsListPage() {
   const filtered = useMemo(() => {
     return receipts.filter((r) => {
       if (tab === 'confirmed' && r.status !== 'confirmed') return false
-      if (tab === 'draft' && r.status === 'confirmed') return false
+      if (tab === 'draft' && r.status !== 'draft' && r.status !== 'new') return false
+      if (tab === 'cancelled' && r.status !== 'cancelled') return false
       if (search) {
         const q = search.toLowerCase()
         const haystack = `${r.number} ${r.counterparty} ${r.warehouse}`.toLowerCase()
@@ -77,7 +79,7 @@ export default function ReceiptsListPage() {
       if (filters.counterparty && r.counterparty !== filters.counterparty) return false
       if (filters.author && r.author !== filters.author) return false
       if (filters.confirmed && !filters.draft && r.status !== 'confirmed') return false
-      if (filters.draft && !filters.confirmed && r.status === 'confirmed') return false
+      if (filters.draft && !filters.confirmed && r.status !== 'draft' && r.status !== 'new') return false
       if (filters.minSum && r.sumUsd < Number(filters.minSum)) return false
       if (filters.maxSum && r.sumUsd > Number(filters.maxSum)) return false
       return true
@@ -166,6 +168,32 @@ export default function ReceiptsListPage() {
               {counts.draft}
             </span>
             {tab === 'draft' && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTab('cancelled')}
+            className={cn(
+              'relative flex cursor-pointer items-center gap-1.5 pb-2.5 pt-1 text-sm transition-colors',
+              tab === 'cancelled'
+                ? 'font-medium text-[#0A0A0A] dark:text-white'
+                : 'font-normal text-[#737373] hover:text-[#0A0A0A] dark:text-muted-foreground'
+            )}
+          >
+            Bekor qilingan
+            <span
+              className={cn(
+                'inline-flex h-[18px] min-w-[24px] items-center justify-center rounded-full px-1.5 text-[12px] font-medium leading-[16px] transition-colors',
+                tab === 'cancelled'
+                  ? 'bg-[#EAF1FE] text-[#0052D2] dark:bg-[#0052D2]/20 dark:text-[#60A5FA]'
+                  : 'bg-[#F5F5F5] text-[#737373] dark:bg-white/10 dark:text-muted-foreground'
+              )}
+            >
+              {counts.cancelled}
+            </span>
+            {tab === 'cancelled' && (
               <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-[#0052D2]" />
             )}
           </button>
@@ -273,7 +301,7 @@ export default function ReceiptsListPage() {
                   <TableCell className="px-3 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.sumUsd)}</TableCell>
                   <TableCell className="px-3 text-right text-[13px] font-medium text-[#0A0A0A] dark:text-white">{formatNumber(r.sumUzs, 0)}</TableCell>
                   <TableCell className="px-3">
-                    <StatusBadge status={r.status === 'confirmed' ? 'confirmed' : 'draft'} />
+                    <StatusBadge status={r.status === 'new' ? 'draft' : r.status} />
                   </TableCell>
                 </TableRow>
               ))}

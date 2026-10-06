@@ -13,6 +13,15 @@ import {
 export default function ConfirmSubmitModal({ open, onOpenChange, receipt, onConfirm }) {
   if (!receipt) return null
   const totalM2 = receipt.rows.reduce((sum, r) => sum + r.m2, 0)
+  // Tasdiqlashdan oldin: kontragent, ombor va har bir qatorda partiya bo'lishi shart
+  const withoutParty = receipt.rows.filter((r) => !r.partiya).length
+  const blocker = !receipt.counterparty
+    ? 'Kontragent (Kimdan) tanlanmagan'
+    : !receipt.warehouse
+      ? 'Ombor tanlanmagan'
+      : withoutParty
+        ? `${withoutParty} ta qatorda partiya yaratilmagan — avval «Partiya yaratish»`
+        : null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,6 +49,12 @@ export default function ConfirmSubmitModal({ open, onOpenChange, receipt, onConf
           />
         </div>
 
+        {blocker && (
+          <p className="rounded-lg bg-[#FFF8E6] px-3.5 py-2.5 text-[13px] text-[#B45309] dark:bg-[#B45309]/20 dark:text-[#FBBF24]">
+            {blocker}
+          </p>
+        )}
+
         <DialogFooter className="mt-2 gap-2 border-t border-[#E5E5E5] pt-4 dark:border-white/10">
           <Button
             variant="outline"
@@ -50,7 +65,8 @@ export default function ConfirmSubmitModal({ open, onOpenChange, receipt, onConf
           </Button>
           <Button
             onClick={onConfirm}
-            className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8]"
+            disabled={!!blocker}
+            className="h-9 gap-1.5 bg-[#0052D2] px-4 text-[14px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:bg-[#0047B8] disabled:opacity-50"
           >
             <Check className="h-4 w-4" /> Tasdiqlash
           </Button>

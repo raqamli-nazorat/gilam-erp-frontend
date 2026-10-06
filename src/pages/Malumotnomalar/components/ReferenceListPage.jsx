@@ -39,6 +39,8 @@ function dmyToIso(value) {
 //   FormModal    — ({ open, onOpenChange, record, onSave, onDelete }) komponenti
 //   deleteTitle  — "Partiyani o'chirish?"
 //   deleteSummary(row) — { label, value }
+//   extraFilters — [{ key, label, fetchPage, dependsOn? }]; `key` — backend so'rov parametri
+//                  (masalan 'quality', 'design'), qiymati serverga yuboriladi
 export default function ReferenceListPage({
   title,
   addLabel,
@@ -49,6 +51,7 @@ export default function ReferenceListPage({
   FormModal,
   deleteTitle,
   deleteSummary,
+  extraFilters = [],
 }) {
   const [modalRec, setModalRec] = useState(null) // record | 'new' | null
   const [delRec, setDelRec] = useState(null)
@@ -94,6 +97,7 @@ export default function ReferenceListPage({
     name: filters.nomi.trim(),
     start_date: dmyToIso(filters.yaratilganDan),
     end_date: dmyToIso(filters.yaratilganGacha),
+    ...Object.fromEntries(extraFilters.map((f) => [f.key, filters[f.key] || ''])),
   })
 
   const shown = useMemo(() => {
@@ -273,7 +277,13 @@ export default function ReferenceListPage({
         record={delRec}
         onDelete={confirmDelete}
       />
-      <ReferenceFilterModal open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={setFilters} />
+      <ReferenceFilterModal
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        filters={filters}
+        onApply={setFilters}
+        extraFilters={extraFilters}
+      />
       <Toast message={toast} />
     </div>
   )

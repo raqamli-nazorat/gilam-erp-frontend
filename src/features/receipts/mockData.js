@@ -1,4 +1,5 @@
-// Backend hali ulanmagan — bu yerdagi ma'lumotlar faqat interfeysni sinash uchun (mock).
+// Backendda kirim hujjati endpointi yo'q — jurnal namunalari faqat interfeysni sinash uchun (mock).
+// Ombor, kontragent, sifat, rang, dizayn, kurs va partiyalar esa API'dan olinadi.
 
 export const WAREHOUSES = ['MAGAZIN', 'OMBOR']
 
@@ -173,7 +174,7 @@ export function nextReceiptNumber() {
   return `KR-${String(receiptSeq++).padStart(4, '0')}`
 }
 
-function makeConfirmedReceipt({ number, date, warehouse, counterparty, author, rows, status = 'confirmed', thirdParty = 'MENEJER', excelMeta = null }) {
+function makeConfirmedReceipt({ number, date, warehouse, counterparty, author, rows, status = 'confirmed', thirdParty = 'MENEJER', excelMeta = null, cancelReason = '' }) {
   const sumUsd = Number(sumRows(rows).toFixed(2))
   return {
     id: number,
@@ -188,6 +189,7 @@ function makeConfirmedReceipt({ number, date, warehouse, counterparty, author, r
     sumUsd,
     sumUzs: Math.round(sumUsd * EXCHANGE_RATE),
     status,
+    cancelReason,
     excelMeta,
   }
 }
@@ -293,6 +295,26 @@ export const initialReceipts = [
     author: 'AXRORJON',
     rows: buildRows().slice(0, 2),
     status: 'draft',
+  }),
+  makeConfirmedReceipt({
+    number: 'KR-0252',
+    date: '2023-12-12',
+    warehouse: 'MAGAZIN',
+    counterparty: '12 TREST ZOHID',
+    author: 'SALMONOV S.',
+    rows: buildRows().slice(0, 2),
+    status: 'cancelled',
+    cancelReason: 'Yetkazuvchi hujjatni qaytarib oldi',
+  }),
+  makeConfirmedReceipt({
+    number: 'KR-0247',
+    date: '2023-12-07',
+    warehouse: 'OMBOR',
+    counterparty: 'XISSADOR SARDOR',
+    author: 'SAG MENEJER',
+    rows: buildRows().slice(0, 1),
+    status: 'cancelled',
+    cancelReason: 'Tovar omborga kelmadi',
   }),
 ]
 
